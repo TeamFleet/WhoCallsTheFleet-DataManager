@@ -1,0 +1,369 @@
+#layout>main>.page[page="ships"]{
+	section{
+		.flexgrid{
+			&>.unit{
+				flex:		1 0 200px;
+				.height(50);
+				.padding-right(10);
+				.padding-left(44);
+				text-align:	left;
+			}
+		}
+	}
+
+
+
+
+
+	section[data-tabname="舰种&舰级"],
+	section[data-tabname="后缀名"],
+	section[data-tabname="舰种集合 (舰娘列表)"],
+	section[data-tabname="舰种集合 (舰娘选择器)"]{
+		.padding-top(30);
+		.new_container{
+			position:	absolute;
+			top:		0;
+			left:		0;
+			width:		100%;
+			.height(30);
+			.line-height(28);
+			color:		#fff;
+			background:	rgba(0,0,0,.5);
+			.border-top(1, solid, #997904);
+			.border-bottom(1, solid, #f0eaab);
+			padding:	0 .85em;
+			button{
+				color:		#fff;
+				margin-right:	.7em;
+				padding:	0 .25em;
+				.transition-property(text-shadow);
+				&:hover{
+					.text-stroke-shadow(#23a0a1)
+				}
+				&:first-child{
+					margin-left:	-.25em;
+				}
+			}
+		}
+		.main{
+			position:	relative;
+			width:		100%;
+			height:		100%;
+			overflow:	auto;
+			&>button.ship_type{
+				.height(50);
+				.min-width(260);
+				.appearance(none);
+				.box-sizing(border-box);
+				padding:	0;
+				border:		0;
+				background:	none;
+				position:	relative;
+				.padding-left(44);
+				text-align:	left;
+				&:before{
+					content:	'';
+					position:	absolute;
+					z-index:	-1;
+					.width(40);
+					.height(40);
+					border-radius:	50%;
+					.top(5);
+					left:			0;
+					background:		#bebeb9;
+					.box-sizing(border-box);
+					.border(2, solid, #6d6d68);
+					.enable-transition();
+					.transition-property(background)
+				}
+				em{
+					position:	absolute;
+					.line-height(50);
+					.width(40);
+					text-align:center;
+					left:		0;
+					top:		0;
+					color:		#fff;
+					font-style:	normal;
+					font-family:@font_famliy_Song;
+					letter-spacing:-0.05em;
+					.font-size(18);
+					@color:		#41413c;
+					text-shadow:	unit( (-1 * @base_multiper),rem) unit( (-1 * @base_multiper),rem) unit( (0.5 * @base_multiper),rem) @color,
+									unit( (-1 * @base_multiper),rem) unit( (0 * @base_multiper),rem) unit( (1 * @base_multiper),rem) @color,
+									unit( (-1 * @base_multiper),rem) unit( (1 * @base_multiper),rem) unit( (0.5 * @base_multiper),rem) @color,
+									unit( (0 * @base_multiper),rem) unit( (-1 * @base_multiper),rem) unit( (1 * @base_multiper),rem) @color,
+									unit( (0 * @base_multiper),rem) unit( (0 * @base_multiper),rem) unit( (1.5 * @base_multiper),rem) @color,
+									unit( (0 * @base_multiper),rem) unit( (1 * @base_multiper),rem) unit( (1 * @base_multiper),rem) @color,
+									unit( (1 * @base_multiper),rem) unit( (-1 * @base_multiper),rem) unit( (0.5 * @base_multiper),rem) @color,
+									unit( (1 * @base_multiper),rem) unit( (0 * @base_multiper),rem) unit( (1 * @base_multiper),rem) @color,
+									unit( (1 * @base_multiper),rem) unit( (1 * @base_multiper),rem) unit( (0.5 * @base_multiper),rem) @color
+				}
+				strong{
+					display:	block;
+					font-family:@font_famliy_Song;
+					font-weight:normal;
+					.font-size(18);
+					color:		#000;
+					.transition-property(color)
+				}
+				small{
+					.font-size(12);
+					color:		#A8851C;
+					.transition-property(color)
+				}
+				&:hover{
+					&:before{
+						background:	#3bc8c9;
+					}
+					strong{
+						color:	#239e9f
+					}
+					small{
+						color:	#239e9f
+					}
+				}
+			}
+			.ship_classes{
+				padding-bottom:	1em;
+				&>.unit{
+					.flex-basis(140);
+				}
+				&>button.unit{
+					.fadein();
+					strong{
+						display:	block;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+form.shipinfo,
+form.iteminfo{
+	@image_width:	218 * 0.65;
+	@image_height:	300 * 0.65;
+	@actions_height:30;
+
+	width:		100%;
+	height:		100%;
+	position:	relative;
+	.padding(0, 0, @actions_height, (@image_width + 30));
+
+	h2, h3, h4, h5, h6{
+		margin-top:	0.6em;
+	}
+	p{
+		.clearfix();
+		.height(20);
+		.margin-bottom(4);
+		label{
+			display:	inline-block;
+			text-align:	right;
+			.font-size(14);
+			.line-height(20);
+			small{
+				.font-size(12);
+			}
+		}
+		input[type="text"],
+		input[type="number"],
+		select{
+			min-width:	0;
+		}
+	}
+
+	&>.base{
+		position:	absolute;
+		top:		0;
+		left:		0;
+		.width(@image_width + 10);
+		height:		~"calc(100% - @{actions_height}px)";
+		overflow:	auto;
+		.padding-top(@image_height + 20);
+		.padding-left(10);
+		&>.image{
+			position:	absolute;
+			.top(10);
+			.left(10);
+			.width(@image_width);
+			height:		0;
+			padding-bottom:	percentage(300 / 218);
+			background:	~"no-repeat 50% 50% / cover";
+		}
+		p{
+			label{
+				width:		30%;
+			}
+			input[type="text"],
+			input[type="number"],
+			select{
+				width:		calc(70% - 4px);
+				float:		right;
+			}
+		}
+		label.name_suffix{
+			&, &+input[type="checkbox"]{
+				float:	right;
+				margin-top:	8px;
+			}
+		}
+		label.name_suffix+input[type="checkbox"] ~ p{
+			display:	block;
+			.fadein();
+		}
+		label.name_suffix+input[type="checkbox"]:checked ~ p{
+			display:	none;
+			&:last-child{
+				display:	block;
+			}
+		}
+	}
+
+	&>.tabview{
+		position:	relative;
+		width:		100%;
+		height:		100%;
+		.padding-top(40);
+		&>header{
+			.padding-top(10);
+		}
+		&>section{
+			position:	relative;
+			width:		100%;
+			height:		100%;
+			overflow:	auto;
+			.padding-right(10);
+			.padding-top(14);
+			label{
+				padding-right:	6px;
+			}
+			&>h2, &>h3, &>h4, &>h5, &>h6{
+				&:first-child{
+					margin-top:	0;
+				}
+			}
+			&[data-tabname="属性"]{
+				p{
+					label{
+						width:		50px;
+					}
+					input[type="text"],
+					input[type="number"],
+					select{
+						width:	~"calc(50% - 50px)";
+					}
+					input[name="stat.carry"],
+					select{
+						~label{
+							width:	50%;
+							text-align:	left;
+							padding-left:	16px;
+						}
+					}
+				}
+			}
+			&[data-tabname="装备"]{
+				p{
+					label{
+						width:		64px;
+					}
+					input[type="text"],
+					input[type="number"]{
+						width:	40px;
+						&~label{
+							width:		70px;
+							&~input[type="text"],
+							&~input[type="number"],
+							&~select{
+								width:	~"calc(100% - 200px)";
+							}
+						}
+					}
+				}
+			}
+			&[data-tabname="其他"]{
+				p{
+					label{
+						width:		50px;
+					}
+					input[type="text"],
+					input[type="number"],
+					select{
+						width:	~"calc(100% - 50px)";
+					}
+					input[name="class_no"]{
+						.width(40);
+						&~label{
+							width:	auto;
+							padding-left:	6px;
+						}
+					}
+					input[name="link_name"]{
+						width:	~"calc(40% - 50px)";
+						~label{
+							width:	44px;
+							&~input[type="text"],
+							&~input[type="number"],
+							&~select{
+								width:	~"calc(60% - 44px)";
+							}
+						}
+					}
+				}
+				section.form_section{
+					counter-reset: line-number;
+					p{
+						counter-increment: line-number;
+						&>label:first-child:before{
+							content:	'#' counter(line-number)
+						}
+					}
+				}
+			}
+			&[data-tabname="系列"]{
+				p{
+					label.remodel{
+						width:		70px;
+						&+input{
+							width:	~"calc(50% - 100px)";
+							&+label{
+								width:		40px;
+								&+input{
+									width:	~"calc(50% - 70px)";
+									&+label{
+										width:		40px;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	&>p.actions{
+		position:	absolute;
+		width:		100%;
+		.height(@actions_height);
+		bottom:		0;
+		left:		0;
+		margin:		0;
+		padding: 	0;
+	}
+}

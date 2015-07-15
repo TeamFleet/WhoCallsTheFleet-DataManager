@@ -1,0 +1,108 @@
+#layout>main>.page[page="update"]{
+	&>.tabview>section[data-tabname="更新日志"]{
+		.padding-top(30);
+		.new_container{
+			position:	absolute;
+			top:		0;
+			left:		0;
+			width:		100%;
+			.height(30);
+			.line-height(28);
+			color:		#fff;
+			background:	rgba(0,0,0,.5);
+			.border-top(1, solid, #997904);
+			.border-bottom(1, solid, #f0eaab);
+			padding:	0 .85em;
+			button{
+				color:		#fff;
+				margin-right:	.7em;
+				padding:	0 .25em;
+				.transition-property(text-shadow);
+				&:hover{
+					.text-stroke-shadow(#23a0a1)
+				}
+				&:first-child{
+					margin-left:	-.25em;
+				}
+			}
+		}
+		.main{
+			position:	relative;
+			width:		100%;
+			height:		100%;
+			overflow:	auto;
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+form.iteminfo{
+	@image_width:	260 * 0.75;
+	.padding-left((@image_width + 30));
+
+	&>.base{
+		.width(@image_width + 10);
+		.padding-top(@image_width + 20);
+		&>.image{
+			.width(@image_width);
+			padding-bottom:	100%;
+		}
+		p{
+			label{
+				.width(45);
+			}
+			input[type="text"],
+			input[type="number"],
+			select{
+				width:		~"calc(100% - 50px)";
+				float:		right;
+			}
+		}
+	}
+
+	&>.tabview{
+		&>section{
+			&[data-tabname="属性"]{
+				p input[type="text"][name="dismantle"],
+				p input[type="number"][name="dismantle"]{
+					width:	~"calc(25% - 50px)"
+				}
+			}
+			&[data-tabname="开发&改修"]{
+				p select[name="upgrade_to"]{
+					width:	~"calc(100% - 214px)";
+					&+label{
+						width:	80px;
+						&+input[type="number"]{
+							width:	40px;
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,95 @@
+<h2>初始化数据</h2>
+
+<div class="caution">
+	该操作将会重置所有数据！
+</div>
+
+<form id="init_all_data">
+	<p>
+		<label>
+			舰娘原数据
+			<input required type="text" id="data_ships" value="http://www.kancolle-calc.net/data/shipdata.js" />
+		</label>
+	</p>
+	<p>
+		<label>
+			装备原数据
+			<input required type="text" id="data_items" value="http://www.kancolle-calc.net/data/itemdata.js" />
+		</label>
+	</p>
+	<p class="actions">
+		<button type="submit">初始化</button>
+	</p>
+</form>
+
+
+
+<h2>获取官方游戏数据</h2>
+<form id="fetch_official">
+	<dl>
+		<dt><label>服务器</label></dt>
+		<dd>
+			<select name="server_ip">
+				<option value="203.104.209.23">鹿屋基地</option>
+			</select>
+		</dd>
+	</dl>
+	<dl>
+		<dt><label>API Token</label></dt>
+		<dd>
+			<input name="api_token" type="text" required />
+		</dd>
+	</dl>
+	<p class="actions">
+		<button type="submit">提交</button>
+	</p>
+</form>
+
+
+
+
+<h2>删除多余图鉴</h2>
+
+<div class="caution">
+	该操作将会删除大量图鉴文件！
+</div>
+
+<form id="init_illustrations">
+	<p class="actions">
+		<button type="submit">开始</button>
+	</p>
+</form>
+
+
+<h2>批处理 & 导出数据</h2>
+
+<form id="init_exportdata">
+	<p>
+		<label>
+			目标目录
+			<input type="file" nwdirectory class="none" />
+			<input required type="text" name="destfolder" />
+			<button type="button" value="Browse...">浏览...</button>
+		</label>
+	</p>
+	<p class="actions">
+		<button type="submit">开始</button>
+	</p>
+</form>
+
+
+<h2>导出图片</h2>
+
+<form id="init_exportpic">
+	<p>
+		<label>
+			目标目录
+			<input type="file" nwdirectory class="none" />
+			<input required type="text" name="destfolder" />
+			<button type="button" value="Browse...">浏览...</button>
+		</label>
+	</p>
+	<p class="actions">
+		<button type="submit">开始</button>
+	</p>
+</form>

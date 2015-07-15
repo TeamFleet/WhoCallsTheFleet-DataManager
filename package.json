@@ -1,0 +1,26 @@
+{
+	"name":		"舰队数据管理器",
+	"main":		"app/main.html",
+	"version":	"0.1.0",
+
+	"debug": 	true,
+	
+	"window": {
+		"width": 			1280,
+		"height":			720,
+		"toolbar":			false,
+		"icon": 			null,
+		"position":			"center",
+		"min_width":		640,
+		"min_height":		480,
+		"as_desktop":		false,
+		"resizable":		true,
+		"always-on-top":	false,
+		"fullscreen":		false,
+		"show_in_taskbar":	true,
+		"frame":			true,
+		"show":				true,
+		"kiosk":			false,
+		"transparent":		false
+	}
+}

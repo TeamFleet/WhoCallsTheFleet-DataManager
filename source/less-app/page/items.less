@@ -1,0 +1,252 @@
+#layout>main>.page[page="items"]{
+	&>.tabview>section[data-tabname="未入库"],
+	&>.tabview>section[data-tabname="类型"],
+	&>.tabview>section[data-tabname="类型集合"]{
+		.padding-top(30);
+		.new_container{
+			position:	absolute;
+			top:		0;
+			left:		0;
+			width:		100%;
+			.height(30);
+			.line-height(28);
+			color:		#fff;
+			background:	rgba(0,0,0,.5);
+			.border-top(1, solid, #997904);
+			.border-bottom(1, solid, #f0eaab);
+			padding:	0 .85em;
+			button{
+				color:		#fff;
+				margin-right:	.7em;
+				padding:	0 .25em;
+				.transition-property(text-shadow);
+				&:hover{
+					.text-stroke-shadow(#23a0a1)
+				}
+				&:first-child{
+					margin-left:	-.25em;
+				}
+			}
+		}
+		.main{
+			position:	relative;
+			width:		100%;
+			height:		100%;
+			overflow:	auto;
+			.item_types{
+				&>.unit.item_type{
+					.height(36);
+					.line-height(36);
+					.margin-top(5);
+					position:	relative;
+					.padding-left(40);
+					&>span{
+						position:	absolute;
+						top:		0;
+						left:		0;
+						.width(36);
+						.height(36);
+						background:	rgba(0, 0, 0, .15) no-repeat 50% 50%;
+						.border(1, solid, rgba(0, 0, 0, .15));
+						border-radius:	50%;
+						.transition-property(background);
+					}
+					&:hover{
+						&>span{
+							background-color:	rgba(0, 0, 0, .35)
+						}
+					}
+				}
+			}
+			.newitems{
+				&>.unit.newitem{
+					.margin(15, 15, 0, 0);
+					.flex-basis(175);
+					.transition-property(opacity);
+					opacity:	.75;
+					&>span{
+						display: 		block;
+						width: 			100%;
+						height: 		0;
+						padding-bottom: 100%;
+						img{
+							display:	block;
+							min-width:	100%;
+							max-width:	100%;
+						}
+					}
+					&:hover{
+						opacity:	1;
+					}
+				}
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+form.iteminfo{
+	@image_width:	260 * 0.75;
+	.padding-left((@image_width + 30));
+
+	&>.base{
+		.width(@image_width + 10);
+		.padding-top(@image_width + 20);
+		&>.image{
+			.width(@image_width);
+			padding-bottom:	100%;
+		}
+		p{
+			label{
+				.width(45);
+			}
+			input[type="text"],
+			input[type="number"],
+			select{
+				width:		~"calc(100% - 50px)";
+				float:		right;
+			}
+		}
+	}
+
+	&>.tabview{
+		&>section{
+			&[data-tabname="属性"]{
+				p input[type="text"][name="dismantle"],
+				p input[type="number"][name="dismantle"]{
+					width:	~"calc(25% - 50px)"
+				}
+			}
+			&[data-tabname="开发&改修"]{
+				counter-reset: 	section;
+				p select[name="upgrade_to"]{
+					width:	~"calc(100% - 214px)";
+					&+label{
+						width:	80px;
+						&+input[type="number"]{
+							width:	40px;
+						}
+					}
+				}
+				.improvement{
+					padding-left:	20px;
+					position:		relative;
+					&:before{
+						counter-increment: section;
+						content:	'改修项 #'counter(section);
+						display: 	block;
+						font-weight:bold;
+						margin-left:-20px;
+						font-size: 	14px;
+					}
+					&>button.delete{
+						position:	absolute;
+						top:		0;
+						right:		0;
+					}
+					p{
+						display: 	flex;
+						label{
+							flex:	0 0 auto;
+						}
+						h5{
+							flex:		none;
+							display:	block;
+							width:		100%;
+							margin:		0;
+						}
+						input[type="number"], input[type="text"], select{
+							flex: 	1 1 auto;
+							& ~ label{
+								padding-left:	10px;
+							}
+						}
+						input[type="number"]{
+							&::-webkit-inner-spin-button{
+								display:	none;
+							}
+							flex-basis:	25px;
+							min-width:	25px;
+						}
+						&.upgrade{
+							select{
+								flex-basis:	160px;
+							}
+							input[type="number"]{
+								flex:		0 0 40px;
+							}
+						}
+						&.resource{
+							padding:	20px 0 0 18px;
+							position:	relative;
+							box-sizing: content-box;
+							h5{
+								position:	absolute;
+								top:		0;
+								left:		0;
+							}
+							label{
+								font-size:	12px;
+								padding:	0 2px !important;
+							}
+							select{
+								flex-grow:	2;
+							}
+						}
+					}
+					div.require{
+						padding-left:	20px;
+						counter-reset: 	section_req;
+						&>h5{
+							margin-left:	-20px;
+						}
+						&>div{
+							padding-left:	40px;
+							position:		relative;
+							&:before{
+								counter-increment: section_req;
+								content:	'项 #'counter(section_req);
+								display: 	block;
+								font-weight:bold;
+								margin-left:-40px;
+								font-size: 	14px;
+							}
+							&>button.delete{
+								position:	absolute;
+								top:		0;
+								right:		0;
+							}
+							h6{
+								margin-left:	-20px;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
