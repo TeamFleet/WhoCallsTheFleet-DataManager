@@ -1,4 +1,9 @@
+// @koala-prepend "js-app/!.js"
 // @koala-prepend "js-app/main.js"
+
+// @koala-prepend "js-app/items/!.js"
+// @koala-prepend "js-app/items/ship.js"
+// @koala-prepend "js-app/items/equipment.js"
 
 // @koala-prepend "js-app/page/home.js"
 // @koala-prepend "js-app/page/init.js"

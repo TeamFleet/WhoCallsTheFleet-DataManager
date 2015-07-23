@@ -50,61 +50,23 @@ var server_ip 	= '203.104.209.23'
 	_g.pathMakeObj( _g.path )
 
 	_g.data = {
+		'entities': {},
+
+		'items': {},
+		'item_types': {},
+
 		'ships': {},
 		'ship_id_by_type': [], 			// refer to _g.ship_type_order
 		'ship_types': {},
-		'items': {},
-		'item_types': {}
+		'ship_type_order': {},
+		'ship_classes': {}
 	}
 
 	var _db = {
-		'ships': new node.nedb({
-				filename: 	_g.path.db + '/ships.json'
-			}),
-		'ship_types': new node.nedb({
-				filename: 	_g.path.db + '/ship_types.json'
-			}),
-		'ship_type_collections': new node.nedb({
-				filename: 	_g.path.db + '/ship_type_collections.json'
-			}),
-		'ship_type_order': new node.nedb({
-				filename: 	_g.path.db + '/ship_type_order.json'
-			}),
-		'ship_classes': new node.nedb({
-				filename: 	_g.path.db + '/ship_classes.json'
-			}),
-		'ship_series': new node.nedb({
-				filename: 	_g.path.db + '/ship_series.json'
-			}),
-		'ship_namesuffix': new node.nedb({
-				filename: 	_g.path.db + '/ship_namesuffix.json'
-			}),
-		'items': new node.nedb({
-				filename: 	_g.path.db + '/items.json'
-			}),
-		'item_types': new node.nedb({
-				filename: 	_g.path.db + '/item_types.json'
-			}),
-		'item_type_collections': new node.nedb({
-				filename: 	_g.path.db + '/item_type_collections.json'
-			}),
-		'entities': new node.nedb({
-				filename: 	_g.path.db + '/entities.json'
-			}),
-		'updates': new node.nedb({
-				filename: 	_g.path.db + '/updates.json'
-			}),
-			
-		'arsenal_all': new node.nedb({
-				filename: 	_g.path.db + '/arsenal_all.json'
-			}),
-		'arsenal_weekday': new node.nedb({
-				filename: 	_g.path.db + '/arsenal_weekday.json'
-			})
 	}
 	_g.ship_type_order = []
-	_g.ship_type_order_name = []
 	_g.ship_type_order_map = {}
+	_g.ship_type_order_name = []
 
 	_g.newInputIndex = function(){
 		_g.inputIndex++
@@ -342,7 +304,310 @@ _frame.app_main = {
 				//}, 1000)
 			})
 
+		// 部分全局事件委托
+			$('html').on('click.openShipModal', '[data-shipid]', function(){
+				if( $(this).data('shipmodal') == 'false' )
+					return false
+				if( $(this).data('shipedit') ){
+					//try{
+						_frame.app_main.page['ships'].show_ship_form( _g.data.ships[ $(this).data('shipid') ] )
+					//}catch(e){console.log(e)}
+				}else{
+					try{
+						_frame.app_main.show_ship( _g.data.ships[ $(this).data('shipid') ] )
+					}catch(e){console.log(e)}
+				}
+			}).on('click.openItemModal', '[data-itemid]', function(){
+				if( $(this).data('itemmodal') == 'false' )
+					return false
+				if( $(this).data('itemedit') ){
+					//try{
+						_frame.app_main.page['items'].show_item_form( _g.data.items[ $(this).data('itemid') ] )
+					//}catch(e){console.log(e)}
+				}else{
+					try{
+						_frame.app_main.show_item( _g.data.items[ $(this).data('itemid') ] )
+					}catch(e){console.log(e)}
+				}
+			})
+
+		var promise_chain 	= Q.fcall(function(){})
+
+		// 开始异步函数链
+			promise_chain
+
+		// 检查 aap-db 目录，预加载全部数据库
+			.then(function(){
+				var deferred = Q.defer()
+				node.fs.readdir(_g.path.db, function(err, files){
+					if( err ){
+						deferred.reject(new Error(err))
+					}else{
+						for(var i in files){
+							_db[ node.path.parse(files[i])['name'] ]
+								= new node.nedb({
+										filename: 	node.path.join(_g.path.db, '/' + files[i])
+									})
+						}
+						deferred.resolve(files)
+					}
+				})
+				return deferred.promise
+			})
+
 		// 读取db
+			.then(function(){
+				_g.log('Preload All DBs: START')
+				var the_promises = []
+					,dbs = []
+					,loaded_count = 0
+
+				for( var db_name in _db ){
+					dbs.push(db_name)
+				}
+
+				dbs.forEach(function(db_name){
+					var deferred = Q.defer()
+					function _done(_db_name){
+						_g.log('DB ' + _db_name + ' DONE')
+						deferred.resolve()
+						loaded_count++
+						if( loaded_count >= dbs.length ){
+							_g.log('Preload All DBs: DONE')
+							setTimeout(function(){
+								_frame.app_main.loaded('dbs')
+							}, 100)
+						}
+					}
+					_db[db_name].loadDatabase(function(err){
+						if( err ){
+							deferred.reject(new Error(err))
+						}else{
+							switch( db_name ){
+								/*
+									case 'entities':
+									case 'items':
+									case 'item_types':
+									case 'ship_classes':
+									case 'ship_types':
+										_db[db_name].find({}, function(err, docs){
+											if( typeof _g.data[db_name] == 'undefined' )
+												_g.data[db_name] = {}
+											for(var i in docs ){
+												_g.data[db_name][docs[i]['id']] = docs[i]
+											}
+											_db_load_next()
+										})
+										break;
+									*/
+								case 'ships':
+									_done(db_name);
+									break;
+								case 'ship_namesuffix':
+									_db.ship_namesuffix.find({}).sort({ 'id': 1 }).exec(function(dberr, docs){
+										if( dberr ){
+											deferred.reject(new Error(dberr))
+										}else{
+											_g.data.ship_namesuffix = [{}].concat(docs)
+											_frame.app_main.loaded('db_namesuffix')
+											_done(db_name)
+										}
+									})
+									break;
+								case 'ship_type_order':
+									_db.ship_type_order.find({}).sort({'id': 1}).exec(function(dberr, docs){
+										if( dberr ){
+											deferred.reject(new Error(dberr))
+										}else{
+											for(var i in docs ){
+												_g.ship_type_order.push(
+													docs[i]['types'].length > 1 ? docs[i]['types'] : docs[i]['types'][0]
+												)
+												//_g.data['ship_type_order'][docs[i]['id']] = docs[i]
+												_g.data['ship_type_order'][i] = docs[i]
+												_g.ship_type_order_name.push( docs[i]['name'] )
+											}
+											// ship type -> ship order
+												(function(){
+													for( var i in _g.ship_type_order ){
+														var index = parseInt(i)
+														if( typeof _g.ship_type_order[i] == 'object' ){
+															for( var j in _g.ship_type_order[i] ){
+																_g.ship_type_order_map[ _g.ship_type_order[i][j] ] = index
+															}
+														}else{
+															_g.ship_type_order_map[ _g.ship_type_order[i] ] = index
+														}
+													}
+												})()
+											_db.ships.find({}).sort({
+												//'class': 1, 'class_no': 1, 'series': 1, 'type': 1, 'time_created': 1, 'name.suffix': 1
+												'type': 1, 'class': 1, 'class_no': 1, 'time_created': 1, 'name.suffix': 1
+											}).exec(function(dberr2, docs){
+												if( dberr2 ){
+													deferred.reject(new Error(dberr))
+												}else{
+													for(var i in docs){
+														_g.data.ships[docs[i]['id']] = new Ship(docs[i])
+
+														if( typeof _g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ] == 'undefined' )
+															_g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ] = []
+														_g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ].push( docs[i]['id'] )
+													}
+													function __(i){
+														var j=0
+														while(
+															_g.data.ship_id_by_type[i]
+															&& _g.data.ship_id_by_type[i][j]
+														){
+															var id = _g.data.ship_id_by_type[i][j]
+																,i_remodel
+															if( _g.data.ships[id].remodel_next
+																&& _g.data.ships[_g.data.ships[id].remodel_next]
+																&& _g.data.ships[id].remodel_next != _g.data.ship_id_by_type[i][j+1]
+																&& (i_remodel = $.inArray(_g.data.ships[id].remodel_next, _g.data.ship_id_by_type[i])) > -1
+															){
+																_g.log(
+																	id
+																	+ ', ' + _g.data.ships[id].remodel_next
+																	+ ', ' + i_remodel
+																)
+																_g.data.ship_id_by_type[i].splice(
+																	i_remodel,
+																	1
+																)
+																_g.data.ship_id_by_type[i].splice(
+																	$.inArray(id, _g.data.ship_id_by_type[i])+1,
+																	0,
+																	_g.data.ships[id].remodel_next
+																)
+																//console.log(_g.data.ship_id_by_type[i])
+																__(i)
+																break
+															}
+															if( j >= _g.data.ship_id_by_type[i].length - 2 ){
+																i++
+																j=0
+															}else{
+																j++
+															}
+														}
+													}
+													__(0)
+													_done(db_name)
+												}
+											})
+										}
+									})
+									break;
+								case 'updates':
+									if( typeof _g.data[db_name] == 'undefined' )
+										_g.data[db_name] = {}
+									_done(db_name)
+									break;
+								case 'arsenal_all':
+									_g.data['arsenal_all'] = []
+									_db.arsenal_all.find({}).sort({
+										'sort': 1
+									}).exec(function(err, docs){
+										for(var i in docs){
+											_g.data['arsenal_all'].push(docs[i]['id'])
+										}
+										_done(db_name)
+									})
+									break;
+								case 'arsenal_weekday':
+									_g.data['arsenal_weekday'] = {}
+									_db.arsenal_weekday.find({}).sort({
+										'weekday': 1
+									}).exec(function(err, docs){
+										for(var i in docs){
+											_g.data['arsenal_weekday'][parseInt(i)]
+												= docs[i].improvements
+										}
+										_done(db_name)
+									})
+									break;
+								default:
+									_db[db_name].find({}, function(dberr, docs){
+										if( dberr ){
+											deferred.reject(new Error(dberr))
+										}else{
+											if( typeof _g.data[db_name] == 'undefined' )
+												_g.data[db_name] = {}
+											for(var i in docs ){
+												switch( db_name ){
+													case 'items':
+														_g.data[db_name][docs[i]['id']] = new Equipment(docs[i])
+														break;
+													default:
+														_g.data[db_name][docs[i]['id']] = docs[i]
+														break;
+												}
+											}
+											_done(db_name)
+										}
+									})
+									break;
+							}
+
+						}
+					})
+					the_promises.push(deferred.promise)
+				})
+
+				return Q.all(the_promises);
+			})
+
+		// 根据装备大类和类型排序整理装备ID
+			.then(function(){
+				var deferred = Q.defer()
+				_g.data.item_id_by_type = []
+				_g.item_type_order = []
+				var type_by_collection = {}
+					,type_order_map = {}
+				// 遍历大类
+					for(var i in _g.data.item_type_collections){
+						for(var j in _g.data.item_type_collections[i]['types']){
+							type_by_collection[ _g.data.item_type_collections[i]['types'][j] ] = i
+							_g.item_type_order.push( _g.data.item_type_collections[i]['types'][j] )
+							type_order_map[ _g.data.item_type_collections[i]['types'][j] ] = _g.item_type_order.length - 1
+						}
+					}
+				// 遍历装备数据
+					for(var i in _g.data.items){
+						var order = type_order_map[ _g.data.items[i]['type'] ]
+						if( !_g.data.item_id_by_type[order] )
+							_g.data.item_id_by_type[order] = {
+								'collection': type_by_collection[_g.data.items[i]['type']],
+								'equipments': [],
+								'names': []
+							}
+						_g.data.item_id_by_type[order]['equipments'].push( _g.data.items[i]['id'] )
+						_g.data.item_id_by_type[order]['names'].push( _g.data.items[i].getName() )
+					}
+				// 排序
+					for(let i in _g.data.item_id_by_type){
+						_g.data.item_id_by_type[i]['equipments'].sort(function(a, b){
+							let diff = _g.data.items[a].getPower() - _g.data.items[b].getPower()
+							if( diff === 0 ){
+								let diff_aa = _g.data.items[a]['stat']['aa'] - _g.data.items[b]['stat']['aa']
+								if( diff_aa === 0 ){
+									return _g.data.items[a]['stat']['hit'] - _g.data.items[b]['stat']['hit']
+								}
+								return diff_aa
+							}
+							return diff
+						})
+					}
+				setTimeout(function(){
+					deferred.resolve()
+				}, 100)
+				return deferred.promise
+			})
+
+		// 读取db
+		/*
 			var _db_size = 0
 				,_db_loaded = 0
 			for( var i in _db )
@@ -409,33 +674,7 @@ _frame.app_main = {
 			for( var i in _db ){
 				_db_load(i)
 			}
-
-		// 部分全局事件委托
-			$('html').on('click.openShipModal', '[data-shipid]', function(){
-				if( $(this).data('shipmodal') == 'false' )
-					return false
-				if( $(this).data('shipedit') ){
-					//try{
-						_frame.app_main.page['ships'].show_ship_form( _g.data.ships[ $(this).data('shipid') ] )
-					//}catch(e){console.log(e)}
-				}else{
-					try{
-						_frame.app_main.show_ship( _g.data.ships[ $(this).data('shipid') ] )
-					}catch(e){console.log(e)}
-				}
-			}).on('click.openItemModal', '[data-itemid]', function(){
-				if( $(this).data('itemmodal') == 'false' )
-					return false
-				if( $(this).data('itemedit') ){
-					//try{
-						_frame.app_main.page['items'].show_item_form( _g.data.items[ $(this).data('itemid') ] )
-					//}catch(e){console.log(e)}
-				}else{
-					try{
-						_frame.app_main.show_item( _g.data.items[ $(this).data('itemid') ] )
-					}catch(e){console.log(e)}
-				}
-			})
+		*/
 
 		_frame.app_main.is_init = true
 	}

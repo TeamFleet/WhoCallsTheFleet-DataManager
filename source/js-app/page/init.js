@@ -3,9 +3,11 @@ node.require('url')
 
 _frame.app_main.page['init'] = {}
 
+var __log
+
 _frame.app_main.page['init'].data_ships = null
 _frame.app_main.page['init'].fetch_ships = function(){
-	_log('fetching data for ships...')
+	__log('fetching data for ships...')
 	var url = node.url.parse( $('#data_ships').val() )
 	//var req = node.http.get( $('#data_ships').val(), function(res){
 	var req = node.http.request({
@@ -26,7 +28,7 @@ _frame.app_main.page['init'].fetch_ships = function(){
 				//res.setEncoding('utf8');
 				body = body.replace(/^var [^ ^\=]+[ ]*=/, '')
 				eval('_frame.app_main.page[\'init\'].data_ships = ' + body)
-				_log('fetched data for ships (' + _frame.app_main.page['init'].data_ships.length + ').')
+				__log('fetched data for ships (' + _frame.app_main.page['init'].data_ships.length + ').')
 
 				// 将Array内所有数据分别存放至 ./fetched_data/ships/
 					node.mkdirp.sync(_g.path.fetched.ships)
@@ -37,7 +39,7 @@ _frame.app_main.page['init'].fetch_ships = function(){
 								savedata()
 							}, 10 )
 						}else{
-							_log('all data for ships saved.')
+							__log('all data for ships saved.')
 							_frame.app_main.page['init'].fetch_items()
 						}
 					}
@@ -51,12 +53,12 @@ _frame.app_main.page['init'].fetch_ships = function(){
 										if(err) {
 											console.log(err);
 										} else {
-											_log('saved data file for ship ['+o.id+'] No.'+o.no+' '+ o.name +'.')
+											__log('saved data file for ship ['+o.id+'] No.'+o.no+' '+ o.name +'.')
 										}
 										savedata_next()
 									})
 							}else{
-								_log('data for ship ['+o.id+'] No.'+o.no+' '+ o.name +' exists in database. skip.')
+								__log('data for ship ['+o.id+'] No.'+o.no+' '+ o.name +' exists in database. skip.')
 								savedata_next()
 							}
 						})
@@ -64,7 +66,7 @@ _frame.app_main.page['init'].fetch_ships = function(){
 					savedata()
 			});
 		}else{
-			_log("fetching error: CODE " + res.statusCode);
+			__log("fetching error: CODE " + res.statusCode);
 		}
 	});
 	req.end();
@@ -72,7 +74,7 @@ _frame.app_main.page['init'].fetch_ships = function(){
 
 _frame.app_main.page['init'].data_items = null
 _frame.app_main.page['init'].fetch_items = function(){
-	_log('fetching data for items...')
+	__log('fetching data for items...')
 	var url = node.url.parse( $('#data_items').val() )
 	//var req = node.http.get( $('#data_items').val(), function(res){
 	var req = node.http.request({
@@ -93,7 +95,7 @@ _frame.app_main.page['init'].fetch_items = function(){
 				//res.setEncoding('utf8');
 				body = body.replace(/^var [^ ^\=]+[ ]*=/, '')
 				eval('_frame.app_main.page[\'init\'].data_items = ' + body)
-				_log('fetched data for items (' + _frame.app_main.page['init'].data_items.length + ').')
+				__log('fetched data for items (' + _frame.app_main.page['init'].data_items.length + ').')
 
 				// 将Array内所有数据分别存放至 ./fetched_data/ships/
 					node.mkdirp.sync(_g.path.fetched.items)
@@ -104,7 +106,7 @@ _frame.app_main.page['init'].fetch_items = function(){
 								savedata()
 							}, 10 )
 						}else{
-							_log('all data for items saved.')
+							__log('all data for items saved.')
 						}
 					}
 					function savedata(){
@@ -117,12 +119,12 @@ _frame.app_main.page['init'].fetch_items = function(){
 										if(err) {
 											console.log(err);
 										} else {
-											_log('saved data file for item ['+o.id+'] '+ o.name +'.')
+											__log('saved data file for item ['+o.id+'] '+ o.name +'.')
 										}
 										savedata_next()
 									})
 							}else{
-								_log('data for item ['+o.id+'] '+ o.name +' exists in database. skip.')
+								__log('data for item ['+o.id+'] '+ o.name +' exists in database. skip.')
 								savedata_next()
 							}
 						})
@@ -130,7 +132,7 @@ _frame.app_main.page['init'].fetch_items = function(){
 					savedata()
 			});
 		}else{
-			_log("fetching error: CODE " + res.statusCode);
+			__log("fetching error: CODE " + res.statusCode);
 		}
 	});
 	req.end();
@@ -147,7 +149,7 @@ _frame.app_main.page['init'].fetch_items = function(){
 
 _frame.app_main.page['init'].remain_illustrations = []
 _frame.app_main.page['init'].init_illustrations = function(){
-	_log('start initializing illustrations for ships...')
+	__log('start initializing illustrations for ships...')
 
 	function move_files(){
 		if( _frame.app_main.page['init'].remain_illustrations.length ){
@@ -158,7 +160,7 @@ _frame.app_main.page['init'].init_illustrations = function(){
 				oldPath,
 				newPath,
 				function(err){
-					_log('file moved to '+ newPath +'.')
+					__log('file moved to '+ newPath +'.')
 					_frame.app_main.page['init'].remain_illustrations.shift()
 					setTimeout( function(){
 						move_files()
@@ -166,7 +168,7 @@ _frame.app_main.page['init'].init_illustrations = function(){
 				}
 			)
 		}else{
-			_log('all illustrations for ships files moved...')
+			__log('all illustrations for ships files moved...')
 		}
 	}
 
@@ -205,9 +207,35 @@ _frame.app_main.page['init'].exportdata = function( form ){
 	var dest 			= form.find('[name="destfolder"]').val()
 		,files 			= []
 		,promise_chain 	= Q.fcall(function(){})
+		,_ship			= {}
+		,_item			= {}
 
 	// 开始异步函数链
 		promise_chain
+	
+	// 遍历全部数据 (舰娘 & 装备)
+		.then(function(){
+			var deferred = Q.defer()
+			_db.ships.find({}, function(err, docs){
+				for( var i in docs ){
+					_ship[docs[i]['id']] = new Equipment(docs[i])
+				}
+				console.log(_ship)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
+			_db.items.find({}, function(err, docs){
+				for( var i in docs ){
+					_item[docs[i]['id']] = new Ship(docs[i])
+				}
+				console.log(_item)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
 
 	// 获取文件列表
 		.then(function(){
@@ -229,9 +257,9 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,equipped_by_item_id = {}
 				,length = 0
 
-			_g.log('&nbsp;')
-			_g.log('========== 装备数据 - 初始装备于 ==========')
-			_g.log('= 批处理开始')
+			__log('&nbsp;')
+			__log('========== 装备数据 - 初始装备于 ==========')
+			__log('= 批处理开始')
 
 			function _get_ships( item_id, _id, _index ){
 				_db.ships.find({"equip": item_id}, function(err2, docs2){
@@ -262,7 +290,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 						$set: set_data
 					},{}, function(err, numReplaced){
 						if( _index >= length - 1 ){
-							_g.log('= 批处理完毕')
+							__log('= 批处理完毕')
 							deferred.resolve()
 						}
 					})
@@ -301,9 +329,9 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,_upgrade_from = {}
 				,length = 0
 
-			_g.log('&nbsp;')
-			_g.log('========== 装备数据 - 改修升级前后关系 ==========')
-			_g.log('= 批处理开始')
+			__log('&nbsp;')
+			__log('========== 装备数据 - 改修升级前后关系 ==========')
+			__log('= 批处理开始')
 
 			_db.items.find({}, function(err, docs){
 				for( var i in docs ){
@@ -335,7 +363,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 						$set: set_data
 					},{}, function(err, numReplaced){
 						if( _index >= length - 1 ){
-							_g.log('= 批处理完毕')
+							__log('= 批处理完毕')
 							deferred.resolve()
 						}
 					})
@@ -363,9 +391,9 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,data_all 		= []
 				,_promise_chain = Q.fcall(function(){})
 
-			_g.log('&nbsp;')
-			_g.log('========== 改修工厂 - 每日改修 & 改修明细 ==========')
-			_g.log('= 批处理开始')
+			__log('&nbsp;')
+			__log('========== 改修工厂 - 每日改修 & 改修明细 ==========')
+			__log('= 批处理开始')
 
 			for( var i=0; i<7; i++){
 				data_weekday[i] = {
@@ -376,11 +404,47 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				index_weekday[i] = {}
 			}
 
+			for(let m in _g.data.item_id_by_type){
+				for(let n in _g.data.item_id_by_type[m]['equipments']){
+					let d = _item[_g.data.item_id_by_type[m]['equipments'][n]]
+			
+			console.log(_g.data.item_id_by_type[m]['equipments'][n], d)
+					if( d.improvement && d.improvement.length ){
+						data_all.push({
+							'id':	d['id'],
+							'sort': data_all.length
+						})
+
+						for(var j in d.improvement){
+							for(var k in d.improvement[j].req){
+								var req = d.improvement[j].req[k]
+								for(var l=0; l<7; l++){
+									if(req[0][l]){
+										var index = d['id'] + '_' + parseInt(j)
+										if( typeof index_weekday[l][index] == 'undefined' ){
+											index_weekday[l][index] = data_weekday[l].improvements.length
+											data_weekday[l].improvements.push([
+												d['id'],
+												parseInt(j),
+												[parseInt(k)]
+											])
+										}else{
+											data_weekday[l].improvements[index_weekday[l][index]][2].push(parseInt(k))
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
 			_promise_chain
 
 			// 遍历全部装备数据
-				.then(function(){
-					var _deferred = Q.defer()
+				//.then(function(){
+					//var _deferred = Q.defer()
+					/*
 					_db.items.find({}).sort({'type': 1, 'rarity': 1, 'id': 1}).exec(function(err, docs){
 						for( var i in docs ){
 							var d = docs[i]
@@ -415,8 +479,10 @@ _frame.app_main.page['init'].exportdata = function( form ){
 							}
 						}
 					})
-					return _deferred.promise
-				})
+					*/
+					//return _deferred.promise
+					//return true
+				//})
 
 			// 清空原有数据库
 				.then(function(){
@@ -452,7 +518,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 
 			// 完成
 				.then(function(){
-					_g.log('= 批处理完成')
+					__log('= 批处理完成')
 					deferred.resolve()
 				})
 
@@ -466,9 +532,9 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,count = 0
 				,length = 0
 
-			_g.log( '&nbsp;' )
-			_g.log('========== 取消装备类型的 equipable_on_stat 属性 ==========')
-			_g.log( '= 批处理开始' )
+			__log( '&nbsp;' )
+			__log('========== 取消装备类型的 equipable_on_stat 属性 ==========')
+			__log( '= 批处理开始' )
 
 			_db.item_types.find({}, function(err, docs){
 				length = docs.length
@@ -482,7 +548,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 					},{}, function(err, numReplaced){
 						count++
 						if( count >= length ){
-							_g.log('= 批处理完毕')
+							__log('= 批处理完毕')
 							deferred.resolve()
 						}
 					})
@@ -498,8 +564,8 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			var deferred = Q.defer()
 				,count = 0
 
-			_g.log( '&nbsp;' )
-			_g.log('========== 复制数据库JSON ==========')
+			__log( '&nbsp;' )
+			__log('========== 复制数据库JSON ==========')
 
 			// 建立目标目录
 				node.mkdirp.sync( dest )
@@ -532,12 +598,12 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			function copyFile_callback( err, source, target ){
 				count++
 				if( !err ){
-					_g.log( '= 数据库JSON已复制到 ' + target )
+					__log( '= 数据库JSON已复制到 ' + target )
 				}else{
 					console.log(err)
 				}
 				if( count >= files.length ){
-					_g.log( '= 全部数据库JSON已复制' )
+					__log( '= 全部数据库JSON已复制' )
 					deferred.resolve()
 				}
 			}
@@ -559,11 +625,11 @@ _frame.app_main.page['init'].exportdata = function( form ){
 
 	// 错误处理
 		.catch(function (err) {
-			_g.log(err)
-			_g.log('输出数据失败')
+			__log(err)
+			__log('输出数据失败')
 		})
 		.done(function(){
-			_g.log('输出数据初始过程结束')
+			__log('输出数据初始过程结束')
 		})
 }
 
@@ -617,7 +683,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
 		execFile(binPath, cmd, function(err, stdout, stderr) {
 			if( !err ){
-				_log(
+				__log(
 					'pic file copied to ' + target
 				)
 				files.shift()
@@ -632,7 +698,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 
 		encoder.write(target, function(err) {
 			console.log(err || 'encoded successfully');
-			_log(
+			__log(
 				'pic file copied to ' + target
 			)
 			files.shift()
@@ -660,7 +726,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 
 		function done(err) {
 			if (!cbCalled) {
-				_log(
+				__log(
 					'pic file copied to ' + target
 				)
 				files.shift()
@@ -808,7 +874,11 @@ _frame.app_main.page['init'].exportpic = function( form ){
 
 
 _frame.app_main.page['init'].init = function( page ){
-	_log = function(data){
+	var _log = function(data){
+		$('<p/>').html(data).prependTo(logs)
+	}
+	__log = function(data){
+		console.log(data)
 		$('<p/>').html(data).prependTo(logs)
 	}
 
@@ -920,7 +990,7 @@ _frame.app_main.page['init'].init = function( page ){
 		page.find('form#fetch_official').on('submit', function(e){
 			var form = $(this)
 			e.preventDefault()
-			_log('开始获取官方游戏数据 (api_start2)...')
+			__log('开始获取官方游戏数据 (api_start2)...')
 			/*
 				Remote Address:127.0.0.1:7070
 				Request URL:http://203.104.209.23/kcsapi/api_start2
@@ -960,7 +1030,7 @@ _frame.app_main.page['init'].init = function( page ){
 				.then(function(){
 					var api = node.url.parse( 'http://'+ ip +'/kcsapi/api_start2' )
 						,deferred = Q.defer()
-					_log('API (api_start2) requesting...')
+					__log('API (api_start2) requesting...')
 
 					request({
 						'uri': 		api,
@@ -1005,10 +1075,10 @@ _frame.app_main.page['init'].init = function( page ){
 					})
 				})
 				.catch(function (err) {
-					_log(err)
+					__log(err)
 				})
 				.done(function(){
-					_log('已获取，数据已保存到文件 /fetched_data/api_start2.json')
+					__log('已获取，数据已保存到文件 /fetched_data/api_start2.json')
 				})
 		})
 }

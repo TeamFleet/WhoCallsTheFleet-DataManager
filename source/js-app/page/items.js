@@ -768,7 +768,7 @@ _frame.app_main.page['items'].field_actions = function(text, func_delete){
 
 _frame.app_main.page['items'].gen_form_new_item_type = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var self = _frame.app_main.page['items']
 		,form = $('<form class="itemform item_type"/>').on('submit',function(e){
 					e.preventDefault()
@@ -859,6 +859,32 @@ _frame.app_main.page['items'].gen_form_new_item_type = function( callback, data_
 			}
 		})
 
+	$('<h4/>').html('主属性').appendTo(input_container)
+		var stats_radios = _p.el.flexgrid.create().addClass('stats').appendTo( input_container )
+			,main_attribute = is_edit ? (data_edit['main_attribute'] || null) : null
+			,stats = [
+				['火力',	'fire'],
+				['雷装',	'torpedo'],
+				['对空',	'aa'],
+				['对潜',	'asw'],
+				['爆装',	'bomb'],
+				['命中',	'hit'],
+				['装甲',	'armor'],
+				['回避',	'evasion'],
+				['索敌',	'los'],
+				['运',		'luck']
+			]
+		for(var i in stats ){
+			var input_id = '_input_g' + _g.inputIndex
+				,unitDOM = $('<div class="unit"/>')
+			stats_radios.appendDOM(unitDOM)
+			_g.inputIndex++
+			$('<input type="radio" name="main_attribute" value="'+stats[i][1]+'" id="'+input_id+'">')
+				.prop('checked', (stats[i][1] == main_attribute) )
+				.appendTo( unitDOM )
+			$('<label for="'+input_id+'"/>').html(stats[i][0]).appendTo(unitDOM)
+		}
+
 	/* scrapped 2015/05/26
 	$('<h4/>').html('当存在以下属性时可装备').appendTo(input_container)
 	// equipable_on_stat
@@ -904,7 +930,7 @@ _frame.app_main.page['items'].gen_form_new_item_type = function( callback, data_
 
 _frame.app_main.page['items'].gen_form_new_item_type_collection = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var self = _frame.app_main.page['items']
 		,form = $('<form class="itemform item_type_collection"/>').on('submit',function(e){
 					e.preventDefault()

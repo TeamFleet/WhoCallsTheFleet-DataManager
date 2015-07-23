@@ -1381,7 +1381,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_class = function( callback ){
 
 _frame.app_main.page['ships'].gen_form_new_ship_suffix = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var self = _frame.app_main.page['ships'].section['舰种&舰级']
 		,form = $('<form class="ship_suffix' +(is_edit ? ' loading' : '')+ '"/>').on('submit',function(e){
 					e.preventDefault()
@@ -1429,7 +1429,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_suffix = function( callback, dat
 
 _frame.app_main.page['ships'].gen_form_new_ship_type_collection = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var types = is_edit ? data_edit['types'] : []
 	var self = _frame.app_main.page['ships'].section['舰种&舰级']
 		,form = $('<form class="ship_type_collection"/>').on('submit',function(e){
@@ -1493,7 +1493,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_type_collection = function( call
 
 _frame.app_main.page['ships'].gen_form_new_ship_type_order = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var types = is_edit ? data_edit['types'] : []
 	var self = _frame.app_main.page['ships'].section['舰种&舰级']
 		,form = $('<form class="ship_type_collection"/>').on('submit',function(e){
