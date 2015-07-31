@@ -71,7 +71,7 @@ _frame.app_main.page['update'].field_actions = function(text, func_delete){
 
 _frame.app_main.page['update'].gen_form_new_journal = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var self = this
 		,form = $('<form class="update_journal"/>').on('submit',function(e){
 					e.preventDefault()

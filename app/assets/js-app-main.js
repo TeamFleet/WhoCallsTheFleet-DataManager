@@ -1537,7 +1537,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 
 	// 遍历 ship_series
 		.then(function(){
-			deferred = Q.defer()
+			let deferred = Q.defer()
 			_db.ship_series.find({}, function(err,docs){
 				for(var i in docs){
 					var ships = docs[i].ships || []
@@ -1849,6 +1849,8 @@ _frame.app_main.page['init'].init = function( page ){
 							deferred.reject(new Error(err))
 						}
 						if( !err && response.statusCode == 200 ){
+							console.log(body)
+							let svdata
 							eval(body)
 							console.log(svdata)
 							if( svdata.api_result == 1 ){
@@ -5940,7 +5942,7 @@ _frame.app_main.page['update'].field_actions = function(text, func_delete){
 
 _frame.app_main.page['update'].gen_form_new_journal = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
-	is_edit = (data_edit)
+	let is_edit = (data_edit)
 	var self = this
 		,form = $('<form class="update_journal"/>').on('submit',function(e){
 					e.preventDefault()
