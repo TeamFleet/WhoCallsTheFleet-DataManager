@@ -1004,11 +1004,12 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		,promise_chain 	= Q.fcall(function(){})
 		,_ship			= {}
 		,_item			= {}
+		,_item_type		= {}
 
 	// 开始异步函数链
 		promise_chain
 	
-	// 遍历全部数据 (舰娘 & 装备)
+	// 遍历全部数据 (舰娘 & 装备 & 装备类型)
 		.then(function(){
 			var deferred = Q.defer()
 			_db.ships.find({}, function(err, docs){
@@ -1027,6 +1028,17 @@ _frame.app_main.page['init'].exportdata = function( form ){
 					_item[docs[i]['id']] = new Ship(docs[i])
 				}
 				console.log(_item)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
+			_db.item_types.find({}, function(err, docs){
+				for( var i in docs ){
+					_item_type[docs[i]['id']] = docs[i]
+				}
+				console.log(_item_type)
 				deferred.resolve()
 			})
 			return deferred.promise
@@ -1316,6 +1328,58 @@ _frame.app_main.page['init'].exportdata = function( form ){
 					__log('= 批处理完成')
 					deferred.resolve()
 				})
+
+			return deferred.promise
+		})
+
+	// 舰种 - 可装备类型
+		.then(function(){
+			let deferred 			= Q.defer()
+				,types_by_shiptype	= {}
+				,length				= 0
+
+			__log('&nbsp;')
+			__log('========== 舰种 - 可装备类型 ==========')
+			__log('= 批处理开始')
+			
+			for( let i in _item_type ){
+				let equipable_on_type = _item_type[i].equipable_on_type || []
+				for( let j in equipable_on_type ){
+					if( !types_by_shiptype[equipable_on_type[j]] )
+						types_by_shiptype[equipable_on_type[j]] = []
+					types_by_shiptype[equipable_on_type[j]].push( _item_type[i].id )
+				}
+			}
+			length = types_by_shiptype._size
+			
+			function _db_do_all(){
+				let index = 0
+				function _db_do( find, set_data, _index ){
+					console.log(find, set_data)
+					_db.ship_types.update(find, {
+						$set: set_data
+					},{}, function(err, numReplaced){
+						if( _index >= length - 1 ){
+							__log('= 批处理完毕')
+							deferred.resolve()
+						}
+					})
+				}
+				for(let i in types_by_shiptype){
+					_db_do(
+						{
+							'id': parseInt(i)
+						},
+						{
+							'equipable': types_by_shiptype[i]
+						},
+						index
+					)
+					index++
+				}
+			}
+			
+			_db_do_all()
 
 			return deferred.promise
 		})
