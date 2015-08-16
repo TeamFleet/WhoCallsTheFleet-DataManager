@@ -2123,7 +2123,7 @@ _frame.app_main.page['ships'].section['新建'] = {
 										}
 									console.log(formdata)
 									if( formdata.remodel_from > -1 ){
-										remodel_from = _g.data.ships[formdata.remodel_from]
+										let remodel_from = _g.data.ships[formdata.remodel_from]
 										ship_data['name'] = remodel_from['name']
 										ship_data['type'] = remodel_from['type']
 										ship_data['class'] = remodel_from['class']

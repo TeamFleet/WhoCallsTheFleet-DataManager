@@ -28,6 +28,7 @@ var server_ip 	= '203.104.209.23'
 
 	_g.path = {
 		'db': 		process.cwd() + '/data/',
+		'db-other':	process.cwd() + '/data-other/',
 		'fetched': {
 			'ships': 	process.cwd() + '/fetched_data/ships/',
 			'items': 	process.cwd() + '/fetched_data/items/'
@@ -63,6 +64,9 @@ var server_ip 	= '203.104.209.23'
 	}
 
 	var _db = {
+		'guides': new node.nedb({
+				filename: 	node.path.join(_g.path['db-other'], 'guides.json')
+			})
 	}
 	_g.ship_type_order = []
 	_g.ship_type_order_map = {}
