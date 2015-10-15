@@ -8,6 +8,8 @@
 	node.require('cwebp')
 	node.require('semver')
 	node.require('url')
+	node.require('mime')
+	node.require('gm')
 
 	var Q 			= node.require('q')
 		,request 	= node.require('request')
@@ -461,21 +463,22 @@ _frame.app_main = {
 														_g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ].push( docs[i]['id'] )
 													}
 													function __(i){
-														var j=0
+														let j=0
 														while(
 															_g.data.ship_id_by_type[i]
 															&& _g.data.ship_id_by_type[i][j]
 														){
-															var id = _g.data.ship_id_by_type[i][j]
+															let id = _g.data.ship_id_by_type[i][j]
 																,i_remodel
-															if( _g.data.ships[id].remodel_next
-																&& _g.data.ships[_g.data.ships[id].remodel_next]
-																&& _g.data.ships[id].remodel_next != _g.data.ship_id_by_type[i][j+1]
-																&& (i_remodel = $.inArray(_g.data.ships[id].remodel_next, _g.data.ship_id_by_type[i])) > -1
+																,next_id = _g.data.ships[id].remodel ? _g.data.ships[id].remodel.next : null
+															if( next_id
+																&& _g.data.ships[next_id]
+																&& next_id != _g.data.ship_id_by_type[i][j+1]
+																&& (i_remodel = $.inArray(next_id, _g.data.ship_id_by_type[i])) > -1
 															){
 																_g.log(
 																	id
-																	+ ', ' + _g.data.ships[id].remodel_next
+																	+ ', ' + next_id
 																	+ ', ' + i_remodel
 																)
 																_g.data.ship_id_by_type[i].splice(
@@ -485,7 +488,7 @@ _frame.app_main = {
 																_g.data.ship_id_by_type[i].splice(
 																	$.inArray(id, _g.data.ship_id_by_type[i])+1,
 																	0,
-																	_g.data.ships[id].remodel_next
+																	next_id
 																)
 																//console.log(_g.data.ship_id_by_type[i])
 																__(i)
@@ -687,7 +690,7 @@ _frame.app_main = {
 }
 
 
-class ITEM {
+class ItemBase {
 	constructor() {
 	}
 
@@ -703,43 +706,16 @@ class ITEM {
 	}
 }
 
-class Ship extends ITEM{
-	constructor(data){
+// Class for Entity (Person/Group, such as CVs, illustrators)
+
+class Entity extends ItemBase{
+	constructor(data) {
 		super()
 		$.extend(true, this, data)
 	}
-	
-	getName(joint, language){
-		joint = joint || ''
-		language = language || _g.lang
-		return (
-				this['name'][language] || this['name']['ja_jp']
-				) + (
-				this['name'].suffix ? (
-						(joint === true ? _g.joint : joint)
-						+ (
-								_g.data['ship_namesuffix'][this['name'].suffix][language]
-								|| _g.data['ship_namesuffix'][this['name'].suffix]['ja_jp']
-							)
-					) : ''
-				)
-	}
-	
-	getType(language){
-		language = language || _g.lang
-		return this['type']
-				? _g['data']['ship_types'][this['type']]['full_zh']
-				: null
-	}
-	
-	getSeriesData(){
-		return this['series']
-				? _g['data']['ship_series'][this['series']]['ships']
-				: []
-	}
 }
 
-class Equipment extends ITEM{
+class Equipment extends ItemBase{
 	constructor(data) {
 		super()
 		$.extend(true, this, data)
@@ -747,7 +723,7 @@ class Equipment extends ITEM{
 	
 	getName(small_brackets, language){
 		language = language || _g.lang
-		var result = ITEM.prototype.getName.call(this, language)
+		var result = ItemBase.prototype.getName.call(this, language)
 			//,result = super.getName(language)
 			,small_brackets_tag = small_brackets && !small_brackets === true ? small_brackets : 'small'
 		return small_brackets
@@ -764,6 +740,9 @@ class Equipment extends ITEM{
 
 	getIconId(){
 		return _g.data.item_types[this['type']]['icon']
+	}
+	get _icon(){
+		return 'assets/images/itemicon/' + this.getIconId() + '.png'
 	}
 	
 	getCaliber(){
@@ -791,6 +770,314 @@ class Equipment extends ITEM{
 				case 9:
 		}
 		*/
+	}
+}
+
+/* Class: Ship / 舰娘
+
+ *******************************************************************
+
+new Ship( Object data )
+	data	原始数据
+
+ *******************************************************************
+
+ship instanceof Ship
+
+ship.getName( joint, language )
+	获取舰名
+	变量
+		joint		[OPTIONAL]
+			String		连接符，如果存在后缀名，则在舰名和后缀名之间插入该字符串
+			Boolean		如果为 true，则添加默认连接符
+						如果为 false，则不添加连接符
+			null		不添加连接符
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		舰名 + 连接符（如果有） + 后缀名（如果有）
+	快捷方式
+		ship._name	默认连接符，默认语言
+
+ship.getNameNoSuffix( language )
+	获取舰名，不包括后缀
+	变量
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		舰名，不包括后缀
+
+ship.getSuffix( language )
+	获取后缀名
+	变量
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		后缀名
+
+ship.getType( language )
+	获取舰种
+	变量
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		舰种
+	快捷方式
+		ship._type	默认语言
+
+ship.getSeriesData()
+	获取系列数据
+	返回值
+		Object		系列
+
+ship.getPic( picId )
+	获取图鉴uri/path
+	变量
+		picId	[OPTIONAL]
+			Number		图鉴Id，默认 0
+	返回值
+		String		uri/path
+	快捷方式
+		ship._pics	获取全部图鉴，Array
+
+ship.getRel( relation )
+	获取关系
+	变量
+		relation	[OPTIONAL]
+			String		关系名
+	返回值
+		Object			如果没有给出 relation，返回关系对象
+		String||Number	如果给出 relation，返回值，默认读取 rels 下的属性，如果不存在，读取上一个改造版本的对应关系
+
+ship.getCV( language )
+	获取声优
+	变量
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		声优名
+	快捷方式
+		ship._cv	默认语言
+
+ship.getIllustrator( language )
+	获取画师
+	变量
+		language	[OPTIONAL]
+			String		语言代码，默认为 _g.lang
+	返回值
+		String		画师名
+	快捷方式
+		ship._illustrator	默认语言
+
+ */
+
+class Ship extends ItemBase{
+	constructor(data){
+		super()
+		$.extend(true, this, data)
+	}
+	
+	getName(joint, language){
+		joint = joint || ''
+		language = language || _g.lang
+		let suffix = this.getSuffix(language)
+		return (
+				this['name'][language] || this['name']['ja_jp']
+				) + ( suffix ? (
+						(joint === true ? _g.joint : joint)
+						+ suffix
+					) : ''
+				)
+	}
+	
+	getNameNoSuffix(language){
+		language = language || _g.lang
+		return this['name'][language] || this['name']['ja_jp']
+	}
+	
+	getSuffix(language){
+		language = language || _g.lang
+		return this['name'].suffix
+					? (
+						_g.data['ship_namesuffix'][this['name'].suffix][language]
+						|| _g.data['ship_namesuffix'][this['name'].suffix]['ja_jp']
+						|| ''
+					)
+					: ''
+	}
+	
+	getType(language){
+		language = language || _g.lang
+		return this['type']
+				? _g['data']['ship_types'][this['type']]['full_zh']
+				: null
+	}
+	get _type(){
+		return this.getType()
+	}
+	
+	getSeriesData(){
+		return this['series']
+				? _g['data']['ship_series'][this['series']]['ships']
+				: [{
+						'id':	this.id
+					}]
+	}
+	
+	getPic(picId){
+		let series = this.getSeriesData()
+		picId = parseInt(picId || 0)
+		
+		for(let i=0; i<series.length; i++){
+			if( series[i].id == this.id ){
+				switch(picId){
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 12:
+					case 13:
+					case 14:
+						return node.path.join(_g.path.pics.ships, this.id + '/' +picId+ '.webp')
+						break;
+					default:
+						if( series[i].illust_delete ){
+							return node.path.join(_g.path.pics.ships, series[i-1].id + '/' +picId+ '.webp')
+						}else{
+							return node.path.join(_g.path.pics.ships, this.id + '/' +picId+ '.webp')
+						}
+						break;
+				}
+				break;
+			}
+		}
+	}
+	get _pics(){
+		let arr = []
+		for(let i=0; i<15; i++){
+			arr.push( this.getPic(i) )
+		}
+		return arr
+	}
+	
+	getSpeed(language){
+		language = language || _g.lang
+		return _g.statSpeed[parseInt(this.stat.speed)]
+	}
+	get _speed(){
+		return this.getSpeed()
+	}
+	
+	getRange(language){
+		language = language || _g.lang
+		return _g.statRange[parseInt(this.stat.range)]
+	}
+	get _range(){
+		return this.getRange()
+	}
+	
+	getEquipmentTypes(){
+		return _g.data.ship_types[this['type']].equipable.concat( ( this.additional_item_types || [] ) ).sort(function(a, b){
+			return a-b
+		})
+	}
+	
+	getAttribute(attr, lvl){
+		lvl = lvl || 1
+		if( lvl > 150 )
+			lvl = 150
+		
+		let getStatOfLvl = function( lvl, base, max ){
+			lvl = lvl || 1
+			base = parseFloat(base)
+			max = parseFloat(max) || base
+			if( base < 0 || max < 0 )
+				return -1
+			return Math.floor( base + (max - base) * lvl / 99 )
+		}
+		
+		let value
+		
+		switch(attr){
+			case 'hp':
+				value = this['stat']['hp']
+				if( lvl > 99 ){
+					if (this['stat']['hp'] >= 90) value = this['stat']['hp'] + 9
+					else if (this['stat']['hp'] >= 70) value = this['stat']['hp'] + 8
+					else if (this['stat']['hp'] >= 50) value = this['stat']['hp'] + 7
+					else if (this['stat']['hp'] >= 40) value = this['stat']['hp'] + 6
+					else if (this['stat']['hp'] >= 30) value = this['stat']['hp'] + 5
+					else value = this['stat']['hp'] + 4
+					if (value > this['stat']['hp_max']) value = this['stat']['hp_max']
+				}
+				return value
+				break;
+			case 'speed':
+				return _g.getStatSpeed( this['stat']['speed'] )
+				break;
+			case 'range':
+				return _g.getStatRange( this['stat']['range'] )
+				break;
+			case 'luck':
+				if( lvl > 99 )
+					return (this['stat']['luck'] + 3)
+				return this['stat']['luck']
+				break;
+			case 'fuel':
+			case 'ammo':
+				if( lvl > 99 )
+					return Math.floor( this['consum'][attr] * 0.85 )
+				return this['consum'][attr]
+				break;
+			case 'aa':
+			case 'armor':
+			case 'fire':
+			case 'torpedo':
+				return this['stat'][attr+'_max'] || this['stat'][attr]
+				break;
+			default:
+				return getStatOfLvl( lvl, this['stat'][attr], this['stat'][attr + '_max'] )
+				break;
+		}
+	}
+	
+	getRel( relation ){
+		if( relation ){
+			if( !this.rels[relation] && this.remodel && this.remodel.prev ){
+				let prev = _g.data.ships[this.remodel.prev]
+				while( prev ){
+					if( prev.rels && prev.rels[relation] )
+						return prev.rels[relation]
+					if( !prev.remodel || !prev.remodel.prev )
+						prev = null
+					else
+						prev = _g.data.ships[prev.remodel.prev]
+				}
+			}
+			return this.rels[relation]
+		}else{
+			return this.rels
+		}
+	}
+	
+	getCV(language){
+		let entity = this.getRel('cv')
+		if( entity )
+			return _g.data.entities[entity].getName(language || _g.lang)
+		return
+	}
+	get _cv(){
+		return this.getCV()
+	}
+	
+	getIllustrator(language){
+		let entity = this.getRel('illustrator')
+		if( entity )
+			return _g.data.entities[entity].getName(language || _g.lang)
+		return
+	}
+	get _illustrator(){
+		return this.getIllustrator()
 	}
 }
 
@@ -1007,8 +1294,10 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		,files 			= []
 		,promise_chain 	= Q.fcall(function(){})
 		,_ship			= {}
+		,_ship_series	= {}
 		,_item			= {}
 		,_item_type		= {}
+		,_entity		= {}
 
 	// 开始异步函数链
 		promise_chain
@@ -1018,7 +1307,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			var deferred = Q.defer()
 			_db.ships.find({}, function(err, docs){
 				for( var i in docs ){
-					_ship[docs[i]['id']] = new Equipment(docs[i])
+					_ship[docs[i]['id']] = new Ship(docs[i])
 				}
 				console.log(_ship)
 				deferred.resolve()
@@ -1027,9 +1316,20 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		})
 		.then(function(){
 			var deferred = Q.defer()
+			_db.ship_series.find({}, function(err, docs){
+				for( var i in docs ){
+					_ship_series[docs[i]['id']] = docs[i]
+				}
+				console.log(_ship_series)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
 			_db.items.find({}, function(err, docs){
 				for( var i in docs ){
-					_item[docs[i]['id']] = new Ship(docs[i])
+					_item[docs[i]['id']] = new Equipment(docs[i])
 				}
 				console.log(_item)
 				deferred.resolve()
@@ -1043,6 +1343,17 @@ _frame.app_main.page['init'].exportdata = function( form ){
 					_item_type[docs[i]['id']] = docs[i]
 				}
 				console.log(_item_type)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
+			_db.entities.find({}, function(err, docs){
+				for( var i in docs ){
+					_entity[docs[i]['id']] = new Entity(docs[i])
+				}
+				console.log(_entity)
 				deferred.resolve()
 			})
 			return deferred.promise
@@ -1069,7 +1380,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,length = 0
 
 			__log('&nbsp;')
-			__log('========== 装备数据 - 初始装备于 ==========')
+			__log('========== 装备 - 初始装备于 ==========')
 			__log('= 批处理开始')
 
 			function _get_ships( item_id, _id, _index ){
@@ -1141,7 +1452,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,length = 0
 
 			__log('&nbsp;')
-			__log('========== 装备数据 - 改修升级前后关系 ==========')
+			__log('========== 装备 - 改修升级前后关系 ==========')
 			__log('= 批处理开始')
 
 			_db.items.find({}, function(err, docs){
@@ -1422,16 +1733,184 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		})
 	*/
 
+	// 舰娘 - 改造前后关系
+		.then(function(){
+			var deferred = Q.defer()
+				,mod = {}
+
+			__log('&nbsp;')
+			__log('========== 舰娘 - 改造前后关系 ==========')
+			__log('= 批处理开始')
+			
+			for( let i in _ship_series ){
+				let s = _ship_series[i].ships
+					,j = 1
+				while( s[j] && s[j].id ){
+					let prev = s[j-1]
+					
+					if( !mod[s[j].id] )
+						mod[s[j].id] = {
+							'remodel': {}
+						}
+					
+					if( prev && prev.id ){
+						if( !mod[prev.id] )
+							mod[prev.id] = {
+								'remodel': {}
+							}
+						mod[prev.id].remodel.next = s[j].id
+						mod[prev.id].remodel.next_lvl = prev.next_lvl
+						if( prev.next_loop ){
+							mod[prev.id].remodel.next_loop = true
+							mod[s[j].id].remodel.prev_loop = true
+						}
+					}
+					mod[s[j].id].remodel.prev = prev.id
+
+					j++
+				}
+			}
+			
+			function _db_do_all(){
+				let index = 0
+					,length = mod._size
+				function _db_do( find, set_data, _index ){
+					_db.ships.update(find, set_data,{}, function(err, numReplaced){
+						if( _index >= length - 1 ){
+							__log('= 批处理完毕')
+							deferred.resolve()
+						}
+					})
+				}
+				for(let i in mod){
+					_db_do(
+						{
+							'id': parseInt(i)
+						},
+						{
+							$set: mod[i],
+							$unset: {
+								'remodel_next': true
+							}
+						},
+						index
+					)
+					index++
+				}
+			}
+			
+			_db_do_all()
+
+			return deferred.promise
+		})
+
+	// 舰种 - 可装备类型
+		.then(function(){
+			let deferred 	= Q.defer()
+				,byEntity 	= {}
+				,byEntitySeriesCV = {}
+				,byEntitySeriesIllustrator = {}
+
+			__log('&nbsp;')
+			__log('========== 人物团体 - 配音&绘制数据 ==========')
+			__log('= 批处理开始')
+			
+			_g.data.ship_id_by_type.forEach(function(thisType){
+				thisType.forEach(function(shipId){
+					let thisShip = _ship[shipId]
+						,thisSeries = thisShip.series
+						,thisCV = thisShip.getRel('cv')
+						,thisIllustrator = thisShip.getRel('illustrator')
+					
+					if( !byEntitySeriesCV[thisCV] )
+						byEntitySeriesCV[thisCV] = []					
+					if( !byEntitySeriesIllustrator[thisIllustrator] )
+						byEntitySeriesIllustrator[thisIllustrator] = []
+					
+					if( $.inArray( thisSeries, byEntitySeriesCV[thisCV] ) < 0 )
+						byEntitySeriesCV[thisCV].push(thisSeries || thisShip.getSeriesData())
+					
+					if( $.inArray( thisSeries, byEntitySeriesIllustrator[thisIllustrator] ) < 0 )
+						byEntitySeriesIllustrator[thisIllustrator].push(thisSeries || thisShip.getSeriesData())
+				})
+			})
+			
+			let parseSeriesData = function(t, data){
+				for( let i in data ){
+					if( i ){
+						if( !byEntity[i] )
+							byEntity[i] = {}
+						if( !byEntity[i]['relation'] )
+							byEntity[i]['relation'] = {}
+						if( !byEntity[i]['relation'][t] )
+							byEntity[i]['relation'][t] = []
+						
+						data[i].forEach(function(thisSeriesId){
+							let arr = []
+								,ships = typeof thisSeriesId == 'object' ? thisSeriesId : _ship_series[thisSeriesId].ships
+							ships.forEach(function(thisData){
+								let thisShipId = thisData.id
+									,thisShip = _ship[thisShipId]
+									,thisRel = thisShip.getRel(t)
+								if( thisRel == i )
+									arr.push(thisShipId)
+							})
+							
+							byEntity[i]['relation'][t].push( arr )
+						})
+					}
+				}
+			}
+			
+			parseSeriesData('cv', byEntitySeriesCV)
+			parseSeriesData('illustrator', byEntitySeriesIllustrator)
+			
+			console.log( byEntity )
+			
+			function _db_do_all(){
+				let index = 0
+					,length = byEntity._size
+				function _db_do( find, set_data, _index ){
+					_db.entities.update(find, set_data,{}, function(err, numReplaced){
+						if( _index >= length - 1 ){
+							__log('= 批处理完毕')
+							deferred.resolve()
+						}
+					})
+				}
+				for(let i in byEntity){
+					_db_do(
+						{
+							'id': parseInt(i)
+						},
+						{
+							$set: byEntity[i],
+							$unset: {
+								'rels': true
+							}
+						},
+						index
+					)
+					index++
+				}
+			}
+			
+			_db_do_all()
+
+			return deferred.promise
+		})
+
 	// 复制所有数据文件
 		.then(function(){
 			var deferred = Q.defer()
 				,count = 0
+				,dest_db = node.path.join(dest, 'app-db')
 
 			__log( '&nbsp;' )
 			__log('========== 复制数据库JSON ==========')
 
 			// 建立目标目录
-				node.mkdirp.sync( dest )
+				node.mkdirp.sync( dest_db )
 
 			function copyFile(source, target, callback) {
 				var cbCalled = false;
@@ -1479,12 +1958,27 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			for( var i in files ){
 				copyFile(
 					'./data/' + files[i],
-					dest + '/' + files[i],
+					dest_db + '/' + files[i],
 					copyFile_callback
 				)
 			}
 			return deferred.promise
 		})
+	
+	// 输出页面: ships.html
+		.then(function(){
+			return _frame.app_main.page['init'].exportdata_cache_ships( dest, _ship )
+		})
+	
+	// 输出页面: equipments.html
+		.then(function(){
+			return _frame.app_main.page['init'].exportdata_cache_equipments( dest, _item )
+		})
+	
+	// 输出页面: entities.html
+		//.then(function(){
+		//	return _frame.app_main.page['init'].exportdata_cache_entities( dest, _item )
+		//})
 
 	// 错误处理
 		.catch(function (err) {
@@ -1492,6 +1986,8 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			__log('输出数据失败')
 		})
 		.done(function(){
+			__log( '&nbsp;' )
+			__log( '==========' )
 			__log('输出数据初始过程结束')
 		})
 }
@@ -1508,7 +2004,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 
 
 _frame.app_main.page['init'].exportpic = function( form ){
-	var dest = form.find('[name="destfolder"]').val()
+	var dest = node.path.normalize(form.find('[name="destfolder"]').val())
 		,ship_ids = node.fs.readdirSync('./pics/ships/')
 		,item_ids = node.fs.readdirSync('./pics/items/')
 		,files = []
@@ -1529,8 +2025,10 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		}catch(e){}
 	}
 
-	node.mkdirp.sync( dest + '/ships/' )
-	node.mkdirp.sync( dest + '/items/' )
+	node.mkdirp.sync( node.path.join(dest, '/ships/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/items/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/ships_png/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/items_png/' ) )
 
 	var execFile = require('child_process').execFile;
 	var binPath = require('webp-bin').path;
@@ -1540,19 +2038,80 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		target = target || files[0][1]
 		quality = (quality || files[0][2]) || 75
 		is_lossless = (is_lossless || files[0][3]) || false
-
-		//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
-		var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
-		//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
-		execFile(binPath, cmd, function(err, stdout, stderr) {
-			if( !err ){
+		
+		if( quality == 'png' ){
+			var cbCalled = false;
+	
+			var rd = node.fs.createReadStream(source);
+			rd.on("error", function(err) {
+				done(err);
+			});
+	
+			var wr = node.fs.createWriteStream(target);
+				wr.on("error", function(err) {
+				done(err);
+			});
+			wr.on("close", function(ex) {
+				done();
+			});
+	
+			rd.pipe(wr);
+	
+			function done(err) {
+				if( err )
+					console.log(err)
+				if (!cbCalled) {
+					__log(
+						'pic file copied to ' + target
+					)
+					files.shift()
+					cbCalled = true;
+					
+					copyFile_webp();
+				}
+			}
+		}else if(quality == 'mask'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -compose in ' + source + ' ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
 				__log(
-					'pic file copied to ' + target
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
 				)
 				files.shift()
 				copyFile_webp();
-			}
-		});
+			})
+			/*
+			node.gm( source )
+				.mask(node.path.join(_g.root, '!designs/mask-1.png'))
+				.write(target_mask_1, function (err) {
+					console.log(err)
+					__log(
+						'pic file copied to ' + target_mask_1 + ' (mask-1)'
+					)
+					files.shift()
+					copyFile_webp();
+				})
+			*/
+		}else{
+			//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
+			var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
+			//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
+			execFile(binPath, cmd, function(err, stdout, stderr) {
+				if( !err ){
+					__log(
+						'pic file copied to ' + target
+					)
+					files.shift()
+					copyFile_webp();
+				}
+			});
+		}
 
 		/*
 
@@ -1568,36 +2127,6 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			copyFile_webp();
 		});
 		*/
-
-		/*
-		var cbCalled = false;
-
-		var rd = node.fs.createReadStream(source);
-		rd.on("error", function(err) {
-			done(err);
-		});
-
-		var wr = node.fs.createWriteStream(target);
-			wr.on("error", function(err) {
-			done(err);
-		});
-		wr.on("close", function(ex) {
-			done();
-		});
-
-		rd.pipe(wr);
-
-		function done(err) {
-			if (!cbCalled) {
-				__log(
-					'pic file copied to ' + target
-				)
-				files.shift()
-				copyFile_webp();
-				cbCalled = true;
-			}
-		}
-		*/
 	}
 
 	// 开始异步函数链
@@ -1610,7 +2139,9 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				for(var i in docs){
 					var ships = docs[i].ships || []
 					for(var j in ships){
-						if(ships[j]['id']){
+						if( !parseInt(ships[j]['id'])
+							|| (parseInt(ships[j]['id']) < 500 || parseInt(ships[j]['id']) > 9000)
+						){
 							picid_by_shipid[ships[j]['id']] = []
 							picid_by_shipid[ships[j]['id']].push(['0.png', '0.webp', 90])
 							if( !ships[j]['illust_delete'] ){
@@ -1636,6 +2167,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		.then(function(picid_by_shipid){
 			for( var i in ship_ids ){
 				node.mkdirp.sync( dest + '/ships/' + ship_ids[i] )
+				node.mkdirp.sync( dest + '/ships_png/' + ship_ids[i] )
 				var arr = picid_by_shipid[ship_ids[i]] || null
 				if( !arr ){
 					arr = []
@@ -1650,14 +2182,37 @@ _frame.app_main.page['init'].exportpic = function( form ){
 						dest + '/ships/' + ship_ids[i] + '/' + arr[j][1],
 						arr[j][2]
 					)
+					check_do(
+						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
+						dest + '/ships_png/' + ship_ids[i] + '/' + arr[j][0],
+						'png'
+					)
 				}
+				check_do(
+					'./pics/ships/' + ship_ids[i] + '/' + '0.png',
+					dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+					'mask',
+					1
+				)
+				check_do(
+					'./pics/ships/' + ship_ids[i] + '/' + '0.png',
+					dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+					'mask',
+					2
+				)
 			}
 			for( var i in item_ids ){
 				node.mkdirp.sync( dest + '/items/' + item_ids[i] )
+				node.mkdirp.sync( dest + '/items_png/' + item_ids[i] )
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
 					dest + '/items/' + item_ids[i] + '/card.webp',
 					80
+				)
+				check_do(
+					'./pics/items/' + item_ids[i] + '/card.png',
+					dest + '/items_png/' + item_ids[i] + '/card.png',
+					'png'
 				)
 			}
 			return files
@@ -1949,6 +2504,1571 @@ _frame.app_main.page['init'].init = function( page ){
 }
 
 
+/*
+ */
+_p.el.tablelist = {
+	init_el: function(el){
+		if( el.data('tablelist') )
+			return true
+
+		if( el.hasClass('ships') )
+			el.data({
+				'tablelist': new TablelistShips( el )
+			})
+		else if( el.hasClass('equipments') )
+			el.data({
+				'tablelist': new TablelistEquipments( el )
+			})
+		else if( el.hasClass('fleets') )
+			el.data({
+				'tablelist': new TablelistFleets( el )
+			})
+		/*
+		else
+			el.data({
+				'tablelist': new _tablelist( el )
+			})*/
+	},
+
+	init: function(tar, els){
+		tar = tar || $body;
+		els = els || tar.find('.tablelist')
+
+		els.each(function(){
+			_p.el.tablelist.init_el($(this))
+		})
+	}
+}
+
+
+
+
+
+class Tablelist{
+	constructor( container, options ){
+		this.dom = {
+			'container': container
+		}
+		
+		options = options || {}
+		
+		this.trIndex = 0
+		this.flexgrid_empty_count = options.flexgrid_empty_count || 8
+		this.sort_data_by_stat = options.sort_data_by_stat || {}
+		this.sort_default_order_by_stat = options.sort_default_order_by_stat || {}
+		/*
+		if( this.is_init )
+			return true
+	
+		if( this['_' + this.listtype + '_init'] )
+			this['_' + this.listtype + '_init']()
+	
+		this.is_init = true
+		*/
+	}
+
+	// 添加选项
+		append_option( type, name, label, value, suffix, options ){
+			options = options || {}
+			function gen_input(){
+				let input
+					,option_empty
+					,o_el
+					,id = Tablelist.genId()
+				//_g.inputIndex++
+				switch( type ){
+					case 'text':
+					case 'number':
+					case 'hidden':
+						input = $('<input type="'+type+'" name="'+name+'" id="'+id+'" />').val(value)
+						break;
+					case 'select':
+						input = $('<select name="'+name+'" id="'+id+'" />')
+						option_empty = $('<option value=""/>').html('').appendTo( input )
+						value.forEach(function(currentValue, i){
+							if( typeof currentValue == 'object' ){
+								o_el = $('<option value="' + (typeof currentValue.val == 'undefined' ? currentValue['value'] : currentValue.val) + '"/>')
+									.html(currentValue['title'] || currentValue['name'])
+									.appendTo( input )
+							}else{
+								o_el = $('<option value="' + currentValue + '"/>')
+									.html(currentValue)
+									.appendTo( input )
+							}
+							if( typeof options['default'] != 'undefined' && o_el.val() == options['default'] ){
+								o_el.prop('selected', true)
+							}
+						})
+						if( !value || !value.length ){
+							option_empty.remove()
+							$('<option value=""/>').html('...').appendTo( input )
+						}
+						if( options['new'] ){
+							$('<option value=""/>').html('==========').insertAfter( option_empty )
+							$('<option value="___new___"/>').html('+ 新建').insertAfter( option_empty )
+							input.on('change.___new___', function(){
+								var select = $(this)
+								if( select.val() == '___new___' ){
+									select.val('')
+									options['new']( input )
+								}
+							})
+						}
+						break;
+					case 'checkbox':
+						input = $('<input type="'+type+'" name="'+name+'" id="'+id+'" />').prop('checked', value)
+						break;
+					case 'radio':
+						input = $();
+						value.forEach(function(currentValue, i){
+							var title, val
+								,checked = false
+							if( value[i].push ){
+								val = value[i][0]
+								title = value[i][1]
+							}else{
+								val = value[i].val || value[i].value
+								title = value[i].title || value[i].name
+							}
+							if( options.radio_default && options.radio_default == val )
+								checked = true
+							input = input.add(
+								$('<input type="radio" name="'+name+'" id="'+id+'-'+val+'" ischecked="'+checked+'" />')
+									.val(val)
+									.prop('checked', (checked || (!checked && i == 0) ))
+								)
+							input = input.add($('<label for="'+id+'-'+val+'"/>').html( title ))
+						})
+						break;
+				}
+		
+				if( options.required ){
+					input.prop('required', true)
+				}
+		
+				if( options.onchange ){
+					input.on('change.___onchange___', function(e){
+						options.onchange( e, $(this) )
+					})
+					if( options['default'] )
+						input.trigger('change')
+				}
+		
+				if( !name )
+					input.attr('name', null)
+		
+				return input
+			}
+		
+			let line = $('<p/>').addClass(name).appendTo( this.dom.filters )
+				,input = gen_input().appendTo(line)
+				,id = input.attr('id') || Tablelist.genId()
+		
+			label = label ? $('<label for="'+id+'"/>').html( label ).appendTo(line) : null
+		
+			if( type == 'checkbox' && label )
+				label.insertAfter(input)
+		
+			if( suffix )
+				$('<label for="'+id+'"/>').html(suffix).appendTo(line)
+		
+			//_g.inputIndex++
+			return line
+		}
+
+		// 强制 thead 重绘，以解决某些CSS计算延迟问题
+			thead_redraw( timeout_duration ){
+				if( this.dom.thead && this.dom.thead.length ){
+					var thead = this.dom.thead
+					setTimeout(function(){
+						thead.hide().show(0)
+					}, timeout_duration || 10)
+				}
+			}
+
+		// 表格排序相关
+			// 排序表格中正在显示行中某一列(td:nth-of-type)
+			// 返回一个Array，每一个元素为jQuery DOM Object
+			// is_ascending 	是否为升序，默认降序
+			// rows				目标行，默认为全部可见行
+				sort_column( nth, is_ascending, rows ){
+					if( !rows ){
+						let tbody = this.dom.tbody
+						if( !tbody || !tbody.length )
+							tbody = this.dom.table.find('tbody')
+						rows = tbody.find('tr.row:visible').not('[data-donotcompare]')
+					}
+					nth = nth || 1
+		
+					// 建立临时用对象，在函数结束时delete
+						this._tmp_values = []
+						this._tmp_value_map_cell = {}
+		
+					// 遍历，将值全部导出到 _tmp_values，_tmp_value_map_cell 中记录 值 -> jQuery DOM
+						rows.find('td:nth-of-type(' + nth + ')').each(function(index, element){
+							let cell = $(element)
+								,val = cell.data('value')
+		
+							val = parseFloat(val)
+		
+							if( $.inArray( val, this._tmp_values ) < 0 )
+								this._tmp_values.push( val )
+		
+							if( !this._tmp_value_map_cell[val] )
+								this._tmp_value_map_cell[val] = $()
+		
+							this._tmp_value_map_cell[val] = this._tmp_value_map_cell[val].add( cell )
+						}.bind(this))
+		
+					// 排序
+						this._tmp_values.sort(function(a, b){
+							if( is_ascending )
+								return a-b
+							else
+								return b-a
+						})
+		
+					// 根据排序结果，整理返回结果
+						let return_array = []
+						this._tmp_values.forEach(function(currentValue){
+							return_array.push( this._tmp_value_map_cell[currentValue] )
+						}, this)
+		
+					// delete 临时对象
+						delete this._tmp_values
+						delete this._tmp_value_map_cell
+		
+					return return_array
+				}
+
+			// 标记表格全部数据列中第一和第二高值的单元格
+				mark_high( cacheSortData ){
+					let tbody = this.dom.tbody
+		
+					if( !tbody || !tbody.length )
+						tbody = this.dom.table.find('tbody')
+		
+					let rows = tbody.find('tr.row:visible').not('[data-donotcompare]')
+						,sort_data_by_stat = this.sort_data_by_stat
+		
+					rows.find('td[data-value]').removeClass('sort-first sort-second')
+		
+					rows.eq(0).find('td[data-value]').each(function(index, element){
+						let is_ascending = false
+							,$this = $(element)
+							,stat = $this.data('stat')
+		
+						// 以下属性不进行标记，但仍计算排序
+							,noMark = stat.match(/\b(speed|range)\b/ )
+		
+						if( typeof this.sort_default_order_by_stat[stat] == 'undefined' ){
+							// 以下属性为升序
+								if( stat.match(/\b(consum_fuel|consum_ammo)\b/ ) )
+									is_ascending = true
+							this.sort_default_order_by_stat[stat] = is_ascending ? 'asc' : 'desc'
+						}else{
+							is_ascending = this.sort_default_order_by_stat[stat] == 'asc' ? true : false
+						}
+		
+						let sort = this.sort_column( index+1, is_ascending, rows )
+							,max = Math.min( 6, Math.ceil(rows.length / 2) + 1 )
+		
+						if( !noMark && sort.length > 1 && sort[0].length < max ){
+							sort[0].addClass('sort-first')
+							if( sort.length > 2 && sort[1].length < max )
+								sort[1].addClass('sort-second')
+						}
+						
+						//console.log(is_ascending, sort)
+		
+						// 将排序结果存储到表头对应的列中
+							if( cacheSortData )
+								sort_data_by_stat[stat] = sort
+							else
+								delete( sort_data_by_stat[stat] )
+		
+					}.bind(this))
+		
+					return rows
+				}
+
+			// thead td, thead th
+			// 点击表头单元格，表格排序
+				sort_table_from_theadcell( cell ){
+					if( !cell )
+						return
+					
+					let stat = cell.data('stat')
+						,sortData = this.sort_data_by_stat[stat]
+						
+					if( !stat || !sortData )
+						return false
+		
+					if( stat != this.lastSortedStat ){
+						if( this.lastSortedHeader )
+							this.lastSortedHeader.removeClass('sorting desc asc')
+						cell.addClass('sorting')
+					}
+		
+					let order = (stat == this.lastSortedStat && this.lastSortedOrder == 'obverse')
+									? 'reverse'
+									: 'obverse'
+						,i = order == 'reverse' ? sortData.length - 1 : 0
+		
+					if( this.sort_default_order_by_stat[stat] ){
+						let reverse = this.sort_default_order_by_stat[stat] == 'asc' ? 'desc' : 'asc'
+						if( order == 'obverse' ){
+							cell.removeClass(reverse).addClass(this.sort_default_order_by_stat[stat])
+						}else{
+							cell.removeClass(this.sort_default_order_by_stat[stat]).addClass(reverse)
+						}
+					}
+		
+					this.sortedRow = $()
+		
+					while( sortData[i] ){
+						this._tmpDOM = sortData[i].parent()
+						this.sortedRow = this.sortedRow.add( this._tmpDOM )
+						this._tmpDOM.appendTo( this.dom.tbody )
+						i = order == 'reverse' ? i - 1 : i + 1
+					}
+		
+					// 修改排序提示按钮
+						this.dom.btn_compare_sort.removeClass('disabled').html('取消排序')
+		
+					this.lastSortedStat = stat
+					this.lastSortedOrder = order
+					this.lastSortedHeader = cell
+					delete this._tmpDOM
+				}
+
+			// 重置表格排序
+				sort_table_restore(){
+					if( !this.sortedRow )
+						return true
+		
+					// 还原所有DOM位置
+						let parent, arr = []
+						this.sortedRow.each(function(index, element){
+							var $this = $(element)
+								,trIndex = parseInt( $this.data('trindex') )
+							parent = parent || $this.parent()
+							arr.push({
+								'index': 	trIndex,
+								'el': 		$this,
+								'prev': 	parent.children('tr[data-trindex="' + (trIndex - 1) + '"]')
+							})
+						})
+						// 如果在上一步直接将DOM移动到上一个index行的后方，可能会因为目标DOM也为排序目标同时在当前DOM顺序后，造成结果不正常
+						// 故需要两步操作
+						arr.sort(function(a, b){
+							return a['index']-b['index']
+						})
+						arr.forEach(function(currentValue){
+							currentValue.el.insertAfter( currentValue.prev )
+						})
+		
+					// 修改排序提示按钮
+						this.dom.btn_compare_sort.addClass('disabled').html('点击表格标题可排序')
+		
+					// 重置其他样式
+						this.lastSortedHeader.removeClass('sorting desc asc')
+		
+					delete this.sortedRow
+					delete this.lastSortedStat
+					delete this.lastSortedOrder
+					delete this.lastSortedHeader
+					return true
+				}
+}
+Tablelist.index = 0
+Tablelist.genId = function(text){
+	var hash = 0
+		, i
+		, chr
+		, len
+	text = text || ((new Date()).toISOString() + _g.randInt(10000));
+	if (text.length == 0) return hash;
+	for (i = 0, len = text.length; i < len; i++) {
+		chr   = text.charCodeAt(i);
+		hash  = ((hash << 5) - hash) + chr;
+		hash |= 0; // Convert to 32bit integer
+	}
+	return 'tablelist'+hash;
+}
+
+_frame.app_main.page['init'].exportdata_cache_entities = function( dest, _item ){
+	let deferred = Q.defer()
+		,dest_path = node.path.join(dest, 'app/page')
+
+	__log( '&nbsp;' )
+	__log('========== 输出页面: entities.html ==========')
+
+	// 确保目标目录
+		node.mkdirp.sync( dest_path )
+	
+	// 
+		let container = $('<div class="tablelist entities"/>')
+			,data = new TablelistEntities( container )
+
+	// 写入文件
+		let interval = setInterval(function(){
+			if( data.generated ){
+				clearInterval(interval)
+				interval = null
+				node.fs.writeFile(node.path.join(dest_path, 'entities.html')
+					, container[0].outerHTML
+					, function(err) {
+						if(err) {
+							console.log(err);
+						} else {
+							__log('= entities.html 已输出')
+						}
+						deferred.resolve()
+					})
+			}
+		},10)
+
+	return deferred.promise
+}
+
+
+
+
+
+
+_tmpl.link_entity = function( entity, tagName, returnHTML, count ){
+	if( !entity )
+		return false
+
+	if( tagName && typeof tagName == 'object' )
+		return _tmpl.link_entity(
+					entity,
+					tagName['tagName'] || null,
+					tagName['returnHTML'] || null,
+					tagName['count'] || null
+				)
+
+	tagName = tagName || 'a'
+	returnHTML = returnHTML || false
+	count = typeof count == 'undefined' ? false : count
+
+	if( typeof entity != 'object' ){
+		var entityId = parseInt(entity)
+		entity = _g.data.entities[entityId]
+	}else{
+		var entityId = entity['id']
+	}
+
+	return _tmpl.export(
+			'<' + tagName
+				+ (tagName == 'a' ? ' href="?infos=entity&id='+entityId+'"' : '')
+				+ ' class="link_entity" data-entityid="' + entityId + '" data-infos="[[ENTITY::' + entityId + ']]">'
+				+ (entity.picture && entity.picture.avatar
+					? '<i style="background-image:url(' + entity.picture.avatar + ')"></i>'
+					: '<i></i>'
+				)
+				+ '<span>'
+					+ entity._name
+					+ ( typeof count == 'undefined'
+						? ''
+						: ' <small>(' + count + ')</small>'
+					)
+				+ '</span>'
+			+ '</' + tagName + '>',
+			returnHTML
+		)
+}
+
+
+
+
+
+
+
+
+// Entities
+
+class TablelistEntities extends Tablelist{
+	constructor( container, options ){
+		super( container, options )
+
+		// 标记全局载入状态
+			_frame.app_main.loading.push('tablelist_'+this._index)
+			_frame.app_main.is_loaded = false
+		
+		if( container.children('.tablelist-list').length ){
+			this.init_parse()
+		}else{
+			this.init_new()
+		}
+	}
+
+	append_item_cv( entity ){
+		return _tmpl.link_entity( entity, null, false, entity.relation.cv.length ).addClass('unit cv')
+	}
+
+	append_item_illustrator( entity ){
+		return $('<a/>',{
+			'class':	'unit illustrator',
+			'href':		'?infos=entity&id=' + entity.id,
+			'html':		entity._name + ' (' + entity.relation.illustrator.length + ')'
+		})
+	}
+
+	append_items( title, arr, callback_append_item ){
+		let container
+		
+		this.dom.container
+			.append(
+				$('<div/>',{
+					'class':	'typetitle',
+					'html':		title
+				})
+			)
+			.append(
+				container = _p.el.flexgrid.create().addClass('tablelist-list')
+			)
+		
+		arr.forEach(function(item){
+			container.appendDOM( callback_append_item( item ) )
+		}, this)
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	init_new(){
+		let listCV = [],
+			listIllustrator = []
+		
+		for( let i in _g.data.entities ){
+			let entity = _g.data.entities[i]
+			if( !entity.relation )
+				continue
+			if( entity.relation.cv && entity.relation.cv.length )
+				listCV.push(entity)
+			if( entity.relation.illustrator && entity.relation.illustrator.length )
+				listIllustrator.push(entity)
+		}
+
+		this.append_items(
+			'声优',
+			listCV.sort(function(a,b){
+				return b.relation.cv.length - a.relation.cv.length
+			}),
+			this.append_item_cv
+		)
+		this.append_items(
+			'画师',
+			listIllustrator.sort(function(a,b){
+				return b.relation.illustrator.length - a.relation.illustrator.length
+			}),
+			this.append_item_illustrator
+		)
+		
+		_frame.app_main.loaded('tablelist_'+this._index, true)
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	init_parse(){
+	}
+}
+
+_frame.app_main.page['init'].exportdata_cache_equipments = function( dest, _item ){
+	let deferred = Q.defer()
+		,dest_path = node.path.join(dest, 'app/page')
+
+	__log( '&nbsp;' )
+	__log('========== 输出页面: equipments.html ==========')
+
+	// 确保目标目录
+		node.mkdirp.sync( dest_path )
+	
+	// 
+		let container = $('<div class="tablelist equipments"/>')
+			,data = new TablelistEquipments( container )
+
+	// 写入文件
+		let interval = setInterval(function(){
+			if( data.generated ){
+				clearInterval(interval)
+				interval = null
+				node.fs.writeFile(node.path.join(dest_path, 'equipments.html')
+					, container[0].outerHTML
+					, function(err) {
+						if(err) {
+							console.log(err);
+						} else {
+							__log('= equipments.html 已输出')
+						}
+						deferred.resolve()
+					})
+			}
+		},10)
+
+	return deferred.promise
+}
+
+// Equipments
+
+class TablelistEquipments extends Tablelist{
+	constructor( container, options ){
+		super( container, options )
+
+		this.columns = [
+			'  ',
+			['火力',	'fire'],
+			['雷装',	'torpedo'],
+			['对空',	'aa'],
+			['对潜',	'asw'],
+			['爆装',	'bomb'],
+			['命中',	'hit'],
+			['装甲',	'armor'],
+			['回避',	'evasion'],
+			['索敌',	'los'],
+			['射程',	'range'],
+			['可改修','improvable']
+		]
+
+		// 标记全局载入状态
+			_frame.app_main.loading.push('tablelist_'+this._index)
+			_frame.app_main.is_loaded = false
+	
+		// 生成过滤器与选项
+			this.dom.filter_container = $('<div class="options"/>').appendTo( this.dom.container )
+			this.dom.filters = $('<div class="filters"/>').appendTo( this.dom.filter_container )
+	
+		// 装备大类切换
+			var checked = false
+			this.dom.type_radios = {}
+			for(var i in _g.data.item_type_collections){
+				//var radio_id = '_input_g' + parseInt(_g.inputIndex)
+				let radio_id = Tablelist.genId()
+				this.dom.type_radios[i] = $('<input type="radio" name="equipmentcollection" id="'+radio_id+'" value="'+i+'"/>')
+					.prop('checked', !checked )
+					.on('change', function(){
+						// force thead redraw
+						this.dom.table_container_inner.scrollTop(0)
+						this.thead_redraw()
+					}.bind(this))
+					.prependTo( this.dom.container )
+				$('<label class="tab container" for="'+radio_id+'" data-equipmentcollection="'+i+'"/>')
+					.html(
+						'<i></i>'
+						+ '<span>' + _g.data.item_type_collections[i]['name']['zh_cn'].replace(/\&/g, '<br/>') + '</span>'
+					)
+					.appendTo( this.dom.filters )
+				checked = true
+				//_g.inputIndex++
+			}
+		
+		// 装备类型过滤
+			this.dom.filter_types = $('<input name="types" type="hidden"/>').prependTo( this.dom.container )
+	
+		// 生成表格框架
+			this.dom.table_container = $('<div class="fixed-table-container"/>').appendTo( this.dom.container )
+			this.dom.table_container_inner = $('<div class="fixed-table-container-inner"/>').appendTo( this.dom.table_container )
+			this.dom.table = $('<table class="equipments hashover hashover-column"/>').appendTo( this.dom.table_container_inner )
+			function gen_thead(arr){
+				this.dom.thead = $('<thead/>')
+				var tr = $('<tr/>').appendTo(this.dom.thead)
+				arr.forEach(function(currentValue){
+					if( typeof currentValue == 'object' ){
+						$('<td data-stat="' + currentValue[1] + '"/>')
+							.html('<div class="th-inner-wrapper"><span><span>'+currentValue[0]+'</span></span></div>').appendTo(tr)
+					}else{
+						$('<th/>').html('<div class="th-inner-wrapper"><span><span>'+currentValue[0]+'</span></span></div>').appendTo(tr)
+					}
+				})
+				return this.dom.thead
+			}
+			gen_thead = gen_thead.bind(this)
+			gen_thead( this.columns ).appendTo( this.dom.table )
+			this.dom.tbody = $('<tbody/>').appendTo( this.dom.table )
+	
+		// 生成装备数据DOM
+			this.append_all_items()
+	
+		// 生成底部内容框架
+			this.dom.msg_container = $('<div class="msgs"/>').appendTo( this.dom.container )
+			if( !_config.get( 'hide-equipmentsinfos' ) )
+				this.dom.msg_container.attr( 'data-msgs', 'equipmentsinfos' )
+	
+		// 生成部分底部内容
+			var equipmentsinfos = $('<div class="equipmentsinfos"/>').html('点击装备查询初装舰娘等信息').appendTo( this.dom.msg_container )
+				$('<button/>').html('&times;').on('click', function(){
+					this.dom.msg_container.removeAttr('data-msgs')
+					_config.set( 'hide-equipmentsinfos', true )
+				}.bind(this)).appendTo( equipmentsinfos )
+	}
+
+	append_item( equipment_data, collection_id ){
+		let tr = $('<tr/>',{
+						'class':			'row',
+						'data-equipmentid':	equipment_data['id'],
+						'data-equipmentcollection':	collection_id,
+						'data-infos': 		'[[EQUIPMENT::'+ equipment_data['id'] +']]',
+						'data-equipmentedit':this.dom.container.hasClass('equipmentlist-edit') ? 'true' : null,
+						'data-equipmenttype':equipment_data.type
+					})
+					.on('click', function(e, forceInfos){
+						if( !forceInfos && _frame.app_main.is_mode_selection() ){
+							e.preventDefault()
+							e.stopImmediatePropagation()
+							e.stopPropagation()
+							
+							if( $.inArray(equipment_data.type, TablelistEquipments.types) > -1 )
+								_frame.app_main.mode_selection_callback(equipment_data['id'])
+						}
+					})
+					.appendTo( this.dom.tbody )
+	
+		function _val( val, show_zero ){
+			if( !show_zero && (val == 0 || val === '0' || val === '') )
+				return '<small class="zero">-</small>'
+			//if( val > 0 )
+			//	return '+' + val
+			return val
+		}
+	
+		this.columns.forEach(function(currentValue){
+			switch( currentValue[1] ){
+				case ' ':
+					$('<th/>').html(
+						'<a href="?infos=equipment&id='+ equipment_data.id + '">'
+						+ equipment_data.getName()
+						+ '</a>'
+					).appendTo(tr)
+					break;
+				case 'range':
+					$('<td data-stat="range" data-value="' + equipment_data['stat']['range'] + '"/>')
+						.html(
+							equipment_data['stat']['range']
+								? _g.getStatRange( equipment_data['stat']['range'] )
+								: '<small class="zero">-</small>'
+						)
+						.appendTo(tr)
+					break;
+				case 'improvable':
+					$('<td data-stat="range" data-value="' + (equipment_data['improvable'] ? '1' : '0') + '"/>')
+						.html(
+							equipment_data['improvable']
+								? '✓'
+								: '<small class="zero">-</small>'
+						)
+						.appendTo(tr)
+					break;
+				default:
+					$('<td data-stat="'+currentValue[1]+'" data-value="' + equipment_data['stat'][currentValue[1]] + '"/>')
+						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
+						.html( _val( equipment_data['stat'][currentValue[1]] ) )
+						.appendTo(tr)
+					break;
+			}
+		})
+	
+		return tr
+	}
+
+	append_all_items(){
+		this.generated = false
+		this.dom.types = []
+		function _do( i, j ){
+			if( _g.data.item_id_by_type[i] ){
+				if( !j ){
+					var data_equipmenttype = _g.data.item_types[ _g.item_type_order[i] ]
+					this.dom.types.push(
+						$('<tr class="typetitle" data-equipmentcollection="'+_g.data.item_id_by_type[i]['collection']+'" data-type="'+data_equipmenttype.id+'">'
+								+ '<th colspan="' + (this.columns.length + 1) + '">'
+									+ '<span style="background-image: url(../app/assets/images/itemicon/'+data_equipmenttype['icon']+'.png)"></span>'
+									+ data_equipmenttype['name']['zh_cn']
+									+ TablelistEquipments.gen_helper_equipable_on( data_equipmenttype['id'] )
+								+ '</th></tr>'
+							).appendTo( this.dom.tbody )
+					)
+				}
+	
+				this.append_item(
+					_g.data.items[ _g.data.item_id_by_type[i]['equipments'][j] ],
+					_g.data.item_id_by_type[i]['collection']
+				)
+	
+				setTimeout(function(){
+					if( j >= _g.data.item_id_by_type[i]['equipments'].length - 1 ){
+						_do( i+1, 0 )
+					}else{
+						_do( i, j+1 )
+					}
+				}, 0)
+			}else{
+				//this.mark_high()
+				// force thead redraw
+					this.thead_redraw()
+					this.generated = true
+					this.apply_types_check()
+				_frame.app_main.loaded('tablelist_'+this._index, true)
+			}
+		}
+		_do = _do.bind(this)
+		_do( 0, 0 )
+	}
+
+	apply_types(){
+		console.log('types: ' + TablelistEquipments.types)
+		this.dom.filter_types.removeAttr('class')
+		
+		if( TablelistEquipments.types.length ){
+			this.dom.filter_types.addClass('type' + TablelistEquipments.types.join(' type'))
+			if( this.generated )
+				this.apply_types_check()
+		}
+	}
+
+	apply_types_check(){
+		if( TablelistEquipments.shipIdLast && TablelistEquipments.shipIdLast == TablelistEquipments.shipId )
+			return
+		
+		TablelistEquipments.shipIdLast = TablelistEquipments.shipId
+		
+		// 航母：直接进入飞行器页
+		if( TablelistEquipments.shipId
+			&& $.inArray(_g.data.ships[TablelistEquipments.shipId].type, [9, 10, 11] ) > -1
+		){
+			let k = 0
+				,el
+	
+			while( this.dom.types[k++].attr('data-equipmentcollection') != 3
+				|| $.inArray((parseInt(this.dom.types[k].attr('data-type')) || null), TablelistEquipments.types) <= -1 ){
+				el = this.dom.types[k+1]
+			}
+			
+			el = el || this.dom.types[0]
+			
+			this.dom.type_radios[3].prop('checked', true).trigger('change')
+			this.dom.table_container_inner.scrollTop(el[0].offsetTop || 0)
+			return
+		}
+		
+		if( TablelistEquipments.types.length ){
+			let k = 0
+				,el
+	
+			while( $.inArray((parseInt(this.dom.types[k++].attr('data-type')) || null), TablelistEquipments.types) <= -1 ){
+				el = this.dom.types[k]
+			}
+			
+			el = el || this.dom.types[0]
+			
+			this.dom.type_radios[parseInt(el.attr('data-equipmentcollection')) || 1].prop('checked', true).trigger('change')
+			this.dom.table_container_inner.scrollTop(el[0].offsetTop || 0)
+		}
+	}
+}
+
+TablelistEquipments.gen_helper_equipable_on = function( type_id ){
+	var equipable_on = ''
+	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
+		var item_type_id = _g.data.item_types[type_id]['equipable_on_type'][i]
+		equipable_on+= '<span>'
+							+ _g['data']['ship_types'][item_type_id]['full_zh']
+							+ ( i < _g.data.item_types[type_id]['equipable_on_type'].length-1 ? ',&nbsp;' : '' )
+						+ '</span>'
+	})
+	return '<em class="helper" data-tip="<h4 class=item_equipable_on>可装备于</h4>' + equipable_on + '">?</em>'
+}
+
+TablelistEquipments.types = []
+TablelistEquipments.shipId = null
+TablelistEquipments.shipIdLast = null
+
+_frame.app_main.page['init'].exportdata_cache_ships = function( dest, _ship ){
+	let deferred = Q.defer()
+		,dest_path = node.path.join(dest, 'app/page')
+
+	__log( '&nbsp;' )
+	__log('========== 输出页面: ships.html ==========')
+
+	// 确保目标目录
+		node.mkdirp.sync( dest_path )
+	
+	// 
+		let container = $('<div class="tablelist ships"/>')
+			,data = new TablelistShips( container )
+
+	// 写入文件
+		let interval = setInterval(function(){
+			if( !data.last_item ){
+				clearInterval(interval)
+				interval = null
+				node.fs.writeFile(node.path.join(dest_path, 'ships.html')
+					, container[0].outerHTML
+					, function(err) {
+						if(err) {
+							console.log(err);
+						} else {
+							__log('= ships.html 已输出')
+						}
+						deferred.resolve()
+					})
+			}
+		},10)
+
+	return deferred.promise
+}
+
+class TablelistShips extends Tablelist{
+	constructor( container, options ){
+		super( container, options )
+
+		this.columns = [
+			'  ',
+			['火力',	'fire'],
+			['雷装',	'torpedo'],
+			['夜战',	'nightpower'],
+			['对空',	'aa'],
+			['对潜',	'asw'],
+			['耐久',	'hp'],
+			['装甲',	'armor'],
+			['回避',	'evasion'],
+			['搭载',	'carry'],
+			['航速',	'speed'],
+			['射程',	'range'],
+			['索敌',	'los'],
+			['运',		'luck'],
+			['油耗',	'consum_fuel'],
+			['弹耗',	'consum_ammo'],
+			['多立绘',	'extra_illust']
+		]
+		this.header_checkbox = []
+		this.checkbox = []
+		this.last_item = null
+
+		// 标记全局载入状态
+			_frame.app_main.loading.push('tablelist_'+this._index)
+			_frame.app_main.is_loaded = false
+	
+			//_g.log( 'shiplist init', _frame.app_main.loading )
+	
+		// 生成过滤器与选项
+			this.dom.filter_container = $('<div class="options"/>').appendTo( this.dom.container )
+			this.dom.filters = $('<div class="filters"/>').appendTo( this.dom.filter_container )
+			this.dom.exit_compare = $('<div class="exit_compare"/>')
+									.append(
+										$('<button icon="arrow-set2-left"/>')
+											.html('结束对比')
+											.on('click', function(){
+												this.compare_end()
+											}.bind(this))
+									)
+									.append(
+										$('<button icon="checkbox-checked"/>')
+											.html('继续选择')
+											.on('click', function(){
+												this.compare_continue()
+											}.bind(this))
+									)
+									.appendTo( this.dom.filter_container )
+			this.dom.btn_compare_sort = $('<button icon="sort-amount-desc" class="disabled"/>')
+												.html('点击表格标题可排序')
+												.on('click', function(){
+													if( !this.dom.btn_compare_sort.hasClass('disabled') )
+														this.sort_table_restore()
+												}.bind(this)).appendTo( this.dom.exit_compare )
+	
+		// 初始化设置
+			this.append_option( 'checkbox', 'hide-premodel', '仅显示同种同名舰最终版本',
+				_config.get( 'shiplist-filter-hide-premodel' ) === 'false' ? null : true, null, {
+					'onchange': function( e, input ){
+						_config.set( 'shiplist-filter-hide-premodel', input.prop('checked') )
+						this.dom.filter_container.attr('filter-hide-premodel', input.prop('checked'))
+						this.thead_redraw()
+					}.bind(this)
+				} )
+			this.append_option( 'radio', 'viewtype', null, [
+					['card', ''],
+					['list', '']
+				], null, {
+					'radio_default': _config.get( 'shiplist-viewtype' ),
+					'onchange': function( e, input ){
+						if( input.is(':checked') ){
+							_config.set( 'shiplist-viewtype', input.val() )
+							this.dom.filter_container.attr('viewtype', input.val())
+							this.thead_redraw()
+						}
+					}.bind(this)
+				} ).attr('data-caption', '布局')
+			this.dom.filters.find('input').trigger('change')
+	
+		// 生成表格框架
+			this.dom.table_container = $('<div class="fixed-table-container"/>').appendTo( this.dom.container )
+			this.dom.table_container_inner = $('<div class="fixed-table-container-inner"/>').appendTo( this.dom.table_container )
+			this.dom.table = $('<table class="ships hashover hashover-column"/>').appendTo( this.dom.table_container_inner )
+			function gen_thead(arr){
+				this.dom.thead = $('<thead/>')
+				var tr = $('<tr/>').appendTo(this.dom.thead)
+				arr.forEach(function(currentValue, i){
+					if( typeof currentValue == 'object' ){
+						var td = $('<td data-stat="' + currentValue[1] + '"/>')
+									.html('<div class="th-inner-wrapper"><span><span>'+currentValue[0]+'</span></span></div>')
+									.on('click', function(){
+										this.sort_table_from_theadcell(td)
+									}.bind(this))
+									.appendTo(tr)
+					}else{
+						$('<th/>').html('<div class="th-inner-wrapper"><span><span>'+currentValue[0]+'</span></span></div>').appendTo(tr)
+					}
+				}, this)
+				return this.dom.thead
+			}
+			gen_thead = gen_thead.bind(this)
+			gen_thead( this.columns ).appendTo( this.dom.table )
+			this.dom.tbody = $('<tbody/>').appendTo( this.dom.table )
+		
+		// 右键菜单事件
+			this.dom.table.on('contextmenu.contextmenu_ship', 'tr[data-shipid]', function(e){
+				this.contextmenu_show($(e.currentTarget))
+			}.bind(this)).on('click.contextmenu_ship', 'tr[data-shipid]>th>em', function(e){
+				this.contextmenu_show($(e.currentTarget).parent().parent())
+				e.stopImmediatePropagation()
+				e.stopPropagation()
+			}.bind(this))
+	
+		// 获取所有舰娘数据，按舰种顺序 (_g.ship_type_order / _g.ship_type_order_map) 排序
+		// -> 获取舰种名称
+		// -> 生成舰娘DOM
+			if( _g.data.ship_types ){
+				this.append_all_items()
+			}else{
+				$('<p/>').html('暂无数据...').appendTo( this.dom.table_container_inner )
+			}
+			//_db.ships.find({}).sort({'type': 1, 'class': 1, 'class_no': 1, 'time_created': 1, 'name.suffix': 1}).exec(function(err, docs){
+			//	if( !err ){
+			//		for(var i in docs){
+			//			_g.data.ships[docs[i]['id']] = docs[i]
+	
+			//			if( typeof _g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ] == 'undefined' )
+			//				_g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ] = []
+			//			_g.data.ship_id_by_type[ _g.ship_type_order_map[docs[i]['type']] ].push( docs[i]['id'] )
+			//		}
+			//	}
+	
+				/*
+				_db.ship_types.find({}, function(err2, docs2){
+					if( !err2 ){
+						for(var i in docs2 ){
+							_g.data.ship_types[docs2[i]['id']] = docs2[i]
+						}
+	
+					}
+				})
+				*/
+			//	if( _g.data.ship_types ){
+			//		this.append_all_items()
+			//	}else{
+			//		$('<p/>').html('暂无数据...').appendTo( this.dom.table_container_inner )
+			//	}
+			//})
+	
+		// 生成底部内容框架
+			this.dom.msg_container = $('<div class="msgs"/>').appendTo( this.dom.container )
+			if( !_config.get( 'hide-compareinfos' ) )
+				this.dom.msg_container.attr( 'data-msgs', 'compareinfos' )
+	
+		// 生成部分底部内容
+			let compareinfos = $('<div class="compareinfos"/>').html('点击舰娘查询详细信息，勾选舰娘进行对比').appendTo( this.dom.msg_container )
+				$('<button/>').html('&times;').on('click', function(){
+					this.dom.msg_container.removeAttr('data-msgs')
+					_config.set( 'hide-compareinfos', true )
+				}.bind(this)).appendTo( compareinfos )
+			$('<div class="comparestart"/>').html('开始对比')
+								.on('click', function(){
+									this.compare_start()
+								}.bind(this)).appendTo( this.dom.msg_container )
+
+	}
+
+	append_item( ship_data, header_index ){
+			//,tr = $('<tr class="row" data-shipid="'+ ship_data['id'] +'" data-header="'+ header_index +'" modal="true"/>')
+			//,tr = $('<tr class="row" data-shipid="'+ ship_data['id'] +'" data-header="'+ header_index +'" data-infos="__ship__"/>')
+		let donotcompare = _g.data.ship_types[ship_data['type']]['donotcompare'] ? true : false
+			,tr = $('<tr/>',{
+						'class':		'row',
+						'data-shipid':	ship_data['id'],
+						'data-header':	header_index,
+						'data-trindex': this.trIndex,
+						'data-infos': 	'[[SHIP::'+ship_data['id']+']]',
+						'data-shipedit':this.dom.container.hasClass('shiplist-edit') ? 'true' : null,
+						'data-donotcompare': donotcompare ? true : null
+					})
+					.on('click', function(e, forceInfos){
+						if( !forceInfos && e.target.tagName.toLowerCase() != 'em' && _frame.app_main.is_mode_selection() ){
+							e.preventDefault()
+							e.stopImmediatePropagation()
+							e.stopPropagation()
+							if(!donotcompare)
+								_frame.app_main.mode_selection_callback(ship_data['id'])
+						}
+					})
+					//.appendTo( this.dom.tbody )
+					.insertAfter( this.last_item )
+			,name = ship_data['name'][_g.lang]
+					+ (ship_data['name']['suffix']
+						? '<small>' + _g.data.ship_namesuffix[ship_data['name']['suffix']][_g.lang] + '</small>'
+						: '')
+			,checkbox = $('<input type="checkbox" class="compare"/>')
+							.prop('disabled', donotcompare)
+							.on('click, change',function(e, not_trigger_check){
+								if( checkbox.prop('checked') )
+									tr.attr('compare-checked', true )
+								else
+									tr.removeAttr('compare-checked')
+								this.compare_btn_show( checkbox.prop('checked') )
+								if( !not_trigger_check )
+									this.header_checkbox[header_index].trigger('docheck')
+							}.bind(this))
+			,has_extra_illust = false
+			,seriesData = ship_data.getSeriesData()
+		
+		seriesData.forEach(function(data_cur, i){
+			let data_prev = i ? seriesData[ i - 1 ] : null
+			
+			has_extra_illust = data_cur.illust_extra && data_cur.illust_extra.length && data_cur.illust_extra[0] ? true : false
+			
+			if( !has_extra_illust && data_cur.illust_delete && data_prev )
+				has_extra_illust = data_prev.illust_extra && data_prev.illust_extra.length && data_prev.illust_extra[0] ? true : false
+		})
+		
+		this.last_item = tr
+		this.trIndex++
+	
+		this.header_checkbox[header_index].data(
+				'ships',
+				this.header_checkbox[header_index].data('ships').add( tr )
+			)
+		tr.data('checkbox', checkbox)
+		
+		this.checkbox[ship_data['id']] = checkbox
+	
+		function _val( val, show_zero ){
+			if( !show_zero && (val == 0 || val == '0') )
+				return '<small class="zero">-</small>'
+			if( val == -1 || val == '-1' )
+				return '<small class="zero">?</small>'
+			return val
+		}
+	
+		this.columns.forEach(function(currentValue, i){
+			switch( currentValue[1] ){
+				case ' ':
+					$('<th/>')
+						.html(
+							//'<img src="../pics/ships/'+ship_data['id']+'/0.jpg"/>'
+							//'<img src="' + _g.path.pics.ships + '/' + ship_data['id']+'/0.webp" contextmenu="disabled"/>'
+							'<a href="?infos=ship&id='+ship_data['id']+'"'
+								+ (has_extra_illust ? ' icon="hanger"' : '')
+							+ '>'
+							+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp" contextmenu="disabled"/>'
+							+ '<strong>' + name + '</strong>'
+							+ '</a>'
+							+ '<em></em>'
+							//+ '<small>' + ship_data['pron'] + '</small>'
+						)
+						.prepend(
+							checkbox
+						)
+						.appendTo(tr)
+					break;
+				case 'nightpower':
+					// 航母没有夜战火力
+					var datavalue = /^(9|10|11)$/.test( ship_data['type'] )
+									? 0
+									: (parseInt(ship_data['stat']['fire_max'] || 0)
+										+ parseInt(ship_data['stat']['torpedo_max'] || 0)
+									)
+					$('<td data-stat="nightpower"/>')
+						.attr(
+							'data-value',
+							datavalue
+						)
+						.html( _val( datavalue ) )
+						.appendTo(tr)
+					break;
+				case 'asw':
+					$('<td data-stat="asw" />')
+						.attr(
+							'data-value',
+							ship_data['stat']['asw_max']
+						)
+						.html( _val(
+							ship_data['stat']['asw_max'],
+							/^(5|8|9|12|24)$/.test( ship_data['type'] )
+						) )
+						.appendTo(tr)
+					break;
+				case 'hp':
+					$('<td data-stat="hp" data-value="' + ship_data['stat']['hp'] + '"/>')
+						.html(_val( ship_data['stat']['hp'] ))
+						.appendTo(tr)
+					break;
+				case 'carry':
+					$('<td data-stat="carry" data-value="' + ship_data['stat']['carry'] + '"/>')
+						.html(_val( ship_data['stat']['carry'] ))
+						.appendTo(tr)
+					break;
+				case 'speed':
+					$('<td data-stat="speed" data-value="' + ship_data['stat']['speed'] + '"/>')
+						.html( _g.getStatSpeed( ship_data['stat']['speed'] ) )
+						.appendTo(tr)
+					break;
+				case 'range':
+					$('<td data-stat="range" data-value="' + ship_data['stat']['range'] + '"/>')
+						.html( _g.getStatRange( ship_data['stat']['range'] ) )
+						.appendTo(tr)
+					break;
+				case 'luck':
+					$('<td data-stat="luck" data-value="' + ship_data['stat']['luck'] + '"/>')
+						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
+						.appendTo(tr)
+					break;
+				case 'consum_fuel':
+					$('<td data-stat="consum_fuel"/>')
+						.attr(
+							'data-value',
+							ship_data['consum']['fuel']
+						)
+						.html( _val(ship_data['consum']['fuel']) )
+						.appendTo(tr)
+					break;
+				case 'consum_ammo':
+					$('<td data-stat="consum_ammo"/>')
+						.attr(
+							'data-value',
+							ship_data['consum']['ammo']
+						)
+						.html( _val(ship_data['consum']['ammo']) )
+						.appendTo(tr)
+					break;
+				case 'extra_illust':
+					$('<td data-stat="'+currentValue[1]+'" data-value="' + (has_extra_illust ? '1' : '0') + '"/>')
+						.html(
+							has_extra_illust
+								? '✓'
+								: '<small class="zero">-</small>'
+						)
+						.appendTo(tr)
+					break;
+				default:
+					$('<td data-stat="'+currentValue[1]+'"/>')
+						.attr(
+							'data-value',
+							ship_data['stat'][currentValue[1] + '_max']
+						)
+						.html( _val( ship_data['stat'][currentValue[1] + '_max'] ) )
+						.appendTo(tr)
+					break;
+			}
+		})
+	
+		// 检查数据是否存在 remodel.next
+		// 如果 remodel.next 与当前数据 type & name 相同，标记当前为可改造前版本
+		if( ship_data.remodel && ship_data.remodel.next
+			&& _g.data.ships[ ship_data.remodel.next ]
+			&& _g.ship_type_order_map[ship_data['type']] == _g.ship_type_order_map[_g.data.ships[ ship_data.remodel.next ]['type']]
+			&& ship_data['name']['ja_jp'] == _g.data.ships[ ship_data.remodel.next ]['name']['ja_jp']
+		){
+			tr.addClass('premodeled')
+		}
+	
+		return tr
+	}
+
+	append_all_items(){
+		function _do( i, j ){
+			if( _g.data.ship_id_by_type[i] ){
+				if( !j ){
+					let data_shiptype
+						,checkbox
+	
+					if( typeof _g.ship_type_order[i] == 'object' ){
+						data_shiptype = _g.data.ship_types[ _g.ship_type_order[i][0] ]
+					}else{
+						data_shiptype = _g.data.ship_types[ _g.ship_type_order[i] ]
+					}
+	
+					let checkbox_id = Tablelist.genId()
+					
+					this.last_item =
+							$('<tr class="typetitle" data-trindex="'+this.trIndex+'">'
+								+ '<th colspan="' + (this.columns.length + 1) + '">'
+								+ '<label for="' + checkbox_id + '">'
+								//+ data_shiptype['full_zh']
+								//+ _g.data['ship_type_order'][i+1]['name']['zh_cn']
+								+ _g.data['ship_type_order'][i]['name']['zh_cn']
+								//+ ( _g.data['ship_type_order'][i+1]['name']['zh_cn'] == data_shiptype['full_zh']
+								+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
+									? ('<small>[' + data_shiptype['code'] + ']</small>')
+									: ''
+								)
+								+ '</label></th></tr>')
+								.appendTo( this.dom.tbody )
+					this.trIndex++
+	
+					// 创建空DOM，欺骗flexbox layout排版
+						var k = 0
+						while(k < this.flexgrid_empty_count){
+							var _index = this.trIndex + _g.data.ship_id_by_type[i].length + k
+							$('<tr class="empty" data-trindex="'+_index+'" data-shipid/>').appendTo(this.dom.tbody)
+							k++
+						}
+	
+					checkbox = $('<input type="checkbox" id="' + checkbox_id + '"/>')
+							//.prop('disabled', _g.data['ship_type_order'][i+1]['donotcompare'] ? true : false)
+							.prop('disabled', _g.data['ship_type_order'][i]['donotcompare'] ? true : false)
+							.on({
+								'change': function(){
+									checkbox.data('ships').filter(':visible').each(function(index, element){
+										$(element).data('checkbox').prop('checked', checkbox.prop('checked')).trigger('change', [true])
+									})
+								},
+								'docheck': function(){
+									// ATTR: compare-checked
+									var trs = checkbox.data('ships').filter(':visible')
+										,checked = trs.filter('[compare-checked=true]')
+									if( !checked.length ){
+										checkbox.prop({
+											'checked': 			false,
+											'indeterminate': 	false
+										})
+									}else if( checked.length < trs.length ){
+										checkbox.prop({
+											'checked': 			false,
+											'indeterminate': 	true
+										})
+									}else{
+										checkbox.prop({
+											'checked': 			true,
+											'indeterminate': 	false
+										})
+									}
+								}
+							})
+							.data('ships', $())
+							.prependTo( this.last_item.find('th') )
+	
+					this.header_checkbox[i] = checkbox
+	
+					//_g.inputIndex++
+				}
+	
+				this.append_item( _g.data.ships[ _g.data.ship_id_by_type[i][j] ], i )
+	
+				setTimeout(function(){
+					if( j >= _g.data.ship_id_by_type[i].length - 1 ){
+						this.trIndex+= this.flexgrid_empty_count
+						_do( i+1, 0 )
+					}else{
+						_do( i, j+1 )
+					}
+				}.bind(this), 0)
+			}else{
+				this.mark_high()
+				this.thead_redraw()
+				_frame.app_main.loaded('tablelist_'+this._index, true)
+				//_g.log( this.last_item )
+				delete( this.last_item )
+				//_g.log( this.last_item )
+			}
+		}
+		_do = _do.bind(this)
+		_do( 0, 0 )
+	}
+
+	compare_btn_show( is_checked ){
+		if( (!is_checked && this.dom.tbody.find('input[type="checkbox"].compare:checked').length)
+			|| is_checked
+		){
+			this.dom.msg_container.attr('data-msgs', 'comparestart')
+		}else{
+			this.dom.msg_container.removeAttr('data-msgs')
+		}
+	}
+
+	compare_start(){
+		// 隐藏底部提示信息
+			this.dom.msg_container.removeAttr('data-msgs')
+	
+		// 存储当前状态
+			this.last_viewtype = this.dom.filter_container.attr('viewtype')
+			_config.set( 'shiplist-viewtype', this.last_viewtype )
+			this.last_scrollTop = this.dom.table_container_inner.scrollTop()
+	
+		// 更改视图
+			this.dom.filter_container.attr('viewtype', 'compare')
+			this.dom.table_container_inner.scrollTop( 0 )
+			this.dom.table.addClass('sortable')
+	
+		// 计算数据排序排序
+			this.mark_high( true )
+			this.thead_redraw( 500 )
+	}
+
+	compare_off(){
+		this.dom.filter_container.attr('viewtype', this.last_viewtype)
+		this.sort_table_restore()
+		this.mark_high()
+		this.thead_redraw( 500 )
+		this.dom.table_container_inner.scrollTop( this.last_scrollTop )
+		this.dom.table.removeClass('sortable')
+		delete this.last_viewtype
+		delete this.last_scrollTop
+	}
+
+	compare_end(){
+		this.dom.tbody.find('input[type="checkbox"].compare:checked').prop('checked', false).trigger('change')
+		this.dom.msg_container.removeAttr('data-msgs')
+		this.compare_off()
+	}
+
+	compare_continue(){
+		this.dom.msg_container.attr('data-msgs', 'comparestart')
+		this.compare_off()
+	}
+	
+	contextmenu_show($el, shipId){
+		if( this.dom.filter_container.attr('viewtype') == 'compare' || $el.attr('data-donotcompare') == 'true' )
+			return false
+	
+		TablelistShips.contextmenu_curid = shipId || $el.data('shipid')
+		TablelistShips.contextmenu_curel = $el
+	
+		if( !TablelistShips.contextmenu )
+			TablelistShips.contextmenu = new _menu({
+				'className': 'contextmenu-ship',
+				'items': [
+					$('<menuitem/>').html('选择')
+						.on({
+							'click': function(e){
+								if( _frame.app_main.is_mode_selection() )
+									_frame.app_main.mode_selection_callback(TablelistShips.contextmenu_curid)
+							},
+							'show': function(){
+								if( _frame.app_main.is_mode_selection() )
+									$(this).show()
+								else
+									$(this).hide()
+							}
+						}),
+					$('<menuitem/>').html('查看资料')
+						.on({
+							'click': function(e){
+								TablelistShips.contextmenu_curel.trigger('click', [true])
+							}
+						}),
+	
+					$('<menuitem/>').html('将该舰娘加入对比')
+						.on({
+							'click': function(e){
+								this.checkbox[TablelistShips.contextmenu_curid]
+									.prop('checked', !this.checkbox[TablelistShips.contextmenu_curid].prop('checked'))
+									.trigger('change')
+							}.bind(this),
+							'show': function(e){
+								if( !TablelistShips.contextmenu_curid )
+									return false
+								
+								if( _g.data.ship_types[_g['data']['ships'][TablelistShips.contextmenu_curid]['type']]['donotcompare'] )
+									$(e.target).hide()
+								else
+									$(e.target).show()
+									
+								if( this.checkbox[TablelistShips.contextmenu_curid].prop('checked') )
+									$(e.target).html('取消对比')
+								else
+									$(e.target).html('将该舰娘加入对比')
+							}.bind(this)
+						}),
+					
+					$('<div/>').on('show', function(e){
+						var $div = $(e.target).empty()
+						if( TablelistShips.contextmenu_curid ){
+							var series = _g['data']['ships'][TablelistShips.contextmenu_curid].getSeriesData() || []
+							series.forEach(function(currentValue, i){
+								if( !i )
+									$div.append($('<hr/>'))
+								let checkbox = null
+								try{
+									checkbox = this.checkbox[currentValue['id']]
+								}catch(e){}
+								$div.append(
+									$('<div class="item"/>')
+										.html('<span>' + _g['data']['ships'][currentValue['id']].getName(true) + '</span>')
+										.append(
+											$('<div class="group"/>')
+												.append(function(){
+													var els = $()
+													
+													if( _frame.app_main.is_mode_selection() ){
+														els = els.add(
+															$('<menuitem/>')
+																.html('选择')
+																.on({
+																	'click': function(){
+																		if( _frame.app_main.is_mode_selection() )
+																			_frame.app_main.mode_selection_callback(currentValue['id'])
+																	}
+																})
+														)
+													}
+													
+													return els
+												})
+												.append(
+													$('<menuitem data-infos="[[SHIP::'+currentValue['id']+']]"/>')
+														.html('查看资料')
+												)
+												.append(
+													$('<menuitem/>')
+														.html(
+															checkbox && checkbox.prop('checked')
+																? '取消对比'
+																: '加入对比'
+														)
+														.on({
+															'click': function(e){
+																if( checkbox ){
+																	this.checkbox[currentValue['id']]
+																		.prop('checked', !checkbox.prop('checked'))
+																		.trigger('change')
+																}
+															}.bind(this)
+														})
+												)
+										)
+								)
+							}, this)
+						}
+					}.bind(this))
+				]
+			})
+
+		TablelistShips.contextmenu.show($el)
+	}
+}
+
 _frame.app_main.page['ships'] = {}
 _frame.app_main.page['ships'].section = {}
 
@@ -2102,6 +4222,7 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 	d.rels = d.rels || {}
 	d.slot = d.slot || []
 	d.equip = d.equip || []
+	d.remodel_next = d.remodel.next || null
 	console.log(d)
 	function _input(name, label, suffix, options){
 		return _frame.app_main.page['ships'].gen_form_line(
@@ -2371,6 +4492,28 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					).appendTo(line)
 				$('<label for="'+id+'"/>').html( '蓝图' ).appendTo(line)
 
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_prev_catapult',
+						id,
+						d_series.remodel_prev_catapult || false,
+						{'notRequired': true}
+					).appendTo(line)
+				$('<label for="'+id+'"/>').html( '甲板' ).appendTo(line)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_prev_loop',
+						id,
+						d_series.remodel_prev_loop || false,
+						{'notRequired': true}
+					).appendTo(line)
+				$('<label for="'+id+'"/>').html( '循环' ).appendTo(line)
+
 				var line2 = $('<p/>')
 
 				id = '_input_g' + _g.inputIndex
@@ -2405,6 +4548,28 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 						{'notRequired': true}
 					).appendTo(line2)
 				$('<label for="'+id+'"/>').html( '蓝图' ).appendTo(line2)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_next_catapult',
+						id,
+						d_series.remodel_next_catapult || false,
+						{'notRequired': true}
+					).appendTo(line2)
+				$('<label for="'+id+'"/>').html( '甲板' ).appendTo(line2)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_next_loop',
+						id,
+						d_series.remodel_next_loop || false,
+						{'notRequired': true}
+					).appendTo(line2)
+				$('<label for="'+id+'"/>').html( '循环' ).appendTo(line2)
 
 				// 基础等级
 					id = '_input_g' + _g.inputIndex
@@ -2778,6 +4943,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series.remodel_prev = docs[0].ships[index-1]['id'] || null
 							d_series.remodel_prev_lvl = docs[0].ships[index-1]['next_lvl'] || null
 							d_series.remodel_prev_blueprint = docs[0].ships[index-1]['next_blueprint'] || false
+							d_series.remodel_prev_catapult = docs[0].ships[index-1]['next_catapult'] || false
+							d_series.remodel_prev_loop = docs[0].ships[index-1]['next_loop'] || false
 						}
 						if( docs[0].ships[index+1] ){
 							d_series.remodel_next = docs[0].ships[index+1]['id'] || null
@@ -2791,6 +4958,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 						}
 						d_series.remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
+						d_series.remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
+						d_series.remodel_next_loop = docs[0].ships[index]['next_loop'] || false
 						d_series.illust_delete = docs[0].ships[index]['illust_delete'] || false
 						d_series.illust_extra = docs[0].ships[index]['illust_extra'] || []
 						break
@@ -2800,14 +4969,20 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					d_series.remodel_prev = parseInt(d.remodel.prev) || null
 					d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
 					d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
+					d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
+					d_series.remodel_prev_loop = d.remodel.prev_loop || false
 				}
 			}else{
 				d_series.remodel_prev = parseInt(d.remodel.prev) || null
 				d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
 				d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
+				d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
+				d_series.remodel_prev_loop = d.remodel.prev_loop || false
 				d_series.remodel_next = parseInt(d.remodel.next) || null
 				d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 				d_series.remodel_next_blueprint = d.remodel.next_blueprint || false
+				d_series.remodel_next_catapult = d.remodel.next_catapult || false
+				d_series.remodel_next_loop = d.remodel.next_loop || false
 				d.remodel_next = d.remodel_next || ( parseInt(d.remodel.next) || null )
 			}
 
@@ -2874,7 +5049,9 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					ship_next = {
 						'prev': 			data['id'],
 						'prev_lvl': 		data['series']['remodel_next_lvl'],
-						'prev_blueprint': 	data['series']['remodel_next_blueprint']
+						'prev_blueprint': 	data['series']['remodel_next_blueprint'],
+						'prev_catapult': 	data['series']['remodel_next_catapult'],
+						'prev_loop': 		data['series']['remodel_next_loop']
 					}
 				}
 				//d_series_true
@@ -2905,6 +5082,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 													data['series'].remodel_prev = docs[0].ships[index-1]['id'] || null
 													data['series'].remodel_prev_lvl = docs[0].ships[index-1]['next_lvl'] || null
 													data['series'].remodel_prev_blueprint = docs[0].ships[index-1]['next_blueprint'] || false
+													data['series'].remodel_prev_catapult = docs[0].ships[index-1]['next_catapult'] || false
+													data['series'].remodel_prev_loop = docs[0].ships[index-1]['next_loop'] || false
 												}
 												if( docs[0].ships[index+1] ){
 													data['series'].remodel_next = docs[0].ships[index+1]['id'] || null
@@ -2918,6 +5097,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 													data['series'].remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 												}
 												data['series'].remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
+												data['series'].remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
+												data['series'].remodel_next_loop = docs[0].ships[index]['next_loop'] || false
 												data['series'].illust_delete = docs[0].ships[index]['illust_delete'] || false
 												data['series'].illust_extra = docs[0].ships[index]['illust_extra'] || []
 												break
@@ -2957,6 +5138,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							_prev['id'] = data['series']['remodel_prev']
 							_prev['next_lvl'] = data['series']['remodel_prev_lvl']
 							_prev['next_blueprint'] = data['series']['remodel_prev_blueprint']
+							_prev['next_catapult'] = data['series']['remodel_prev_catapult']
+							_prev['next_loop'] = data['series']['remodel_prev_loop']
 						}
 
 						if( !d_series_true.ships[ d_series_true_index ] )
@@ -2966,6 +5149,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 
 						d_series_true.ships[ d_series_true_index ]['next_lvl'] = data['series']['remodel_next_lvl']
 						d_series_true.ships[ d_series_true_index ]['next_blueprint'] = data['series']['remodel_next_blueprint']
+						d_series_true.ships[ d_series_true_index ]['next_catapult'] = data['series']['remodel_next_catapult']
+						d_series_true.ships[ d_series_true_index ]['next_loop'] = data['series']['remodel_next_loop']
 						d_series_true.ships[ d_series_true_index ]['illust_delete'] = data['series']['illust_delete']
 						d_series_true.ships[ d_series_true_index ]['illust_extra'] = data['series']['illust_extra']
 
@@ -2995,13 +5180,17 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series_true.ships.push({
 								'id': 				data['series']['remodel_prev'],
 								'next_lvl': 		data['series']['remodel_prev_lvl'],
-								'next_blueprint': 	data['series']['remodel_prev_blueprint']
+								'next_blueprint': 	data['series']['remodel_prev_blueprint'],
+								'next_catapult': 	data['series']['remodel_prev_catapult'],
+								'next_loop': 		data['series']['remodel_prev_loop']
 							})
 						}
 						d_series_true.ships.push({
 							'id': 				data['id'],
 							'next_lvl': 		data['series']['remodel_next_lvl'],
 							'next_blueprint': 	data['series']['remodel_next_blueprint'],
+							'next_catapult': 	data['series']['remodel_next_catapult'],
+							'next_loop': 		data['series']['remodel_next_loop'],
 							'illust_delete': 	data['series']['illust_delete'],
 							'illust_extra': 	data['series']['illust_extra']
 						})
@@ -5741,6 +7930,10 @@ _frame.app_main.page['entities'].section = {}
 
 _frame.app_main.page['entities'].gen_form_new_entity = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
+	if( data_edit ){
+		if( !data_edit['picture'] )
+			data_edit['picture'] = {}
+	}
 	var self = _frame.app_main.page['entities']
 		,form = $('<form class="new_entity"/>').on('submit',function(e){
 					e.preventDefault()
@@ -5784,6 +7977,30 @@ _frame.app_main.page['entities'].gen_form_new_entity = function( callback, data_
 							})
 					}
 				})
+	
+	// 图片: 头像
+		let avatarInput = $('<input type="hidden" name="picture.avatar"/>').val( data_edit ? data_edit['picture']['avatar'] : null ).appendTo(form)
+			,avatar = $('<div class="avatar"/>').appendTo(form)
+		$('<input type="file" accept=".jpg,.jpeg,.bmp,.gif,.png"/>').on({
+				'change': function(){
+					let $this = $(this)
+						,path = $this.val()
+						,bitmap = node.fs.readFileSync(path)
+						,base64 = new Buffer(bitmap).toString('base64')
+						,mime = node.mime.lookup(path)
+						,result = 'data:' + mime + ';base64,' + base64
+					$this.val('')
+					avatarInput.val(result)
+					avatarNew.css('background-image', 'url(' + result + ')')
+					//console.log(mime, base64)
+				}
+			}).appendTo(avatar)
+		if( data_edit && data_edit['picture']['avatar'] )
+			$('<div class="old"/>')
+				//.css('background-image', 'url(data:image/jpeg;base64,' + data_edit['picture']['avatar'] + ')')
+				.css('background-image', 'url(' + data_edit['picture']['avatar'] + ')')
+				.appendTo(avatar)
+		let avatarNew = $('<div class="new"/>').appendTo(avatar)
 
 	$('<h4/>').html('名称').appendTo(form)
 		_frame.app_main.page['ships'].section['舰种&舰级'].field_input_text('name.ja_jp', '日', data_edit ? data_edit['name']['ja_jp'] : null).appendTo(form)
@@ -5884,8 +8101,11 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 	// 相关表单/按钮
 		'get_titlebtn': function( d ){
 			var self = _frame.app_main.page['entities'].section['人物&组织']
-				,btn = $('<button class="ship_suffix"/>').html(
-						self.get_content(d)
+				,btn = $('<button class="unit"/>').html(
+							'<strong>'
+								+ d['name']['zh_cn']
+							+ '</strong><br/>'
+							+ '<small><em>'+d['name']['ja_jp']+'</em></small>'
 					).on('click', function(){
 						_frame.modal.show(
 							_frame.app_main.page['entities'].gen_form_new_entity(
@@ -5906,7 +8126,8 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 			var self = _frame.app_main.page['entities'].section['人物&组织']
 
 			// 舰种标题，同时也是编辑按钮
-				self.get_titlebtn(d).appendTo( self.dom.section )
+				self.dom.list.appendDOM( self.get_titlebtn(d) )
+				//self.get_titlebtn(d).appendTo( self.dom.section )
 		},
 
 	'init': function(section){
@@ -5925,7 +8146,10 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 					}).appendTo( self.dom.new_container )
 
 		// 读取实体列表，创建内容
-			self.dom.section = $('<div class="main"/>').appendTo(section)
+			//self.dom.section = $('<div class="main"/>').appendTo(section)
+			self.dom.main = $('<div class="main"/>').appendTo( section )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
+
 			_db['entities'].find({}).sort({ 'id': 1 }).exec(function(err, docs){
 				if( !err ){
 					for(var i in docs ){
@@ -6174,7 +8398,7 @@ _frame.app_main.page['update'].section['更新日志'] = {
 
 		// 列表container
 			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('update_history').appendTo( self.dom.main )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic update_history').appendTo( self.dom.main )
 
 		// 读取db，初始化内容
 			_db.updates.find({}).sort({'date': -1}).exec(function(err, docs){
@@ -6997,7 +9221,7 @@ _frame.app_main.page['guide'].section['攻略'] = {
 
 		// 列表container
 			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('update_history').appendTo( self.dom.main )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
 
 		// 读取db，初始化内容
 			_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){
@@ -8204,12 +10428,17 @@ _itemlist.prototype.init = function(){
 // @koala-prepend "js-app/!.js"
 // @koala-prepend "js-app/main.js"
 
-// @koala-prepend "js-app/items/!.js"
-// @koala-prepend "js-app/items/ship.js"
-// @koala-prepend "js-app/items/equipment.js"
+// @koala-prepend "KanColle-JS-Kit/js/class-item/!.js"
+// @koala-prepend "KanColle-JS-Kit/js/class-item/entity.js"
+// @koala-prepend "KanColle-JS-Kit/js/class-item/equipment.js"
+// @koala-prepend "KanColle-JS-Kit/js/class-item/ship.js"
 
 // @koala-prepend "js-app/page/home.js"
 // @koala-prepend "js-app/page/init.js"
+// @koala-prepend "js-app/page/init_exportdata_cache.js"
+// @koala-prepend "js-app/page/init_exportdata_cache_entities.js"
+// @koala-prepend "js-app/page/init_exportdata_cache_equipments.js"
+// @koala-prepend "js-app/page/init_exportdata_cache_ships.js"
 // @koala-prepend "js-app/page/ships.js"
 // @koala-prepend "js-app/page/items.js"
 // @koala-prepend "js-app/page/entities.js"

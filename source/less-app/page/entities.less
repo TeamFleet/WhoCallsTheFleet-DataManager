@@ -1,0 +1,47 @@
+form.new_entity{
+	padding-right: 	170px;
+	position: 		relative;
+	
+	.avatar{
+		position: 	absolute;
+		top: 		0;
+		right: 		0;
+		width: 		150px;
+		overflow: 	hidden;
+		padding-top:30px;
+		input{
+			position: 	absolute;
+			top: 		0;
+		}
+		div{
+			position: 	relative;
+			width: 		150px;
+			height: 	150px;
+			margin-top: 10px;
+			background: no-repeat 50% 50% / cover;
+			&:before{
+				position: 	absolute;
+				top: 		0;
+				left: 		0;
+				z-index: 	2;
+				line-height:1.5;
+				padding: 	0 .35em;
+				font-size: 	14px;
+				background: rgba(0, 0, 0, .85);
+				color: 		#fff;
+			}
+			&.new{
+				background-color: 	hsla(150, 75%, 50%, .5);
+				&:before{
+					content: 	'新'
+				}
+			}
+			&.old{
+				background-color: 	hsla(0, 75%, 50%, .5);
+				&:before{
+					content: 	'旧'
+				}
+			}
+		}
+	}
+}

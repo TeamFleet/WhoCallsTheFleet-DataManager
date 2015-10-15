@@ -19,33 +19,9 @@
 	section[data-tabname="后缀名"],
 	section[data-tabname="舰种集合 (舰娘列表)"],
 	section[data-tabname="舰种集合 (舰娘选择器)"]{
-		.padding-top(30);
-		.new_container{
-			position:	absolute;
-			top:		0;
-			left:		0;
-			width:		100%;
-			.height(30);
-			.line-height(28);
-			color:		#fff;
-			background:	rgba(0,0,0,.5);
-			.border-top(1, solid, #997904);
-			.border-bottom(1, solid, #f0eaab);
-			padding:	0 .85em;
-			button{
-				color:		#fff;
-				margin-right:	.7em;
-				padding:	0 .25em;
-				.transition-property(text-shadow);
-				&:hover{
-					.text-stroke-shadow(#23a0a1)
-				}
-				&:first-child{
-					margin-left:	-.25em;
-				}
-			}
-		}
+		flex-flow:	column;
 		.main{
+			padding-top:30px;
 			position:	relative;
 			width:		100%;
 			height:		100%;
@@ -337,6 +313,21 @@ form.iteminfo{
 			}
 			&[data-tabname="系列"]{
 				p{
+					display: 	flex;
+					flex-flow: 	row nowrap;
+					label.remodel{
+						flex: 	0 0 70px;
+						&~label{
+							flex: 	0 0 auto;
+						}
+					}
+					input[type="number"]{
+						flex: 	1 0 0;
+					}
+					input[type="checkbox"]{
+						flex: 	0 0 13px;
+					}
+					/*
 					label.remodel{
 						width:		70px;
 						&+input{
@@ -352,6 +343,7 @@ form.iteminfo{
 							}
 						}
 					}
+					*/
 				}
 			}
 		}

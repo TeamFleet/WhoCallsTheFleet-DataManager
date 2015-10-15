@@ -208,8 +208,10 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		,files 			= []
 		,promise_chain 	= Q.fcall(function(){})
 		,_ship			= {}
+		,_ship_series	= {}
 		,_item			= {}
 		,_item_type		= {}
+		,_entity		= {}
 
 	// 开始异步函数链
 		promise_chain
@@ -219,7 +221,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			var deferred = Q.defer()
 			_db.ships.find({}, function(err, docs){
 				for( var i in docs ){
-					_ship[docs[i]['id']] = new Equipment(docs[i])
+					_ship[docs[i]['id']] = new Ship(docs[i])
 				}
 				console.log(_ship)
 				deferred.resolve()
@@ -228,9 +230,20 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		})
 		.then(function(){
 			var deferred = Q.defer()
+			_db.ship_series.find({}, function(err, docs){
+				for( var i in docs ){
+					_ship_series[docs[i]['id']] = docs[i]
+				}
+				console.log(_ship_series)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
 			_db.items.find({}, function(err, docs){
 				for( var i in docs ){
-					_item[docs[i]['id']] = new Ship(docs[i])
+					_item[docs[i]['id']] = new Equipment(docs[i])
 				}
 				console.log(_item)
 				deferred.resolve()
@@ -244,6 +257,17 @@ _frame.app_main.page['init'].exportdata = function( form ){
 					_item_type[docs[i]['id']] = docs[i]
 				}
 				console.log(_item_type)
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			var deferred = Q.defer()
+			_db.entities.find({}, function(err, docs){
+				for( var i in docs ){
+					_entity[docs[i]['id']] = new Entity(docs[i])
+				}
+				console.log(_entity)
 				deferred.resolve()
 			})
 			return deferred.promise
@@ -270,7 +294,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,length = 0
 
 			__log('&nbsp;')
-			__log('========== 装备数据 - 初始装备于 ==========')
+			__log('========== 装备 - 初始装备于 ==========')
 			__log('= 批处理开始')
 
 			function _get_ships( item_id, _id, _index ){
@@ -342,7 +366,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 				,length = 0
 
 			__log('&nbsp;')
-			__log('========== 装备数据 - 改修升级前后关系 ==========')
+			__log('========== 装备 - 改修升级前后关系 ==========')
 			__log('= 批处理开始')
 
 			_db.items.find({}, function(err, docs){
@@ -623,16 +647,184 @@ _frame.app_main.page['init'].exportdata = function( form ){
 		})
 	*/
 
+	// 舰娘 - 改造前后关系
+		.then(function(){
+			var deferred = Q.defer()
+				,mod = {}
+
+			__log('&nbsp;')
+			__log('========== 舰娘 - 改造前后关系 ==========')
+			__log('= 批处理开始')
+			
+			for( let i in _ship_series ){
+				let s = _ship_series[i].ships
+					,j = 1
+				while( s[j] && s[j].id ){
+					let prev = s[j-1]
+					
+					if( !mod[s[j].id] )
+						mod[s[j].id] = {
+							'remodel': {}
+						}
+					
+					if( prev && prev.id ){
+						if( !mod[prev.id] )
+							mod[prev.id] = {
+								'remodel': {}
+							}
+						mod[prev.id].remodel.next = s[j].id
+						mod[prev.id].remodel.next_lvl = prev.next_lvl
+						if( prev.next_loop ){
+							mod[prev.id].remodel.next_loop = true
+							mod[s[j].id].remodel.prev_loop = true
+						}
+					}
+					mod[s[j].id].remodel.prev = prev.id
+
+					j++
+				}
+			}
+			
+			function _db_do_all(){
+				let index = 0
+					,length = mod._size
+				function _db_do( find, set_data, _index ){
+					_db.ships.update(find, set_data,{}, function(err, numReplaced){
+						if( _index >= length - 1 ){
+							__log('= 批处理完毕')
+							deferred.resolve()
+						}
+					})
+				}
+				for(let i in mod){
+					_db_do(
+						{
+							'id': parseInt(i)
+						},
+						{
+							$set: mod[i],
+							$unset: {
+								'remodel_next': true
+							}
+						},
+						index
+					)
+					index++
+				}
+			}
+			
+			_db_do_all()
+
+			return deferred.promise
+		})
+
+	// 舰种 - 可装备类型
+		.then(function(){
+			let deferred 	= Q.defer()
+				,byEntity 	= {}
+				,byEntitySeriesCV = {}
+				,byEntitySeriesIllustrator = {}
+
+			__log('&nbsp;')
+			__log('========== 人物团体 - 配音&绘制数据 ==========')
+			__log('= 批处理开始')
+			
+			_g.data.ship_id_by_type.forEach(function(thisType){
+				thisType.forEach(function(shipId){
+					let thisShip = _ship[shipId]
+						,thisSeries = thisShip.series
+						,thisCV = thisShip.getRel('cv')
+						,thisIllustrator = thisShip.getRel('illustrator')
+					
+					if( !byEntitySeriesCV[thisCV] )
+						byEntitySeriesCV[thisCV] = []					
+					if( !byEntitySeriesIllustrator[thisIllustrator] )
+						byEntitySeriesIllustrator[thisIllustrator] = []
+					
+					if( $.inArray( thisSeries, byEntitySeriesCV[thisCV] ) < 0 )
+						byEntitySeriesCV[thisCV].push(thisSeries || thisShip.getSeriesData())
+					
+					if( $.inArray( thisSeries, byEntitySeriesIllustrator[thisIllustrator] ) < 0 )
+						byEntitySeriesIllustrator[thisIllustrator].push(thisSeries || thisShip.getSeriesData())
+				})
+			})
+			
+			let parseSeriesData = function(t, data){
+				for( let i in data ){
+					if( i ){
+						if( !byEntity[i] )
+							byEntity[i] = {}
+						if( !byEntity[i]['relation'] )
+							byEntity[i]['relation'] = {}
+						if( !byEntity[i]['relation'][t] )
+							byEntity[i]['relation'][t] = []
+						
+						data[i].forEach(function(thisSeriesId){
+							let arr = []
+								,ships = typeof thisSeriesId == 'object' ? thisSeriesId : _ship_series[thisSeriesId].ships
+							ships.forEach(function(thisData){
+								let thisShipId = thisData.id
+									,thisShip = _ship[thisShipId]
+									,thisRel = thisShip.getRel(t)
+								if( thisRel == i )
+									arr.push(thisShipId)
+							})
+							
+							byEntity[i]['relation'][t].push( arr )
+						})
+					}
+				}
+			}
+			
+			parseSeriesData('cv', byEntitySeriesCV)
+			parseSeriesData('illustrator', byEntitySeriesIllustrator)
+			
+			console.log( byEntity )
+			
+			function _db_do_all(){
+				let index = 0
+					,length = byEntity._size
+				function _db_do( find, set_data, _index ){
+					_db.entities.update(find, set_data,{}, function(err, numReplaced){
+						if( _index >= length - 1 ){
+							__log('= 批处理完毕')
+							deferred.resolve()
+						}
+					})
+				}
+				for(let i in byEntity){
+					_db_do(
+						{
+							'id': parseInt(i)
+						},
+						{
+							$set: byEntity[i],
+							$unset: {
+								'rels': true
+							}
+						},
+						index
+					)
+					index++
+				}
+			}
+			
+			_db_do_all()
+
+			return deferred.promise
+		})
+
 	// 复制所有数据文件
 		.then(function(){
 			var deferred = Q.defer()
 				,count = 0
+				,dest_db = node.path.join(dest, 'app-db')
 
 			__log( '&nbsp;' )
 			__log('========== 复制数据库JSON ==========')
 
 			// 建立目标目录
-				node.mkdirp.sync( dest )
+				node.mkdirp.sync( dest_db )
 
 			function copyFile(source, target, callback) {
 				var cbCalled = false;
@@ -680,12 +872,27 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			for( var i in files ){
 				copyFile(
 					'./data/' + files[i],
-					dest + '/' + files[i],
+					dest_db + '/' + files[i],
 					copyFile_callback
 				)
 			}
 			return deferred.promise
 		})
+	
+	// 输出页面: ships.html
+		.then(function(){
+			return _frame.app_main.page['init'].exportdata_cache_ships( dest, _ship )
+		})
+	
+	// 输出页面: equipments.html
+		.then(function(){
+			return _frame.app_main.page['init'].exportdata_cache_equipments( dest, _item )
+		})
+	
+	// 输出页面: entities.html
+		//.then(function(){
+		//	return _frame.app_main.page['init'].exportdata_cache_entities( dest, _item )
+		//})
 
 	// 错误处理
 		.catch(function (err) {
@@ -693,6 +900,8 @@ _frame.app_main.page['init'].exportdata = function( form ){
 			__log('输出数据失败')
 		})
 		.done(function(){
+			__log( '&nbsp;' )
+			__log( '==========' )
 			__log('输出数据初始过程结束')
 		})
 }
@@ -709,7 +918,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
 
 
 _frame.app_main.page['init'].exportpic = function( form ){
-	var dest = form.find('[name="destfolder"]').val()
+	var dest = node.path.normalize(form.find('[name="destfolder"]').val())
 		,ship_ids = node.fs.readdirSync('./pics/ships/')
 		,item_ids = node.fs.readdirSync('./pics/items/')
 		,files = []
@@ -730,8 +939,10 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		}catch(e){}
 	}
 
-	node.mkdirp.sync( dest + '/ships/' )
-	node.mkdirp.sync( dest + '/items/' )
+	node.mkdirp.sync( node.path.join(dest, '/ships/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/items/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/ships_png/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/items_png/' ) )
 
 	var execFile = require('child_process').execFile;
 	var binPath = require('webp-bin').path;
@@ -741,19 +952,80 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		target = target || files[0][1]
 		quality = (quality || files[0][2]) || 75
 		is_lossless = (is_lossless || files[0][3]) || false
-
-		//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
-		var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
-		//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
-		execFile(binPath, cmd, function(err, stdout, stderr) {
-			if( !err ){
+		
+		if( quality == 'png' ){
+			var cbCalled = false;
+	
+			var rd = node.fs.createReadStream(source);
+			rd.on("error", function(err) {
+				done(err);
+			});
+	
+			var wr = node.fs.createWriteStream(target);
+				wr.on("error", function(err) {
+				done(err);
+			});
+			wr.on("close", function(ex) {
+				done();
+			});
+	
+			rd.pipe(wr);
+	
+			function done(err) {
+				if( err )
+					console.log(err)
+				if (!cbCalled) {
+					__log(
+						'pic file copied to ' + target
+					)
+					files.shift()
+					cbCalled = true;
+					
+					copyFile_webp();
+				}
+			}
+		}else if(quality == 'mask'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -compose in ' + source + ' ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
 				__log(
-					'pic file copied to ' + target
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
 				)
 				files.shift()
 				copyFile_webp();
-			}
-		});
+			})
+			/*
+			node.gm( source )
+				.mask(node.path.join(_g.root, '!designs/mask-1.png'))
+				.write(target_mask_1, function (err) {
+					console.log(err)
+					__log(
+						'pic file copied to ' + target_mask_1 + ' (mask-1)'
+					)
+					files.shift()
+					copyFile_webp();
+				})
+			*/
+		}else{
+			//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
+			var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
+			//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
+			execFile(binPath, cmd, function(err, stdout, stderr) {
+				if( !err ){
+					__log(
+						'pic file copied to ' + target
+					)
+					files.shift()
+					copyFile_webp();
+				}
+			});
+		}
 
 		/*
 
@@ -769,36 +1041,6 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			copyFile_webp();
 		});
 		*/
-
-		/*
-		var cbCalled = false;
-
-		var rd = node.fs.createReadStream(source);
-		rd.on("error", function(err) {
-			done(err);
-		});
-
-		var wr = node.fs.createWriteStream(target);
-			wr.on("error", function(err) {
-			done(err);
-		});
-		wr.on("close", function(ex) {
-			done();
-		});
-
-		rd.pipe(wr);
-
-		function done(err) {
-			if (!cbCalled) {
-				__log(
-					'pic file copied to ' + target
-				)
-				files.shift()
-				copyFile_webp();
-				cbCalled = true;
-			}
-		}
-		*/
 	}
 
 	// 开始异步函数链
@@ -811,7 +1053,9 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				for(var i in docs){
 					var ships = docs[i].ships || []
 					for(var j in ships){
-						if(ships[j]['id']){
+						if( !parseInt(ships[j]['id'])
+							|| (parseInt(ships[j]['id']) < 500 || parseInt(ships[j]['id']) > 9000)
+						){
 							picid_by_shipid[ships[j]['id']] = []
 							picid_by_shipid[ships[j]['id']].push(['0.png', '0.webp', 90])
 							if( !ships[j]['illust_delete'] ){
@@ -837,6 +1081,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		.then(function(picid_by_shipid){
 			for( var i in ship_ids ){
 				node.mkdirp.sync( dest + '/ships/' + ship_ids[i] )
+				node.mkdirp.sync( dest + '/ships_png/' + ship_ids[i] )
 				var arr = picid_by_shipid[ship_ids[i]] || null
 				if( !arr ){
 					arr = []
@@ -851,14 +1096,37 @@ _frame.app_main.page['init'].exportpic = function( form ){
 						dest + '/ships/' + ship_ids[i] + '/' + arr[j][1],
 						arr[j][2]
 					)
+					check_do(
+						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
+						dest + '/ships_png/' + ship_ids[i] + '/' + arr[j][0],
+						'png'
+					)
 				}
+				check_do(
+					'./pics/ships/' + ship_ids[i] + '/' + '0.png',
+					dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+					'mask',
+					1
+				)
+				check_do(
+					'./pics/ships/' + ship_ids[i] + '/' + '0.png',
+					dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+					'mask',
+					2
+				)
 			}
 			for( var i in item_ids ){
 				node.mkdirp.sync( dest + '/items/' + item_ids[i] )
+				node.mkdirp.sync( dest + '/items_png/' + item_ids[i] )
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
 					dest + '/items/' + item_ids[i] + '/card.webp',
 					80
+				)
+				check_do(
+					'./pics/items/' + item_ids[i] + '/card.png',
+					dest + '/items_png/' + item_ids[i] + '/card.png',
+					'png'
 				)
 			}
 			return files

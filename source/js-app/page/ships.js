@@ -151,6 +151,7 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 	d.rels = d.rels || {}
 	d.slot = d.slot || []
 	d.equip = d.equip || []
+	d.remodel_next = d.remodel.next || null
 	console.log(d)
 	function _input(name, label, suffix, options){
 		return _frame.app_main.page['ships'].gen_form_line(
@@ -420,6 +421,28 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					).appendTo(line)
 				$('<label for="'+id+'"/>').html( '蓝图' ).appendTo(line)
 
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_prev_catapult',
+						id,
+						d_series.remodel_prev_catapult || false,
+						{'notRequired': true}
+					).appendTo(line)
+				$('<label for="'+id+'"/>').html( '甲板' ).appendTo(line)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_prev_loop',
+						id,
+						d_series.remodel_prev_loop || false,
+						{'notRequired': true}
+					).appendTo(line)
+				$('<label for="'+id+'"/>').html( '循环' ).appendTo(line)
+
 				var line2 = $('<p/>')
 
 				id = '_input_g' + _g.inputIndex
@@ -454,6 +477,28 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 						{'notRequired': true}
 					).appendTo(line2)
 				$('<label for="'+id+'"/>').html( '蓝图' ).appendTo(line2)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_next_catapult',
+						id,
+						d_series.remodel_next_catapult || false,
+						{'notRequired': true}
+					).appendTo(line2)
+				$('<label for="'+id+'"/>').html( '甲板' ).appendTo(line2)
+
+				id = '_input_g' + _g.inputIndex
+				_g.inputIndex++
+				_frame.app_main.page['ships'].gen_input(
+						'checkbox',
+						'series.remodel_next_loop',
+						id,
+						d_series.remodel_next_loop || false,
+						{'notRequired': true}
+					).appendTo(line2)
+				$('<label for="'+id+'"/>').html( '循环' ).appendTo(line2)
 
 				// 基础等级
 					id = '_input_g' + _g.inputIndex
@@ -827,6 +872,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series.remodel_prev = docs[0].ships[index-1]['id'] || null
 							d_series.remodel_prev_lvl = docs[0].ships[index-1]['next_lvl'] || null
 							d_series.remodel_prev_blueprint = docs[0].ships[index-1]['next_blueprint'] || false
+							d_series.remodel_prev_catapult = docs[0].ships[index-1]['next_catapult'] || false
+							d_series.remodel_prev_loop = docs[0].ships[index-1]['next_loop'] || false
 						}
 						if( docs[0].ships[index+1] ){
 							d_series.remodel_next = docs[0].ships[index+1]['id'] || null
@@ -840,6 +887,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 						}
 						d_series.remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
+						d_series.remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
+						d_series.remodel_next_loop = docs[0].ships[index]['next_loop'] || false
 						d_series.illust_delete = docs[0].ships[index]['illust_delete'] || false
 						d_series.illust_extra = docs[0].ships[index]['illust_extra'] || []
 						break
@@ -849,14 +898,20 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					d_series.remodel_prev = parseInt(d.remodel.prev) || null
 					d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
 					d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
+					d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
+					d_series.remodel_prev_loop = d.remodel.prev_loop || false
 				}
 			}else{
 				d_series.remodel_prev = parseInt(d.remodel.prev) || null
 				d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
 				d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
+				d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
+				d_series.remodel_prev_loop = d.remodel.prev_loop || false
 				d_series.remodel_next = parseInt(d.remodel.next) || null
 				d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 				d_series.remodel_next_blueprint = d.remodel.next_blueprint || false
+				d_series.remodel_next_catapult = d.remodel.next_catapult || false
+				d_series.remodel_next_loop = d.remodel.next_loop || false
 				d.remodel_next = d.remodel_next || ( parseInt(d.remodel.next) || null )
 			}
 
@@ -923,7 +978,9 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					ship_next = {
 						'prev': 			data['id'],
 						'prev_lvl': 		data['series']['remodel_next_lvl'],
-						'prev_blueprint': 	data['series']['remodel_next_blueprint']
+						'prev_blueprint': 	data['series']['remodel_next_blueprint'],
+						'prev_catapult': 	data['series']['remodel_next_catapult'],
+						'prev_loop': 		data['series']['remodel_next_loop']
 					}
 				}
 				//d_series_true
@@ -954,6 +1011,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 													data['series'].remodel_prev = docs[0].ships[index-1]['id'] || null
 													data['series'].remodel_prev_lvl = docs[0].ships[index-1]['next_lvl'] || null
 													data['series'].remodel_prev_blueprint = docs[0].ships[index-1]['next_blueprint'] || false
+													data['series'].remodel_prev_catapult = docs[0].ships[index-1]['next_catapult'] || false
+													data['series'].remodel_prev_loop = docs[0].ships[index-1]['next_loop'] || false
 												}
 												if( docs[0].ships[index+1] ){
 													data['series'].remodel_next = docs[0].ships[index+1]['id'] || null
@@ -967,6 +1026,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 													data['series'].remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
 												}
 												data['series'].remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
+												data['series'].remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
+												data['series'].remodel_next_loop = docs[0].ships[index]['next_loop'] || false
 												data['series'].illust_delete = docs[0].ships[index]['illust_delete'] || false
 												data['series'].illust_extra = docs[0].ships[index]['illust_extra'] || []
 												break
@@ -1006,6 +1067,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							_prev['id'] = data['series']['remodel_prev']
 							_prev['next_lvl'] = data['series']['remodel_prev_lvl']
 							_prev['next_blueprint'] = data['series']['remodel_prev_blueprint']
+							_prev['next_catapult'] = data['series']['remodel_prev_catapult']
+							_prev['next_loop'] = data['series']['remodel_prev_loop']
 						}
 
 						if( !d_series_true.ships[ d_series_true_index ] )
@@ -1015,6 +1078,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 
 						d_series_true.ships[ d_series_true_index ]['next_lvl'] = data['series']['remodel_next_lvl']
 						d_series_true.ships[ d_series_true_index ]['next_blueprint'] = data['series']['remodel_next_blueprint']
+						d_series_true.ships[ d_series_true_index ]['next_catapult'] = data['series']['remodel_next_catapult']
+						d_series_true.ships[ d_series_true_index ]['next_loop'] = data['series']['remodel_next_loop']
 						d_series_true.ships[ d_series_true_index ]['illust_delete'] = data['series']['illust_delete']
 						d_series_true.ships[ d_series_true_index ]['illust_extra'] = data['series']['illust_extra']
 
@@ -1044,13 +1109,17 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 							d_series_true.ships.push({
 								'id': 				data['series']['remodel_prev'],
 								'next_lvl': 		data['series']['remodel_prev_lvl'],
-								'next_blueprint': 	data['series']['remodel_prev_blueprint']
+								'next_blueprint': 	data['series']['remodel_prev_blueprint'],
+								'next_catapult': 	data['series']['remodel_prev_catapult'],
+								'next_loop': 		data['series']['remodel_prev_loop']
 							})
 						}
 						d_series_true.ships.push({
 							'id': 				data['id'],
 							'next_lvl': 		data['series']['remodel_next_lvl'],
 							'next_blueprint': 	data['series']['remodel_next_blueprint'],
+							'next_catapult': 	data['series']['remodel_next_catapult'],
+							'next_loop': 		data['series']['remodel_next_loop'],
 							'illust_delete': 	data['series']['illust_delete'],
 							'illust_extra': 	data['series']['illust_extra']
 						})

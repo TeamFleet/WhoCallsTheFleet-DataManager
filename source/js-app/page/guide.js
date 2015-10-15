@@ -238,7 +238,7 @@ _frame.app_main.page['guide'].section['攻略'] = {
 
 		// 列表container
 			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('update_history').appendTo( self.dom.main )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
 
 		// 读取db，初始化内容
 			_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){

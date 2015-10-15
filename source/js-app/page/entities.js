@@ -3,6 +3,10 @@ _frame.app_main.page['entities'].section = {}
 
 _frame.app_main.page['entities'].gen_form_new_entity = function( callback, data_edit, callback_remove ){
 	callback = callback || function(){}
+	if( data_edit ){
+		if( !data_edit['picture'] )
+			data_edit['picture'] = {}
+	}
 	var self = _frame.app_main.page['entities']
 		,form = $('<form class="new_entity"/>').on('submit',function(e){
 					e.preventDefault()
@@ -46,6 +50,30 @@ _frame.app_main.page['entities'].gen_form_new_entity = function( callback, data_
 							})
 					}
 				})
+	
+	// 图片: 头像
+		let avatarInput = $('<input type="hidden" name="picture.avatar"/>').val( data_edit ? data_edit['picture']['avatar'] : null ).appendTo(form)
+			,avatar = $('<div class="avatar"/>').appendTo(form)
+		$('<input type="file" accept=".jpg,.jpeg,.bmp,.gif,.png"/>').on({
+				'change': function(){
+					let $this = $(this)
+						,path = $this.val()
+						,bitmap = node.fs.readFileSync(path)
+						,base64 = new Buffer(bitmap).toString('base64')
+						,mime = node.mime.lookup(path)
+						,result = 'data:' + mime + ';base64,' + base64
+					$this.val('')
+					avatarInput.val(result)
+					avatarNew.css('background-image', 'url(' + result + ')')
+					//console.log(mime, base64)
+				}
+			}).appendTo(avatar)
+		if( data_edit && data_edit['picture']['avatar'] )
+			$('<div class="old"/>')
+				//.css('background-image', 'url(data:image/jpeg;base64,' + data_edit['picture']['avatar'] + ')')
+				.css('background-image', 'url(' + data_edit['picture']['avatar'] + ')')
+				.appendTo(avatar)
+		let avatarNew = $('<div class="new"/>').appendTo(avatar)
 
 	$('<h4/>').html('名称').appendTo(form)
 		_frame.app_main.page['ships'].section['舰种&舰级'].field_input_text('name.ja_jp', '日', data_edit ? data_edit['name']['ja_jp'] : null).appendTo(form)
@@ -146,8 +174,11 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 	// 相关表单/按钮
 		'get_titlebtn': function( d ){
 			var self = _frame.app_main.page['entities'].section['人物&组织']
-				,btn = $('<button class="ship_suffix"/>').html(
-						self.get_content(d)
+				,btn = $('<button class="unit"/>').html(
+							'<strong>'
+								+ d['name']['zh_cn']
+							+ '</strong><br/>'
+							+ '<small><em>'+d['name']['ja_jp']+'</em></small>'
 					).on('click', function(){
 						_frame.modal.show(
 							_frame.app_main.page['entities'].gen_form_new_entity(
@@ -168,7 +199,8 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 			var self = _frame.app_main.page['entities'].section['人物&组织']
 
 			// 舰种标题，同时也是编辑按钮
-				self.get_titlebtn(d).appendTo( self.dom.section )
+				self.dom.list.appendDOM( self.get_titlebtn(d) )
+				//self.get_titlebtn(d).appendTo( self.dom.section )
 		},
 
 	'init': function(section){
@@ -187,7 +219,10 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 					}).appendTo( self.dom.new_container )
 
 		// 读取实体列表，创建内容
-			self.dom.section = $('<div class="main"/>').appendTo(section)
+			//self.dom.section = $('<div class="main"/>').appendTo(section)
+			self.dom.main = $('<div class="main"/>').appendTo( section )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
+
 			_db['entities'].find({}).sort({ 'id': 1 }).exec(function(err, docs){
 				if( !err ){
 					for(var i in docs ){

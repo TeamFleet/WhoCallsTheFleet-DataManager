@@ -235,7 +235,7 @@ _frame.app_main.page['update'].section['更新日志'] = {
 
 		// 列表container
 			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('update_history').appendTo( self.dom.main )
+			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic update_history').appendTo( self.dom.main )
 
 		// 读取db，初始化内容
 			_db.updates.find({}).sort({'date': -1}).exec(function(err, docs){

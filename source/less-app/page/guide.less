@@ -1,31 +1,7 @@
 #layout>main>.page[page="guide"]{
 	&>.tabview>section[data-tabname="攻略"]{
-		.padding-top(30);
-		.new_container{
-			position:	absolute;
-			top:		0;
-			left:		0;
-			width:		100%;
-			.height(30);
-			.line-height(28);
-			color:		#fff;
-			background:	rgba(0,0,0,.5);
-			.border-top(1, solid, #997904);
-			.border-bottom(1, solid, #f0eaab);
-			padding:	0 .85em;
-			button{
-				color:		#fff;
-				margin-right:	.7em;
-				padding:	0 .25em;
-				.transition-property(text-shadow);
-				&:hover{
-					.text-stroke-shadow(#23a0a1)
-				}
-				&:first-child{
-					margin-left:	-.25em;
-				}
-			}
-		}
+		display: 	flex;
+		flex-flow:	column;
 		.main{
 			position:	relative;
 			width:		100%;
