@@ -1,10 +1,10 @@
 // @koala-prepend "js-app/!.js"
 // @koala-prepend "js-app/main.js"
 
-// @koala-prepend "KanColle-JS-Kit/js/class-item/!.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/entity.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/equipment.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/ship.js"
+// @koala-prepend "KanColle-JS-Kit-3/js/class-item/!.js"
+// @koala-prepend "KanColle-JS-Kit-3/js/class-item/entity.js"
+// @koala-prepend "KanColle-JS-Kit-3/js/class-item/equipment.js"
+// @koala-prepend "KanColle-JS-Kit-3/js/class-item/ship.js"
 
 // @koala-prepend "js-app/page/home.js"
 // @koala-prepend "js-app/page/init.js"
