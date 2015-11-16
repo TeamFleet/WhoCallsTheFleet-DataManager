@@ -158,7 +158,10 @@ class Tablelist{
 				,input = gen_input().appendTo(line)
 				,id = input.attr('id') || Tablelist.genId()
 		
-			label = label ? $('<label for="'+id+'"/>').html( label ).appendTo(line) : null
+			label = label ? $('<label'+(type == 'checkbox'? ' class="checkbox"' : '')+' for="'+id+'"/>')
+								.html( label )
+								.appendTo(line)
+						: null
 		
 			if( type == 'checkbox' && label )
 				label.insertAfter(input)

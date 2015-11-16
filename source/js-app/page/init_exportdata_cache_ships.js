@@ -243,6 +243,7 @@ class TablelistShips extends Tablelist{
 								if( !not_trigger_check )
 									this.header_checkbox[header_index].trigger('docheck')
 							}.bind(this))
+			,label = checkbox.add( $('<label class="checkbox"/>') )
 			,has_extra_illust = false
 			,seriesData = ship_data.getSeriesData()
 		
@@ -268,9 +269,11 @@ class TablelistShips extends Tablelist{
 	
 		function _val( val, show_zero ){
 			if( !show_zero && (val == 0 || val == '0') )
-				return '<small class="zero">-</small>'
+				//return '<small class="zero">-</small>'
+				return '-'
 			if( val == -1 || val == '-1' )
-				return '<small class="zero">?</small>'
+				//return '<small class="zero">?</small>'
+				return '?'
 			return val
 		}
 	
@@ -291,7 +294,7 @@ class TablelistShips extends Tablelist{
 							//+ '<small>' + ship_data['pron'] + '</small>'
 						)
 						.prepend(
-							checkbox
+							label
 						)
 						.appendTo(tr)
 					break;
@@ -314,7 +317,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="asw" />')
 						.attr(
 							'data-value',
-							ship_data['stat']['asw_max']
+							ship_data['stat']['asw_max'] || 0
 						)
 						.html( _val(
 							ship_data['stat']['asw_max'],
@@ -323,27 +326,27 @@ class TablelistShips extends Tablelist{
 						.appendTo(tr)
 					break;
 				case 'hp':
-					$('<td data-stat="hp" data-value="' + ship_data['stat']['hp'] + '"/>')
+					$('<td data-stat="hp" data-value="' + (ship_data['stat']['hp'] || 0) + '"/>')
 						.html(_val( ship_data['stat']['hp'] ))
 						.appendTo(tr)
 					break;
 				case 'carry':
-					$('<td data-stat="carry" data-value="' + ship_data['stat']['carry'] + '"/>')
+					$('<td data-stat="carry" data-value="' + (ship_data['stat']['carry'] || 0) + '"/>')
 						.html(_val( ship_data['stat']['carry'] ))
 						.appendTo(tr)
 					break;
 				case 'speed':
-					$('<td data-stat="speed" data-value="' + ship_data['stat']['speed'] + '"/>')
+					$('<td data-stat="speed" data-value="' + (ship_data['stat']['speed'] || 0) + '"/>')
 						.html( _g.getStatSpeed( ship_data['stat']['speed'] ) )
 						.appendTo(tr)
 					break;
 				case 'range':
-					$('<td data-stat="range" data-value="' + ship_data['stat']['range'] + '"/>')
+					$('<td data-stat="range" data-value="' + (ship_data['stat']['range'] || 0) + '"/>')
 						.html( _g.getStatRange( ship_data['stat']['range'] ) )
 						.appendTo(tr)
 					break;
 				case 'luck':
-					$('<td data-stat="luck" data-value="' + ship_data['stat']['luck'] + '"/>')
+					$('<td data-stat="luck" data-value="' + (ship_data['stat']['luck'] || 0) + '"/>')
 						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
 						.appendTo(tr)
 					break;
@@ -351,7 +354,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="consum_fuel"/>')
 						.attr(
 							'data-value',
-							ship_data['consum']['fuel']
+							ship_data['consum']['fuel'] || 0
 						)
 						.html( _val(ship_data['consum']['fuel']) )
 						.appendTo(tr)
@@ -360,7 +363,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="consum_ammo"/>')
 						.attr(
 							'data-value',
-							ship_data['consum']['ammo']
+							ship_data['consum']['ammo'] || 0
 						)
 						.html( _val(ship_data['consum']['ammo']) )
 						.appendTo(tr)
@@ -378,7 +381,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="'+currentValue[1]+'"/>')
 						.attr(
 							'data-value',
-							ship_data['stat'][currentValue[1] + '_max']
+							ship_data['stat'][currentValue[1] + '_max'] || 0
 						)
 						.html( _val( ship_data['stat'][currentValue[1] + '_max'] ) )
 						.appendTo(tr)
@@ -417,7 +420,7 @@ class TablelistShips extends Tablelist{
 					this.last_item =
 							$('<tr class="typetitle" data-trindex="'+this.trIndex+'">'
 								+ '<th colspan="' + (this.columns.length + 1) + '">'
-								+ '<label for="' + checkbox_id + '">'
+								+ '<label class="checkbox" for="' + checkbox_id + '">'
 								//+ data_shiptype['full_zh']
 								//+ _g.data['ship_type_order'][i+1]['name']['zh_cn']
 								+ _g.data['ship_type_order'][i]['name']['zh_cn']

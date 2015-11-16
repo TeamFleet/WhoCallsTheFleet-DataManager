@@ -462,6 +462,17 @@ _frame.app_main.page['items'].show_item_form = function(d){
 			).appendTo(line)
 		$('<label for="'+id+'"/>').html( '可开发' ).appendTo(line)
 
+		line = $('<p/>').appendTo( details_craft )
+		id = '_input_g' + _g.inputIndex
+		_g.inputIndex++
+		_frame.app_main.page['ships'].gen_input(
+				'checkbox',
+				'rankupgradable',
+				id,
+				d.rankupgradable || false
+			).appendTo(line)
+		$('<label for="'+id+'"/>').html( '可提升熟练度' ).appendTo(line)
+
 		// 改修
 			$('<h4/>').html('改修').appendTo(details_craft)
 			for(var i=0; i<(d['improvement'] ? d['improvement'].length : 0); i++ ){

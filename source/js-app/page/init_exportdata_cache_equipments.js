@@ -9,7 +9,7 @@ _frame.app_main.page['init'].exportdata_cache_equipments = function( dest, _item
 		node.mkdirp.sync( dest_path )
 	
 	// 
-		let container = $('<div class="tablelist equipments"/>')
+		let container = $('<div class="tablelist tablelist-equipments"/>')
 			,data = new TablelistEquipments( container )
 
 	// 写入文件
@@ -149,7 +149,8 @@ class TablelistEquipments extends Tablelist{
 	
 		function _val( val, show_zero ){
 			if( !show_zero && (val == 0 || val === '0' || val === '') )
-				return '<small class="zero">-</small>'
+				//return '<small class="zero">-</small>'
+				return '-'
 			//if( val > 0 )
 			//	return '+' + val
 			return val
@@ -183,7 +184,7 @@ class TablelistEquipments extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<td data-stat="'+currentValue[1]+'" data-value="' + equipment_data['stat'][currentValue[1]] + '"/>')
+					$('<td data-stat="'+currentValue[1]+'" data-value="' + (equipment_data['stat'][currentValue[1]] || 0) + '"/>')
 						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
 						.html( _val( equipment_data['stat'][currentValue[1]] ) )
 						.appendTo(tr)

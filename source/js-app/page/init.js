@@ -921,6 +921,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	var dest = node.path.normalize(form.find('[name="destfolder"]').val())
 		,ship_ids = node.fs.readdirSync('./pics/ships/')
 		,item_ids = node.fs.readdirSync('./pics/items/')
+		,entities = {}
 		,files = []
 		,picid_by_shipid = {}
 		,promise_chain 	= Q.fcall(function(){})
@@ -948,12 +949,15 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	var binPath = require('webp-bin').path;
 
 	function copyFile_webp(source, target, quality, is_lossless) {
+		if( !source && !files.length )
+			return __log('PIC EXPORT COMPLETE')
+			
 		source = source || files[0][0]
 		target = target || files[0][1]
 		quality = (quality || files[0][2]) || 75
 		is_lossless = (is_lossless || files[0][3]) || false
 		
-		if( quality == 'png' ){
+		if( quality == 'copy' ){
 			var cbCalled = false;
 	
 			var rd = node.fs.createReadStream(source);
@@ -990,7 +994,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
 			let exec = require('child_process').exec
 			
-			var gmComposite = 'gm composite -compose in ' + source + ' ' + mask + ' ' + target_mask_1
+			var gmComposite = 'gm composite -compose in "' + source + '" ' + mask + ' ' + target_mask_1
 			
 			exec(gmComposite, function(err) {
 				if (err) throw err
@@ -1012,6 +1016,38 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					copyFile_webp();
 				})
 			*/
+		}else if(quality == 'entity-resize'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-0.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -geometry 90x90+35-17 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
+				__log(
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+				)
+				files.shift()
+				copyFile_webp();
+			})
+		}else if(quality == 'entity-resize-mask'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-entity-' + is_lossless + '.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -geometry 90x90+35-16 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
+				__log(
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+				)
+				files.shift()
+				copyFile_webp();
+			})
 		}else{
 			//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
 			var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
@@ -1071,8 +1107,8 @@ _frame.app_main.page['init'].exportpic = function( form ){
 							}
 						}
 					}
-					deferred.resolve(picid_by_shipid)
 				}
+				deferred.resolve(picid_by_shipid)
 			})
 			return deferred.promise
 		})
@@ -1099,7 +1135,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
 						dest + '/ships_png/' + ship_ids[i] + '/' + arr[j][0],
-						'png'
+						'copy'
 					)
 				}
 				check_do(
@@ -1126,10 +1162,45 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
 					dest + '/items_png/' + item_ids[i] + '/card.png',
-					'png'
+					'copy'
 				)
 			}
 			return files
+		})
+	
+	// 遍历_db.entities
+		.then(function(){
+			let deferred = Q.defer()
+			_db.entities.find({}, function(err,docs){
+				docs.forEach(function(d){
+					entities[d.id] = new Entity(d)
+					node.mkdirp.sync( dest + '/entities_png/' + d.id )
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize'
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize-mask',
+						1
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize-mask',
+						2
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/2.jpg',
+						'copy'
+					)
+				})
+				deferred.resolve(entities)
+			})
+			return deferred.promise
 		})
 
 	// webp

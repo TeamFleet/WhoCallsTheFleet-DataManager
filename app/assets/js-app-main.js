@@ -1,5 +1,4 @@
 "use strict";
-
 // node.js modules
 	node.require('fs')
 	node.require('nedb')
@@ -689,7 +688,6 @@ _frame.app_main = {
 	}
 }
 
-
 class ItemBase {
 	constructor() {
 	}
@@ -705,7 +703,6 @@ class ItemBase {
 		return this.getName()
 	}
 }
-
 // Class for Entity (Person/Group, such as CVs, illustrators)
 
 class Entity extends ItemBase{
@@ -714,7 +711,6 @@ class Entity extends ItemBase{
 		$.extend(true, this, data)
 	}
 }
-
 class Equipment extends ItemBase{
 	constructor(data) {
 		super()
@@ -772,7 +768,6 @@ class Equipment extends ItemBase{
 		*/
 	}
 }
-
 /* Class: Ship / 舰娘
 
  *******************************************************************
@@ -1080,9 +1075,7 @@ class Ship extends ItemBase{
 		return this.getIllustrator()
 	}
 }
-
 _frame.app_main.page['home'] = {}
-
 
 node.require('http')
 node.require('url')
@@ -2007,6 +2000,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	var dest = node.path.normalize(form.find('[name="destfolder"]').val())
 		,ship_ids = node.fs.readdirSync('./pics/ships/')
 		,item_ids = node.fs.readdirSync('./pics/items/')
+		,entities = {}
 		,files = []
 		,picid_by_shipid = {}
 		,promise_chain 	= Q.fcall(function(){})
@@ -2034,12 +2028,15 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	var binPath = require('webp-bin').path;
 
 	function copyFile_webp(source, target, quality, is_lossless) {
+		if( !source && !files.length )
+			return __log('PIC EXPORT COMPLETE')
+			
 		source = source || files[0][0]
 		target = target || files[0][1]
 		quality = (quality || files[0][2]) || 75
 		is_lossless = (is_lossless || files[0][3]) || false
 		
-		if( quality == 'png' ){
+		if( quality == 'copy' ){
 			var cbCalled = false;
 	
 			var rd = node.fs.createReadStream(source);
@@ -2076,7 +2073,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
 			let exec = require('child_process').exec
 			
-			var gmComposite = 'gm composite -compose in ' + source + ' ' + mask + ' ' + target_mask_1
+			var gmComposite = 'gm composite -compose in "' + source + '" ' + mask + ' ' + target_mask_1
 			
 			exec(gmComposite, function(err) {
 				if (err) throw err
@@ -2098,6 +2095,38 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					copyFile_webp();
 				})
 			*/
+		}else if(quality == 'entity-resize'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-0.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -geometry 90x90+35-17 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
+				__log(
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+				)
+				files.shift()
+				copyFile_webp();
+			})
+		}else if(quality == 'entity-resize-mask'){
+			let target_mask_1 = node.path.parse(target)
+				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
+			let mask = node.path.join(_g.root, '!designs/mask-entity-' + is_lossless + '.png')
+			let exec = require('child_process').exec
+			
+			var gmComposite = 'gm composite -geometry 90x90+35-16 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+			
+			exec(gmComposite, function(err) {
+				if (err) throw err
+				__log(
+					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+				)
+				files.shift()
+				copyFile_webp();
+			})
 		}else{
 			//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
 			var cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
@@ -2157,8 +2186,8 @@ _frame.app_main.page['init'].exportpic = function( form ){
 							}
 						}
 					}
-					deferred.resolve(picid_by_shipid)
 				}
+				deferred.resolve(picid_by_shipid)
 			})
 			return deferred.promise
 		})
@@ -2185,7 +2214,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
 						dest + '/ships_png/' + ship_ids[i] + '/' + arr[j][0],
-						'png'
+						'copy'
 					)
 				}
 				check_do(
@@ -2212,10 +2241,45 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
 					dest + '/items_png/' + item_ids[i] + '/card.png',
-					'png'
+					'copy'
 				)
 			}
 			return files
+		})
+	
+	// 遍历_db.entities
+		.then(function(){
+			let deferred = Q.defer()
+			_db.entities.find({}, function(err,docs){
+				docs.forEach(function(d){
+					entities[d.id] = new Entity(d)
+					node.mkdirp.sync( dest + '/entities_png/' + d.id )
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize'
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize-mask',
+						1
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/0.png',
+						'entity-resize-mask',
+						2
+					)
+					check_do(
+						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+						dest + '/entities_png/' + d.id + '/2.jpg',
+						'copy'
+					)
+				})
+				deferred.resolve(entities)
+			})
+			return deferred.promise
 		})
 
 	// webp
@@ -2503,7 +2567,6 @@ _frame.app_main.page['init'].init = function( page ){
 		})
 }
 
-
 /*
  */
 _p.el.tablelist = {
@@ -2664,7 +2727,10 @@ class Tablelist{
 				,input = gen_input().appendTo(line)
 				,id = input.attr('id') || Tablelist.genId()
 		
-			label = label ? $('<label for="'+id+'"/>').html( label ).appendTo(line) : null
+			label = label ? $('<label'+(type == 'checkbox'? ' class="checkbox"' : '')+' for="'+id+'"/>')
+								.html( label )
+								.appendTo(line)
+						: null
 		
 			if( type == 'checkbox' && label )
 				label.insertAfter(input)
@@ -2896,7 +2962,6 @@ Tablelist.genId = function(text){
 	}
 	return 'tablelist'+hash;
 }
-
 _frame.app_main.page['init'].exportdata_cache_entities = function( dest, _item ){
 	let deferred = Q.defer()
 		,dest_path = node.path.join(dest, 'app/page')
@@ -3087,7 +3152,6 @@ class TablelistEntities extends Tablelist{
 	init_parse(){
 	}
 }
-
 _frame.app_main.page['init'].exportdata_cache_equipments = function( dest, _item ){
 	let deferred = Q.defer()
 		,dest_path = node.path.join(dest, 'app/page')
@@ -3099,7 +3163,7 @@ _frame.app_main.page['init'].exportdata_cache_equipments = function( dest, _item
 		node.mkdirp.sync( dest_path )
 	
 	// 
-		let container = $('<div class="tablelist equipments"/>')
+		let container = $('<div class="tablelist tablelist-equipments"/>')
 			,data = new TablelistEquipments( container )
 
 	// 写入文件
@@ -3239,7 +3303,8 @@ class TablelistEquipments extends Tablelist{
 	
 		function _val( val, show_zero ){
 			if( !show_zero && (val == 0 || val === '0' || val === '') )
-				return '<small class="zero">-</small>'
+				//return '<small class="zero">-</small>'
+				return '-'
 			//if( val > 0 )
 			//	return '+' + val
 			return val
@@ -3273,7 +3338,7 @@ class TablelistEquipments extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<td data-stat="'+currentValue[1]+'" data-value="' + equipment_data['stat'][currentValue[1]] + '"/>')
+					$('<td data-stat="'+currentValue[1]+'" data-value="' + (equipment_data['stat'][currentValue[1]] || 0) + '"/>')
 						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
 						.html( _val( equipment_data['stat'][currentValue[1]] ) )
 						.appendTo(tr)
@@ -3394,7 +3459,6 @@ TablelistEquipments.gen_helper_equipable_on = function( type_id ){
 TablelistEquipments.types = []
 TablelistEquipments.shipId = null
 TablelistEquipments.shipIdLast = null
-
 _frame.app_main.page['init'].exportdata_cache_ships = function( dest, _ship ){
 	let deferred = Q.defer()
 		,dest_path = node.path.join(dest, 'app/page')
@@ -3640,6 +3704,7 @@ class TablelistShips extends Tablelist{
 								if( !not_trigger_check )
 									this.header_checkbox[header_index].trigger('docheck')
 							}.bind(this))
+			,label = checkbox.add( $('<label class="checkbox"/>') )
 			,has_extra_illust = false
 			,seriesData = ship_data.getSeriesData()
 		
@@ -3665,9 +3730,11 @@ class TablelistShips extends Tablelist{
 	
 		function _val( val, show_zero ){
 			if( !show_zero && (val == 0 || val == '0') )
-				return '<small class="zero">-</small>'
+				//return '<small class="zero">-</small>'
+				return '-'
 			if( val == -1 || val == '-1' )
-				return '<small class="zero">?</small>'
+				//return '<small class="zero">?</small>'
+				return '?'
 			return val
 		}
 	
@@ -3688,7 +3755,7 @@ class TablelistShips extends Tablelist{
 							//+ '<small>' + ship_data['pron'] + '</small>'
 						)
 						.prepend(
-							checkbox
+							label
 						)
 						.appendTo(tr)
 					break;
@@ -3711,7 +3778,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="asw" />')
 						.attr(
 							'data-value',
-							ship_data['stat']['asw_max']
+							ship_data['stat']['asw_max'] || 0
 						)
 						.html( _val(
 							ship_data['stat']['asw_max'],
@@ -3720,27 +3787,27 @@ class TablelistShips extends Tablelist{
 						.appendTo(tr)
 					break;
 				case 'hp':
-					$('<td data-stat="hp" data-value="' + ship_data['stat']['hp'] + '"/>')
+					$('<td data-stat="hp" data-value="' + (ship_data['stat']['hp'] || 0) + '"/>')
 						.html(_val( ship_data['stat']['hp'] ))
 						.appendTo(tr)
 					break;
 				case 'carry':
-					$('<td data-stat="carry" data-value="' + ship_data['stat']['carry'] + '"/>')
+					$('<td data-stat="carry" data-value="' + (ship_data['stat']['carry'] || 0) + '"/>')
 						.html(_val( ship_data['stat']['carry'] ))
 						.appendTo(tr)
 					break;
 				case 'speed':
-					$('<td data-stat="speed" data-value="' + ship_data['stat']['speed'] + '"/>')
+					$('<td data-stat="speed" data-value="' + (ship_data['stat']['speed'] || 0) + '"/>')
 						.html( _g.getStatSpeed( ship_data['stat']['speed'] ) )
 						.appendTo(tr)
 					break;
 				case 'range':
-					$('<td data-stat="range" data-value="' + ship_data['stat']['range'] + '"/>')
+					$('<td data-stat="range" data-value="' + (ship_data['stat']['range'] || 0) + '"/>')
 						.html( _g.getStatRange( ship_data['stat']['range'] ) )
 						.appendTo(tr)
 					break;
 				case 'luck':
-					$('<td data-stat="luck" data-value="' + ship_data['stat']['luck'] + '"/>')
+					$('<td data-stat="luck" data-value="' + (ship_data['stat']['luck'] || 0) + '"/>')
 						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
 						.appendTo(tr)
 					break;
@@ -3748,7 +3815,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="consum_fuel"/>')
 						.attr(
 							'data-value',
-							ship_data['consum']['fuel']
+							ship_data['consum']['fuel'] || 0
 						)
 						.html( _val(ship_data['consum']['fuel']) )
 						.appendTo(tr)
@@ -3757,7 +3824,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="consum_ammo"/>')
 						.attr(
 							'data-value',
-							ship_data['consum']['ammo']
+							ship_data['consum']['ammo'] || 0
 						)
 						.html( _val(ship_data['consum']['ammo']) )
 						.appendTo(tr)
@@ -3775,7 +3842,7 @@ class TablelistShips extends Tablelist{
 					$('<td data-stat="'+currentValue[1]+'"/>')
 						.attr(
 							'data-value',
-							ship_data['stat'][currentValue[1] + '_max']
+							ship_data['stat'][currentValue[1] + '_max'] || 0
 						)
 						.html( _val( ship_data['stat'][currentValue[1] + '_max'] ) )
 						.appendTo(tr)
@@ -3814,7 +3881,7 @@ class TablelistShips extends Tablelist{
 					this.last_item =
 							$('<tr class="typetitle" data-trindex="'+this.trIndex+'">'
 								+ '<th colspan="' + (this.columns.length + 1) + '">'
-								+ '<label for="' + checkbox_id + '">'
+								+ '<label class="checkbox" for="' + checkbox_id + '">'
 								//+ data_shiptype['full_zh']
 								//+ _g.data['ship_type_order'][i+1]['name']['zh_cn']
 								+ _g.data['ship_type_order'][i]['name']['zh_cn']
@@ -4068,7 +4135,6 @@ class TablelistShips extends Tablelist{
 		TablelistShips.contextmenu.show($el)
 	}
 }
-
 _frame.app_main.page['ships'] = {}
 _frame.app_main.page['ships'].section = {}
 
@@ -6542,7 +6608,6 @@ _frame.app_main.page['ships'].section['舰种集合 (舰娘选择器)'] = {
 	}
 }
 
-
 /*
 batch:
 	EQUIPMENT.upgrade_from
@@ -7006,6 +7071,17 @@ _frame.app_main.page['items'].show_item_form = function(d){
 				d.craftable || false
 			).appendTo(line)
 		$('<label for="'+id+'"/>').html( '可开发' ).appendTo(line)
+
+		line = $('<p/>').appendTo( details_craft )
+		id = '_input_g' + _g.inputIndex
+		_g.inputIndex++
+		_frame.app_main.page['ships'].gen_input(
+				'checkbox',
+				'rankupgradable',
+				id,
+				d.rankupgradable || false
+			).appendTo(line)
+		$('<label for="'+id+'"/>').html( '可提升熟练度' ).appendTo(line)
 
 		// 改修
 			$('<h4/>').html('改修').appendTo(details_craft)
@@ -7924,7 +8000,6 @@ _frame.app_main.page['items'].section['新建'] = {
 	}
 }
 
-
 _frame.app_main.page['entities'] = {}
 _frame.app_main.page['entities'].section = {}
 
@@ -8160,7 +8235,6 @@ _frame.app_main.page['entities'].section['人物&组织'] = {
 
 	}
 }
-
 _frame.app_main.page['update'] = {}
 _frame.app_main.page['update'].section = {}
 
@@ -8410,7 +8484,6 @@ _frame.app_main.page['update'].section['更新日志'] = {
 			})
 	}
 }
-
 // http://203.104.209.23/kcs/...
 
 _frame.app_main.page['gamedata'] = {}
@@ -8980,7 +9053,6 @@ _frame.app_main.page['gamedata'].init_slotitem = function( data ){
 		})(data[i])
 	}
 }
-
 _frame.app_main.page['guide'] = {}
 _frame.app_main.page['guide'].section = {}
 
@@ -9545,7 +9617,6 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 			console.log('DONE!')
 		})
 }
-
 _form.section_order = function( name, function_line, defaults ){
 	var section = $('<section class="form_section" data-name="'+name+'"/>')
 					.append( $('<h4>' + name + '</h4>') )
@@ -9665,7 +9736,6 @@ _form.create_equip_types = function(name, defaults){
 	return itemtype_checkboxes
 }
 _form.create_item_types = _form.create_equip_types
-
 _comp.selector_equipment = function( name, id, default_item ){
 	var dom = _frame.app_main.page['ships'].gen_input(
 			'select',
@@ -9722,7 +9792,6 @@ _comp.selector_equipment = function( name, id, default_item ){
 	})
 	return dom
 }
-
 
 _comp.selector_ship = function( name, id, default_item ){
 	var dom = _frame.app_main.page['ships'].gen_input(
@@ -9781,7 +9850,6 @@ _comp.selector_ship = function( name, id, default_item ){
 
 	return dom
 }
-
 
 /*
  */
@@ -10138,7 +10206,6 @@ _shiplist.prototype.init = function(){
 	this.is_init = true
 }
 
-
 /*
  */
 _p.el.itemlist = {
@@ -10424,32 +10491,3 @@ _itemlist.prototype.init = function(){
 
 	this.is_init = true
 }
-
-// @koala-prepend "js-app/!.js"
-// @koala-prepend "js-app/main.js"
-
-// @koala-prepend "KanColle-JS-Kit/js/class-item/!.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/entity.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/equipment.js"
-// @koala-prepend "KanColle-JS-Kit/js/class-item/ship.js"
-
-// @koala-prepend "js-app/page/home.js"
-// @koala-prepend "js-app/page/init.js"
-// @koala-prepend "js-app/page/init_exportdata_cache.js"
-// @koala-prepend "js-app/page/init_exportdata_cache_entities.js"
-// @koala-prepend "js-app/page/init_exportdata_cache_equipments.js"
-// @koala-prepend "js-app/page/init_exportdata_cache_ships.js"
-// @koala-prepend "js-app/page/ships.js"
-// @koala-prepend "js-app/page/items.js"
-// @koala-prepend "js-app/page/entities.js"
-// @koala-prepend "js-app/page/update.js"
-// @koala-prepend "js-app/page/gamedata.js"
-// @koala-prepend "js-app/page/guide.js"
-
-// @koala-prepend "js-app/form/_.js"
-
-// @koala-prepend "js-app/components/selector-equipment.js"
-// @koala-prepend "js-app/components/selector-ship.js"
-
-// @koala-prepend "js-app/elements/shiplist.js"
-// @koala-prepend "js-app/elements/itemlist.js"
