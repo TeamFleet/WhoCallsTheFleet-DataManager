@@ -551,7 +551,7 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 		,details_slot = $('<section data-tabname="装备"/>').appendTo(details)
 		,details_misc = $('<section data-tabname="其他"/>').appendTo(details)
 		,details_series = $('<section data-tabname="系列"/>').appendTo(details)
-		,details_additional_equip_types = $('<section data-tabname="额外装备类型"/>').appendTo(details)
+		,details_extra = $('<section data-tabname="额外"/>').appendTo(details)
 
 	// 标准图鉴
 		,base_image = $('<div class="image"/>').css('background-image', 'url(../pics/ships/'+d['id']+'/2.png)').appendTo(base)
@@ -942,8 +942,20 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 		})
 
 
-	// 额外装备类型
-		_form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo( details_additional_equip_types )
+	// 额外
+		$('<h4/>').html('额外属性').appendTo(details_extra)
+			let line_additional_night_shelling = $('<p/>').appendTo( details_extra )
+				,id_additional_night_shelling = '_input_g' + _g.inputIndex
+			_g.inputIndex++
+			_frame.app_main.page['ships'].gen_input(
+					'checkbox',
+					'additional_night_shelling',
+					id_additional_night_shelling,
+					d.additional_night_shelling || false
+				).appendTo(line_additional_night_shelling)
+			$('<label for="'+id_additional_night_shelling+'"/>').html( '[CV] 夜战炮击能力' ).appendTo(line_additional_night_shelling)
+		$('<h4/>').html('额外装备类型').appendTo(details_extra)
+		_form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo( details_extra )
 
 
 
@@ -965,6 +977,9 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					'cv',
 					'illustrator'
 				]
+				
+				,unset = {}
+				
 			function function_queue_run(){
 				if( !function_queue.length )
 					return true
@@ -1212,7 +1227,8 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 					_db.ships.update({
 						'_id': 		d._id
 					},{
-						$set: data
+						$set: data,
+						$unset: unset
 					},{}, function(err, numReplaced){
 						console.log('UPDATE COMPLETE', numReplaced, data)
 						data._id = d._id
@@ -1294,6 +1310,17 @@ _frame.app_main.page['ships'].show_ship_form = function(d){
 				if( typeof data['additional_item_types'] != 'object' && typeof data['additional_item_types'] != 'undefined' )
 					data['additional_item_types'] = [data['additional_item_types']]
 				data['additional_item_types'] = data['additional_item_types'] || []
+				if( !data['additional_item_types'].length ){
+					delete data['additional_item_types']
+					unset.additional_item_types = true
+				}
+				
+				if( data['additional_night_shelling'] ){
+					data['additional_night_shelling'] = true
+				}else{
+					delete data['additional_night_shelling']
+					unset.additional_night_shelling = true
+				}
 
 				console.log( data, data['slot'], data['equip'] )
 
@@ -2191,7 +2218,7 @@ _frame.app_main.page['ships'].section['新建'] = {
 											'equip': 	[]
 										}
 									console.log(formdata)
-									if( formdata.remodel_from > -1 ){
+									if( formdata.remodel_from && formdata.remodel_from > -1 ){
 										let remodel_from = _g.data.ships[formdata.remodel_from]
 										ship_data['name'] = remodel_from['name']
 										ship_data['type'] = remodel_from['type']
@@ -2204,6 +2231,8 @@ _frame.app_main.page['ships'].section['新建'] = {
 										}
 
 										delete ship_data['name']['suffix']
+									}else{
+										
 									}
 									if( formdata['id'] )
 										ship_data['id'] = formdata['id']

@@ -187,10 +187,13 @@ _frame.app_main.page['guide'].init = function(page){
 _frame.app_main.page['guide'].section['攻略'] = {
 	'dom': {
 	},
+	
+	fileOrder: node.path.join(_g.path['db-other'], 'guides_order.json'),
 
 	// 相关表单/按钮
 		'titlebtn': function( d ){
 			var self = this
+			/*
 				,btn = $('<button class="unit"/>').html(
 							'<strong>'
 								+ d['type'].toUpperCase()
@@ -211,14 +214,83 @@ _frame.app_main.page['guide'].section['攻略'] = {
 									}
 								) , '编辑攻略')
 						})
-			return btn
+			*/
+				,line = $('<div class="unit" data-id="'+d._id+'"/>')
+							.append(
+								$('<button class="title"/>').html(
+									'<strong>'
+										+ d['type'].toUpperCase()
+									+ '</strong><br/>'
+									+ '<small><em>'+d['title']+'</em></small>'
+								)
+								.on('click', function(){
+									_frame.modal.show(
+										_frame.app_main.page['guide'].gen_form_new_guide(
+											function( newdata ){
+												self.titlebtn( newdata )
+													.insertAfter( line )
+												line.remove()
+											},
+											d,
+											function(){
+												line.remove()
+											}
+										) , '编辑攻略')
+								})
+							)
+							.append(
+								$('<button class="arrow up"/>')
+									.html('↑')
+									.on('click', function(){
+										self.move(line, -1)
+									})
+							)
+							.append(
+								$('<button class="arrow down"/>')
+									.html('↓')
+									.on('click', function(){
+										self.move(line, 1)
+									})
+							)
+			return line
 		},
 
 	// 新建完毕，添加内容
-		'add': function( d ){
+		'add': function( d, isNew ){
 			var self = this
 			// 标题，同时也是编辑按钮
-				self.dom.list.appendDOM( self.titlebtn(d) )
+				//self.dom.list.appendDOM( self.titlebtn(d) )
+			if( isNew ){
+				self.titlebtn(d).prependTo(self.dom.list)
+				_frame.app_main.page['guide'].section['攻略'].move()
+			}else
+				self.titlebtn(d).appendTo(self.dom.list)
+		},
+	
+	// 调整位置
+		move: function($line, delta){
+			if( $line ){
+				if( delta == -1 ){
+					let prev = $line.prev()
+					if( prev && prev.length )
+						$line.insertBefore(prev)
+				}else if( delta == 1 ){
+					let next = $line.next()
+					if( next && next.length )
+						$line.insertAfter(next)
+				}
+			}
+			// 更新order
+				let order = []
+				this.dom.list.children('.unit').each(function(i, el){
+					let id = $(el).attr('data-id')
+					order.push(id)
+				})
+				console.log(order)
+				node.fs.writeFileSync(
+					this.fileOrder,
+					order.join(',')
+				)
 		},
 
 	'init': function(section){
@@ -230,7 +302,7 @@ _frame.app_main.page['guide'].section['攻略'] = {
 						_frame.modal.show(
 							_frame.app_main.page['guide'].gen_form_new_guide(
 								function(err, newDoc) {
-									self.add(newDoc)
+									self.add(newDoc, true)
 									_frame.modal.hide()
 								}
 							), '新建攻略')
@@ -238,15 +310,76 @@ _frame.app_main.page['guide'].section['攻略'] = {
 
 		// 列表container
 			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
+			//self.dom.list = _p.el.flexgrid.create().addClass('flexgrid-basic').appendTo( self.dom.main )
+			self.dom.list = $('<div class="guidlist"/>').appendTo( self.dom.main )
 
 		// 读取db，初始化内容
-			_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){
-				if( !err && docs && docs.length ){
-					for( var i in docs ){
-						self.add(docs[i])
+			let order = []
+				,data = {}
+			Q.fcall(function(){})
+			
+			// 检查顺序JSON是否存在
+			.then(function(){
+				let exist = false
+					,deferred = Q.defer()
+				try{
+					let stats = node.fs.lstatSync(this.fileOrder);
+					if(!stats.isDirectory()){
+						exist = true
 					}
+				}catch(e){}
+				if( !exist ){
+					node.fs.writeFile(
+						this.fileOrder,
+						'',
+						function(err){
+							if( err ){
+								deferred.reject(new Error(err))
+							}else{
+								deferred.resolve()
+							}
+						}
+					)
+				}else{
+					deferred.resolve()
 				}
+				return deferred.promise
+			}.bind(this))
+			.then(function(){
+				/*
+				let deferred = Q.defer()
+				_db.guides_order.find({}).sort({'order': 1}).exec(function(err, docs){
+					if( !err && docs && docs.length ){
+						docs.forEach(function(doc){
+							order.push(doc.guideid)
+						})
+					}
+					deferred.resolve()
+				})
+				return deferred.promise
+				*/
+				order = node.fs.readFileSync(this.fileOrder, 'utf-8').split(',')
+				return order
+			}.bind(this))
+			.then(function(){
+				let deferred = Q.defer()
+				_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){
+					if( !err && docs && docs.length ){
+						docs.forEach(function(doc){
+							if( order.indexOf( doc._id ) < 0 )
+								order.push(doc._id)
+							data[doc._id] = doc
+						})
+					}
+					deferred.resolve()
+				})
+				return deferred.promise
+			})
+			.then(function(){
+				order.forEach(function(_id){
+					if( _id && data[_id] )
+						self.add(data[_id])
+				})
 			})
 	}
 }
@@ -279,16 +412,57 @@ _frame.app_main.page['guide'].section['输出'] = {
 			})
 			.html('输出')
 			.appendTo( section )
+			
+		_frame.app_main.page['guide'].section['输出'].dom.log = $('<div/>').appendTo(section)
 	}
 }
 _frame.app_main.page['guide'].section['输出'].export = function(dest){
 	if( !dest )
 		return false
 	
+	_frame.app_main.page['guide'].section['输出'].dom.log.empty()
+	
+	function filter(html){				
+		let searchRes = null
+			,scrapePtrn = /\[\[([^\:^\]^\[]+)\:([0-9]+)\:LINK\]\]/gi
+		while( (searchRes = scrapePtrn.exec(html)) !== null ){
+			try{
+				let d, t = searchRes[1].toLowerCase(), u = 'http://fleet.diablohu.com'
+				switch( t ){
+					case 'ship':
+					case 'ships':
+						d = _g.data.ships[searchRes[2]]._name
+						u = 'http://fleet.diablohu.com/ships/'+searchRes[2]
+						break;
+					case 'item':
+					case 'items':
+					case 'equip':
+					case 'equipment':
+					case 'equipments':
+						d = _g.data.items[searchRes[2]]._name
+						u = 'http://fleet.diablohu.com/equipments/'+searchRes[2]
+						break;
+					case 'entity':
+					case 'entities':
+						d = _g.data.entities[searchRes[2]]._name
+						u = 'http://fleet.diablohu.com/entities/'+searchRes[2]
+						break;
+				}
+				html = html.replace( searchRes[0],
+					'['+d+']('+u+')'
+				)
+			}catch(e){}
+		}
+
+		return html
+	}
+	
 	let tmpl_file		= node.path.join( dest, '/!templates/base.html' )
 		//,dest_file		= node.path.join( dest, 'index.html' )
 		,promise_chain 	= Q.fcall(function(){})
 		,template
+		,order = []
+		,data = {}
 
 	// 开始异步函数链
 		promise_chain
@@ -305,8 +479,69 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 			})
 			return deferred.promise
 		})
+
+	// 检查顺序JSON是否存在
+		.then(function(){
+			let exist = false
+				,deferred = Q.defer()
+			try{
+				let stats = node.fs.lstatSync(_frame.app_main.page['guide'].section['攻略'].fileOrder);
+				if(!stats.isDirectory()){
+					exist = true
+				}
+			}catch(e){}
+			if( !exist ){
+				node.fs.writeFile(
+					_frame.app_main.page['guide'].section['攻略'].fileOrder,
+					'',
+					function(err){
+						if( err ){
+							deferred.reject(new Error(err))
+						}else{
+							deferred.resolve()
+						}
+					}
+				)
+			}else{
+				deferred.resolve()
+			}
+			return deferred.promise
+		})
+	
+	// 读取顺序
+		.then(function(){
+			order = node.fs.readFileSync(_frame.app_main.page['guide'].section['攻略'].fileOrder, 'utf-8').split(',')
+			return order
+		})
+	
+	// 读取数据
+		.then(function(){
+			let deferred = Q.defer()
+			_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){
+				if( !err && docs && docs.length ){
+					docs.forEach(function(doc){
+						if( order.indexOf( doc._id ) < 0 )
+							order.push(doc._id)
+						data[doc._id] = doc
+					})
+				}else{
+					deferred.reject(err)
+				}
+				deferred.resolve()
+			})
+			return deferred.promise
+		})
+		.then(function(){
+			let docs = []
+			order.forEach(function(_id){
+				if( _id && data[_id] )
+					docs.push(data[_id])
+			})
+			return docs
+		})
 	
 	// 读取数据库
+	/*
 		.then(function(){
 			var deferred = Q.defer()
 			_db.guides.find({}).sort({'id': 1}).exec(function(err, docs){
@@ -315,6 +550,60 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 				}
 				deferred.resolve(docs)
 			})
+			return deferred.promise
+		})
+		*/
+	
+	// 生成首页
+		.then(function(docs){
+			let deferred = Q.defer()
+			let html = template
+			let html_nav = ''
+			let url_first
+
+			docs.forEach(function(_doc){
+				let _class = []
+				if( _doc['class-nav'] )
+					_class.push( _doc['class-nav'] )
+				switch( _doc.type ){
+					case 'guide':
+						if( !url_first )
+							url_first = _doc['path'].replace(/index\.html$/gi, '')
+						html_nav+= '<a href="'
+								+ _doc['path'].replace(/index\.html$/gi, '')
+								+ '"'
+								+ (_class.length ? ' class="' + _class.join(' ') + '"' : '')
+								+ '><span>'
+								+ _doc['title']
+								+ '</span></a>'
+						break;
+					
+					case 'title':
+						html_nav+= '<h2>' + _doc['title'] + '</h2>'
+						break;
+					
+					case 'text':
+						html_nav+= '<span>' + _doc['title'] + '</span>'
+						break;
+				}
+			})
+			
+			html = html.replace('[[[[!!NAV!!]]]]', html_nav)
+					.replace('[[[[!!TITLE!!]]]]', '')
+					.replace('<title> - ', '<title>')
+					.replace('[[[[!!MAIN!!]]]]', `<script type="text/javascript">
+	window.location.assign("${url_first}");
+</script>`)
+			node.fs.writeFile(node.path.join( dest, 'index.html' ),
+				html,
+				function(err){
+					if(err){
+						deferred.reject(err)
+					}else{
+						deferred.resolve(docs)
+					}
+				}
+			)
 			return deferred.promise
 		})
 
@@ -419,7 +708,7 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 											+ '" class="main'
 											+ (doc['class-main'] ? ' ' + doc['class-main'] : '')
 											+ '">'
-											+ markdown.toHTML( doc['content'], 'Maruku' )
+											+ markdown.toHTML( filter(doc['content']), 'Maruku' )
 							
 							if( doc['has-comment'] ){
 								let comment_id = doc['name']
@@ -490,15 +779,34 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 									switch(site){
 										case 'acfun':
 											html = html.replace( searchRes[0],
+`<div class="videoplayer videoplayer-acfun">
+	<div class="videoplayer-body">
+		<iframe src="https://ssl.acfun.tv/block-player-homura.html#vid=${id};from=http://www.acfun.tv" id="ACFlashPlayer-re" frameborder="0"></iframe>
+	</div>
+</div>`
+											/*
 												'<div class="videoplayer videoplayer-acfun"><div class="videoplayer-body">'
 												+ '<iframe'
 												+ ' src="https://ssl.acfun.tv/block-player-homura.html#vid=' + id + ';from=http://www.acfun.tv"'
 												+ ' id="ACFlashPlayer-re" frameborder="0"></iframe>'
 												+ '</div></div>'
+											*/
 											)
 											break;
 									}
 								}catch(e){}
+							}
+
+							searchRes = null
+							scrapePtrn = /\[\[([^A-Z^\]\[]+)([A-Z])([^A-Z^\]\[]+)\]\]/gi
+							while( (searchRes = scrapePtrn.exec(html)) !== null ){
+								if( searchRes.length > 2 && searchRes[2].length == 1 ){
+									let to = searchRes[2]
+									switch(searchRes[2]){
+										case 'I': to = 'Ｉ'; break;
+									}
+									html = html.replace( searchRes[0], '[[' + searchRes[1] + to + searchRes[3] + ']]')
+								}
 							}
 						
 							searchRes = null
@@ -506,7 +814,7 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 							while( (searchRes = scrapePtrn.exec(html)) !== null ){
 								try{
 									let origin = searchRes[1].toUpperCase()
-									if( origin.indexOf('姬') > -1 || origin.indexOf('鬼') > -1 ){
+									if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
 										html = html.replace( searchRes[0],
 											'<span class="enemy enemy-boss">' + origin + '</span>'
 										)
@@ -530,11 +838,15 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 										html = html.replace( searchRes[0],
 											'<span class="enemy">' + origin + '</span>'
 										)
+									}else if( origin.indexOf('鬼群') > -1 ){
+										html = html.replace( searchRes[0],
+											'<span class="enemy">' + origin + '</span>'
+										)
 									}
 								}catch(e){}
 							}
 				
-							console.log(html)
+							//console.log(html)
 							
 							node.fs.writeFile(dest_file, html, function(err){
 								if(err){
@@ -558,7 +870,14 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 		})
 
 	// 完成
+		.catch(function(e){
+			console.log(e)
+		})
 		.done(function(){
 			console.log('DONE!')
+			_frame.app_main.page['guide'].section['输出'].dom.log
+				.append(
+					$('<p>DONE!</p>')
+				)
 		})
 }
