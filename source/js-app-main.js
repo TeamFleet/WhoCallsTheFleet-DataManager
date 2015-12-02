@@ -12,6 +12,7 @@
 // @koala-prepend "js-app/page/init_exportdata_cache_entities.js"
 // @koala-prepend "js-app/page/init_exportdata_cache_equipments.js"
 // @koala-prepend "js-app/page/init_exportdata_cache_ships.js"
+// @koala-prepend "js-app/page/init_exportpic.js"
 // @koala-prepend "js-app/page/ships.js"
 // @koala-prepend "js-app/page/items.js"
 // @koala-prepend "js-app/page/entities.js"

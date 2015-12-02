@@ -796,6 +796,30 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 									}
 								}catch(e){}
 							}
+						
+							searchRes = null
+							scrapePtrn = /\[\[video\:([^\]\[]+)\:([^\]\[]+):([^\]\[]+)\]\]/gi
+							while( (searchRes = scrapePtrn.exec(html)) !== null ){
+								try{
+									let site = searchRes[1].toLowerCase()
+										,id = searchRes[2]
+										,thumbnail = searchRes[3]
+										,url = 'javascript:;'
+										,cont
+									switch(site){
+										case 'acfun':
+											cont = `<iframe src="https://ssl.acfun.tv/block-player-homura.html#vid=${id};from=http://www.acfun.tv" id="ACFlashPlayer-re" frameborder="0"></iframe>`
+											break;
+									}
+									html = html.replace( searchRes[0],
+`<div class="videoplayer mod-thumbnail videoplayer-${site}">
+	<div class="videoplayer-body">
+		<a href="${url}" class="thumbnail"><img src="${thumbnail}"/></a>
+		<textarea>${cont}</textarea>
+	</div>
+</div>`)
+								}catch(e){}
+							}
 
 							searchRes = null
 							scrapePtrn = /\[\[([^A-Z^\]\[]+)([A-Z])([^A-Z^\]\[]+)\]\]/gi
