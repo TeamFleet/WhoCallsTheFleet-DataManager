@@ -7,7 +7,7 @@ _p.el.tablelist = {
 
 		if( el.hasClass('ships') )
 			el.data({
-				'tablelist': new TablelistShips( el )
+				'tablelist': new TablelistShips_v2( el )
 			})
 		else if( el.hasClass('equipments') )
 			el.data({

@@ -416,7 +416,8 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 										_log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
 										count++
 
-										var modified = {}
+										let modified = {}
+											,unset = {}
 										// base
 											modified['no'] 			= data['api_sortno']
 											modified['buildtime'] 	= data['api_buildtime']
@@ -448,8 +449,10 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 												i++
 											}
 										// remodel
-											modified['remodel_cost.fuel']	= data['api_afterfuel']
+											//modified['remodel_cost.fuel']	= data['api_afterfuel']
 											modified['remodel_cost.ammo']	= data['api_afterbull']
+											modified['remodel_cost.steel']	= data['api_afterfuel']
+											unset['remodel_cost.fuel'] = true
 										// misc
 											modified['scrap']				= data['api_broken']
 											modified['modernization']		= data['api_powup']
@@ -459,7 +462,8 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 										_db.ships.update({
 											'_id': map[data['api_id']]
 										}, {
-											$set: modified
+											$set: modified,
+											$unset: unset
 										}, function(){
 											deferred.resolve()
 											_done(count)

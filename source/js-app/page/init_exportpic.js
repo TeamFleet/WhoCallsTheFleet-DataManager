@@ -10,8 +10,8 @@ _frame.app_main.page['init'].exportpic = function( form ){
 
 	node.mkdirp.sync( node.path.join(dest, '/ships/' ) )
 	node.mkdirp.sync( node.path.join(dest, '/items/' ) )
-	node.mkdirp.sync( node.path.join(dest, '/ships_png/' ) )
-	node.mkdirp.sync( node.path.join(dest, '/items_png/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/ships_web/' ) )
+	node.mkdirp.sync( node.path.join(dest, '/items_web/' ) )
 
 
 	function check_do( file, dest, quality, is_lossless ){
@@ -253,7 +253,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		.then(function(picid_by_shipid){
 			for( var i in ship_ids ){
 				node.mkdirp.sync( dest + '/ships/' + ship_ids[i] )
-				node.mkdirp.sync( dest + '/ships_png/' + ship_ids[i] )
+				node.mkdirp.sync( dest + '/ships_web/' + ship_ids[i] )
 				var arr = picid_by_shipid[ship_ids[i]] || null
 				if( !arr ){
 					arr = []
@@ -270,7 +270,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
-						dest + '/ships_png/' + ship_ids[i] + '/' + arr[j][0],
+						dest + '/ships_web/' + ship_ids[i] + '/' + arr[j][0],
 						'copy'
 					)
 				}
@@ -278,13 +278,13 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				// apply mask for web version
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-						dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+						dest + '/ships_web/' + ship_ids[i] + '/' + '0.png',
 						'mask',
 						1
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-						dest + '/ships_png/' + ship_ids[i] + '/' + '0.png',
+						dest + '/ships_web/' + ship_ids[i] + '/' + '0.png',
 						'mask',
 						2
 					)
@@ -293,21 +293,41 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					if( is_exists( './pics/ships/' + ship_ids[i] + '/2.jpg' ) ){
 						check_do(
 							'./pics/ships/' + ship_ids[i] + '/2.jpg',
-							dest + '/ships_png/' + ship_ids[i] + '/2.jpg',
+							dest + '/ships_web/' + ship_ids[i] + '/2.jpg',
 							'copy'
 						)
 					}else{
 						check_do(
 							'./pics/ships/' + ship_ids[i] + '/2.png',
-							dest + '/ships_png/' + ship_ids[i] + '/2.jpg',
+							dest + '/ships_web/' + ship_ids[i] + '/2.jpg',
 							'jpeg',
 							81
 						)
 					}
+				
+				// ship illustrations lossless webp for web version
+					check_do(
+						'./pics/ships/' + ship_ids[i] + '/' + '8.png',
+						dest + '/ships_web/' + ship_ids[i] + '/' + '8.webp',
+						'webp',
+						true
+					)
+					check_do(
+						'./pics/ships/' + ship_ids[i] + '/' + '9.png',
+						dest + '/ships_web/' + ship_ids[i] + '/' + '9.webp',
+						'webp',
+						true
+					)
+					check_do(
+						'./pics/ships/' + ship_ids[i] + '/' + '10.png',
+						dest + '/ships_web/' + ship_ids[i] + '/' + '10.webp',
+						'webp',
+						true
+					)
 			}
 			for( var i in item_ids ){
 				node.mkdirp.sync( dest + '/items/' + item_ids[i] )
-				node.mkdirp.sync( dest + '/items_png/' + item_ids[i] )
+				node.mkdirp.sync( dest + '/items_web/' + item_ids[i] )
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
 					dest + '/items/' + item_ids[i] + '/card.webp',
@@ -315,7 +335,7 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				)
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
-					dest + '/items_png/' + item_ids[i] + '/card.png',
+					dest + '/items_web/' + item_ids[i] + '/card.png',
 					'copy'
 				)
 			}
@@ -328,27 +348,27 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			_db.entities.find({}, function(err,docs){
 				docs.forEach(function(d){
 					entities[d.id] = new Entity(d)
-					node.mkdirp.sync( dest + '/entities_png/' + d.id )
+					node.mkdirp.sync( dest + '/entities_web/' + d.id )
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_png/' + d.id + '/0.png',
+						dest + '/entities_web/' + d.id + '/0.png',
 						'entity-resize'
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_png/' + d.id + '/0.png',
+						dest + '/entities_web/' + d.id + '/0.png',
 						'entity-resize-mask',
 						1
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_png/' + d.id + '/0.png',
+						dest + '/entities_web/' + d.id + '/0.png',
 						'entity-resize-mask',
 						2
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_png/' + d.id + '/2.jpg',
+						dest + '/entities_web/' + d.id + '/2.jpg',
 						'copy'
 					)
 				})

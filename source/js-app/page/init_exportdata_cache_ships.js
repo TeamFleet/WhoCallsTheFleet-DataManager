@@ -10,7 +10,7 @@ _frame.app_main.page['init'].exportdata_cache_ships = function( dest, _ship ){
 	
 	// 
 		let container = $('<div class="tablelist ships"/>')
-			,data = new TablelistShips( container )
+			,data = new TablelistShips_v2( container )
 
 	// 写入文件
 		let interval = setInterval(function(){
@@ -77,6 +77,8 @@ class TablelistShips_v2 extends Tablelist{
 		this.header_checkbox = []
 		this.checkbox = []
 		this.last_item = null
+		this.last_title = null
+		this.last_type_items = $()
 
 		// 标记全局载入状态
 			_frame.app_main.loading.push('tablelist_'+this._index)
@@ -136,8 +138,10 @@ class TablelistShips_v2 extends Tablelist{
 	
 		// 生成表格框架
 			this.dom.table_container = $('<div class="tablelist-container"/>').appendTo( this.dom.container )
-			this.dom.thead = $('<div class="tablelist-header"/>').appendTo( this.dom.table_container )
-			this.dom.tbody = $('<div class="tablelist-body"/>').appendTo( this.dom.table_container )
+			//this.dom.thead = $('<div class="tablelist-header"/>').appendTo( this.dom.table_container )
+			//this.dom.thead = $('<div class="wrapper"/>').appendTo($('<div class="tablelist-header"/>').appendTo( this.dom.table_container ))
+			this.dom.thead = $('<dl/>').appendTo($('<div class="tablelist-header"/>').appendTo( this.dom.table_container ))
+			this.dom.tbody = $('<div class="tablelist-body" scrollbody />').appendTo( this.dom.table_container )
 								.on('contextmenu.contextmenu_ship', '[data-shipid]', function(e){
 										this.contextmenu_show($(e.currentTarget))
 									}.bind(this))
@@ -149,14 +153,14 @@ class TablelistShips_v2 extends Tablelist{
 			
 			this.columns.forEach(function(v, i){
 				if( typeof v == 'object' ){
-					var td = $('<span data-stat="' + v[1] + '"/>')
+					var td = $('<dd stat="' + v[1] + '"/>')
 								.html(v[0])
 								.on('click', function(){
 									this.sort_table_from_theadcell(td)
 								}.bind(this))
 								.appendTo(this.dom.thead)
 				}else{
-					$('<strong/>').html(v[0]).appendTo(this.dom.thead)
+					$('<dt/>').html(v[0]).appendTo(this.dom.thead)
 				}
 			}.bind(this))
 	
@@ -166,7 +170,7 @@ class TablelistShips_v2 extends Tablelist{
 			if( _g.data.ship_types ){
 				this.append_all_items()
 			}else{
-				$('<p/>').html('暂无数据...').appendTo( this.dom.table_container )
+				$('<dl/>').html('暂无数据...').appendTo( this.dom.table_container )
 			}
 			//_db.ships.find({}).sort({'type': 1, 'class': 1, 'class_no': 1, 'time_created': 1, 'name.suffix': 1}).exec(function(err, docs){
 			//	if( !err ){
@@ -216,11 +220,11 @@ class TablelistShips_v2 extends Tablelist{
 
 	append_item( ship_data, header_index ){
 		let donotcompare = _g.data.ship_types[ship_data['type']]['donotcompare'] ? true : false
-			,tr = $('<p/>',{
-						'class':		'row',
+			,tr = $('<dl/>',{
+						//'class':		'row',
 						'data-shipid':	ship_data['id'],
 						'data-header':	header_index,
-						'data-trindex': this.trIndex,
+						//'data-trindex': this.trIndex,
 						'data-infos': 	'[[SHIP::'+ship_data['id']+']]',
 						'data-shipedit':this.dom.container.hasClass('shiplist-edit') ? 'true' : null,
 						'data-donotcompare': donotcompare ? true : null
@@ -250,7 +254,8 @@ class TablelistShips_v2 extends Tablelist{
 								if( !not_trigger_check )
 									this.header_checkbox[header_index].trigger('docheck')
 							}.bind(this))
-			,label = checkbox.add( $('<label class="checkbox"/>') )
+			//,label = checkbox.add( $('<label class="checkbox"/>') )
+			,label = $('<label class="checkbox"/>')
 			,has_extra_illust = false
 			,seriesData = ship_data.getSeriesData()
 		
@@ -284,17 +289,24 @@ class TablelistShips_v2 extends Tablelist{
 			return val
 		}
 	
+		function _val_data( val ){
+			if( val === 0 )
+				return 0
+			return val || -1
+		}
+	
 		this.columns.forEach(function(currentValue, i){
 			switch( currentValue[1] ){
 				case ' ':
-					$('<strong/>')
+					$('<dt/>')
 						.html(
 							//'<img src="../pics/ships/'+ship_data['id']+'/0.jpg"/>'
 							//'<img src="' + _g.path.pics.ships + '/' + ship_data['id']+'/0.webp" contextmenu="disabled"/>'
 							'<a href="?infos=ship&id='+ship_data['id']+'"'
 								+ (has_extra_illust ? ' icon="hanger"' : '')
 							+ '>'
-							+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp" contextmenu="disabled"/>'
+							//+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp" contextmenu="disabled"/>'
+							+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp"/>'
 							+ '<strong>' + name + '</strong>'
 							+ '</a>'
 							+ '<em></em>'
@@ -307,24 +319,25 @@ class TablelistShips_v2 extends Tablelist{
 					break;
 				case 'nightpower':
 					// 航母没有夜战火力
-					var datavalue = /^(9|10|11)$/.test( ship_data['type'] )
-									? 0
-									: (parseInt(ship_data['stat']['fire_max'] || 0)
-										+ parseInt(ship_data['stat']['torpedo_max'] || 0)
-									)
-					$('<span data-stat="nightpower"/>')
+					var is_nonight_shelling = /^(9|10|11)$/.test( ship_data['type'] ) && !ship_data.additional_night_shelling
+					var datavalue = is_nonight_shelling
+										? 0
+										: (parseInt(ship_data['stat']['fire_max'] || 0)
+											+ parseInt(ship_data['stat']['torpedo_max'] || 0)
+										)
+					$('<dd stat="nightpower"/>')
 						.attr(
-							'data-value',
-							datavalue
+							'value',
+							_val_data( datavalue )
 						)
 						.html( _val( datavalue ) )
 						.appendTo(tr)
 					break;
 				case 'asw':
-					$('<span data-stat="asw" />')
+					$('<dd stat="asw" />')
 						.attr(
-							'data-value',
-							ship_data['stat']['asw_max'] || 0
+							'value',
+							_val_data( ship_data['stat']['asw_max'] )
 						)
 						.html( _val(
 							ship_data['stat']['asw_max'],
@@ -333,50 +346,50 @@ class TablelistShips_v2 extends Tablelist{
 						.appendTo(tr)
 					break;
 				case 'hp':
-					$('<span data-stat="hp" data-value="' + (ship_data['stat']['hp'] || 0) + '"/>')
+					$('<dd stat="hp" value="' + _val_data( ship_data['stat']['hp'] ) + '"/>')
 						.html(_val( ship_data['stat']['hp'] ))
 						.appendTo(tr)
 					break;
 				case 'carry':
-					$('<span data-stat="carry" data-value="' + (ship_data['stat']['carry'] || 0) + '"/>')
+					$('<dd stat="carry" value="' + _val_data( ship_data['stat']['carry'] ) + '"/>')
 						.html(_val( ship_data['stat']['carry'] ))
 						.appendTo(tr)
 					break;
 				case 'speed':
-					$('<span data-stat="speed" data-value="' + (ship_data['stat']['speed'] || 0) + '"/>')
+					$('<dd stat="speed" value="' + _val_data( ship_data['stat']['speed'] ) + '"/>')
 						.html( _g.getStatSpeed( ship_data['stat']['speed'] ) )
 						.appendTo(tr)
 					break;
 				case 'range':
-					$('<span data-stat="range" data-value="' + (ship_data['stat']['range'] || 0) + '"/>')
+					$('<dd stat="range" value="' + _val_data( ship_data['stat']['range'] ) + '"/>')
 						.html( _g.getStatRange( ship_data['stat']['range'] ) )
 						.appendTo(tr)
 					break;
 				case 'luck':
-					$('<span data-stat="luck" data-value="' + (ship_data['stat']['luck'] || 0) + '"/>')
+					$('<dd stat="luck" value="' + _val_data( ship_data['stat']['luck'] ) + '"/>')
 						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
 						.appendTo(tr)
 					break;
 				case 'consum_fuel':
-					$('<span data-stat="consum_fuel"/>')
+					$('<dd stat="consum_fuel"/>')
 						.attr(
-							'data-value',
-							ship_data['consum']['fuel'] || 0
+							'value',
+							_val_data( ship_data['consum']['fuel'] )
 						)
 						.html( _val(ship_data['consum']['fuel']) )
 						.appendTo(tr)
 					break;
 				case 'consum_ammo':
-					$('<span data-stat="consum_ammo"/>')
+					$('<dd stat="consum_ammo"/>')
 						.attr(
-							'data-value',
-							ship_data['consum']['ammo'] || 0
+							'value',
+							_val_data( ship_data['consum']['ammo'] )
 						)
 						.html( _val(ship_data['consum']['ammo']) )
 						.appendTo(tr)
 					break;
 				case 'extra_illust':
-					$('<span data-stat="'+currentValue[1]+'" data-value="' + (has_extra_illust ? '1' : '0') + '"/>')
+					$('<dd stat="'+currentValue[1]+'" value="' + (has_extra_illust ? '1' : '0') + '"/>')
 						.html(
 							has_extra_illust
 								? '✓'
@@ -385,10 +398,10 @@ class TablelistShips_v2 extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<span data-stat="'+currentValue[1]+'"/>')
+					$('<dd stat="'+currentValue[1]+'"/>')
 						.attr(
-							'data-value',
-							ship_data['stat'][currentValue[1] + '_max'] || 0
+							'value',
+							_val_data( ship_data['stat'][currentValue[1] + '_max'] )
 						)
 						.html( _val( ship_data['stat'][currentValue[1] + '_max'] ) )
 						.appendTo(tr)
@@ -405,14 +418,32 @@ class TablelistShips_v2 extends Tablelist{
 		){
 			tr.addClass('premodeled')
 		}
+		
+		this.last_type_items = this.last_type_items.add(tr)
 	
 		return tr
 	}
 
 	append_all_items(){
+		function _type_check( last_type_items, last_title ){
+			if( !last_type_items || !last_type_items.length || !last_title || !last_title.length )
+				return
+			
+			let all_donotcompare = true
+			
+			last_type_items.each(function(i, el){
+				if( !$(el).attr('data-donotcompare') )
+					all_donotcompare = false
+			})
+			
+			if( all_donotcompare )
+				last_title.attr('data-donotcompare', true)
+		}
 		function _do( i, j ){
 			if( _g.data.ship_id_by_type[i] ){
 				if( !j ){
+					_type_check( this.last_type_items, this.last_title )
+					
 					let data_shiptype
 						,checkbox
 	
@@ -425,7 +456,9 @@ class TablelistShips_v2 extends Tablelist{
 					let checkbox_id = Tablelist.genId()
 					
 					this.last_item =
-							$('<p class="title" data-trindex="'+this.trIndex+'">'
+							//$('<p class="title" data-trindex="'+this.trIndex+'" data-header="'+i+'">'
+							//$('<p class="title" data-header="'+i+'">'
+							$('<h4 data-header="'+i+'">'
 								+ '<label class="checkbox" for="' + checkbox_id + '">'
 									+ _g.data['ship_type_order'][i]['name']['zh_cn']
 									+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
@@ -434,13 +467,16 @@ class TablelistShips_v2 extends Tablelist{
 									)
 								+ '</label></p>')
 								.appendTo( this.dom.tbody )
+					this.last_title = this.last_item
+					this.last_type_items = $()
 					this.trIndex++
 	
 					// 创建空DOM，欺骗flexbox layout排版
 						var k = 0
 						while(k < this.flexgrid_empty_count){
 							var _index = this.trIndex + _g.data.ship_id_by_type[i].length + k
-							$('<p class="empty" data-trindex="'+_index+'" data-shipid/>').appendTo(this.dom.tbody)
+							//$('<p class="empty" data-trindex="'+_index+'" data-shipid/>').appendTo(this.dom.tbody)
+							$('<dl data-shipid/>').appendTo(this.dom.tbody)
 							k++
 						}
 	
@@ -493,6 +529,7 @@ class TablelistShips_v2 extends Tablelist{
 					}
 				}.bind(this), 0)
 			}else{
+				_type_check( this.last_type_items, this.last_title )
 				this.mark_high()
 				this.thead_redraw()
 				_frame.app_main.loaded('tablelist_'+this._index, true)
