@@ -615,7 +615,8 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 				//,html_radios = ''
 				//,html_nav = ''
 				//,html_main = ''
-				,markdown = node.require( "markdown" ).markdown
+				//,markdown = node.require( "markdown" ).markdown
+				,marked = node.require( "marked" )
 				,has_default = false
 				,searchRes
 				,scrapePtrn
@@ -708,7 +709,8 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 											+ '" class="main'
 											+ (doc['class-main'] ? ' ' + doc['class-main'] : '')
 											+ '">'
-											+ markdown.toHTML( filter(doc['content']), 'Maruku' )
+											//+ markdown.toHTML( filter(doc['content']), 'Maruku' )
+											+ marked( filter(doc['content']) )
 							
 							if( doc['has-comment'] ){
 								let comment_id = doc['name']
@@ -838,39 +840,53 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 							while( (searchRes = scrapePtrn.exec(html)) !== null ){
 								try{
 									let origin = searchRes[1].toUpperCase()
-									if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
+										,matched = _g.index.ships[origin]
+									
+									if( matched && matched.length ){
+										matched = matched[matched.length - 1]
 										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-boss">' + origin + '</span>'
+											`<a href="http://fleet.diablohu.com/ships/${matched.id}">${matched.name.zh_cn}</a>`
 										)
-									}else if( origin.indexOf('改FLAGSHIP') > -1 ){
+									}else if( matched = _g.index.equipments[origin] ){
+										matched = matched[matched.length - 1]
 										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+											`<a href="http://fleet.diablohu.com/equipments/${matched.id}">${matched.name.zh_cn}</a>`
 										)
-									}else if( origin.indexOf('FLAGSHIP') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
-										)
-									}else if( origin.indexOf('ELITE') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
-										)
-									}else if( origin.indexOf('级') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
-									}else if( origin.indexOf('后期') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
-									}else if( origin.indexOf('鬼群') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
+									}else{
+										if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-boss">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('改FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+											)
+										}else if( origin.indexOf('FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
+											)
+										}else if( origin.indexOf('ELITE') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
+											)
+										}else if( origin.indexOf('级') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('后期') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('鬼群') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}
 									}
 								}catch(e){}
 							}
-				
-							//console.log(html)
+						
+							console.log(html)
 							
 							node.fs.writeFile(dest_file, html, function(err){
 								if(err){

@@ -682,7 +682,88 @@ _frame.app_main = {
 				_db_load(i)
 			}
 		*/
+			.then(function(){
+				_g.buildIndex();
+			})
 
 		_frame.app_main.is_init = true
 	}
 }
+
+
+
+
+// search index
+	_g.index = {
+		ships: {},
+		equipments: {}
+	};
+	_g.buildIndex = function(){
+		function _build( datalist, n ){
+			for(let i in datalist){
+				let ids = (n == 'ships')
+						? datalist[i].getSeriesData().map(function(o){
+									return o.id
+								})
+						: [datalist[i].id]
+				if( ids.push && ids.length == 0 )
+					ids = [datalist[i].id]
+				for(let j in datalist[i].name){
+					if( datalist[i].name[j] && j != 'suffix' ){
+						let _n = datalist[i].name[j].toLowerCase()
+						if( !_g.index[n][_n] )
+							_g.index[n][_n] = []
+						ids.forEach(function(thisId){
+							if( !_g.index[n][_n].some(function(thisObj){
+								return thisObj.id == thisId
+							}) ){
+								_g.index[n][_n].push( datalist[thisId] )
+							}
+						})
+					}
+				}
+			}
+		}
+		_build( _g.data.ships, 'ships' )
+		_build( _g.data.items, 'equipments' )
+	};
+	_g.search = function( q, t ){
+		t = _g.index[t]
+		let r = [], e = []
+		if( !t || !q )
+			return r
+		q = q.trim().toLowerCase()
+		function _concat(a){
+			r = r.concat(
+				a.filter(function(v){
+					if( e.indexOf( t + v.id ) > -1 )
+						return false
+					e.push( t + v.id )
+					return true
+					//return (r.indexOf(v) < 0)
+				})
+				/*
+				.sort(function(a,b){
+					//return (a._name || a.name[_g.lang]) - (b._name || b.name[_g.lang])
+					return (b.name.suffix||0) - (a.name.suffix||0)
+				})
+				*/
+			)
+		}
+		if( t[q] )
+			_concat(t[q])
+		for( let i in t ){
+			if( q !== i && i.indexOf(q) > -1 ){
+				_concat(t[i])
+			}
+		}
+		return r
+	};
+	_g.searchTest = function( q, t ){
+		let r = []
+		q = _g.search( q, t )
+		for( let i in q ){
+			r.push(q[i]._name || q[i].name[_g.lang])
+		}
+		return r
+	};

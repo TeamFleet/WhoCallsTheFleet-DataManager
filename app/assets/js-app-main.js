@@ -683,10 +683,91 @@ _frame.app_main = {
 				_db_load(i)
 			}
 		*/
+			.then(function(){
+				_g.buildIndex();
+			})
 
 		_frame.app_main.is_init = true
 	}
 }
+
+
+
+
+// search index
+	_g.index = {
+		ships: {},
+		equipments: {}
+	};
+	_g.buildIndex = function(){
+		function _build( datalist, n ){
+			for(let i in datalist){
+				let ids = (n == 'ships')
+						? datalist[i].getSeriesData().map(function(o){
+									return o.id
+								})
+						: [datalist[i].id]
+				if( ids.push && ids.length == 0 )
+					ids = [datalist[i].id]
+				for(let j in datalist[i].name){
+					if( datalist[i].name[j] && j != 'suffix' ){
+						let _n = datalist[i].name[j].toLowerCase()
+						if( !_g.index[n][_n] )
+							_g.index[n][_n] = []
+						ids.forEach(function(thisId){
+							if( !_g.index[n][_n].some(function(thisObj){
+								return thisObj.id == thisId
+							}) ){
+								_g.index[n][_n].push( datalist[thisId] )
+							}
+						})
+					}
+				}
+			}
+		}
+		_build( _g.data.ships, 'ships' )
+		_build( _g.data.items, 'equipments' )
+	};
+	_g.search = function( q, t ){
+		t = _g.index[t]
+		let r = [], e = []
+		if( !t || !q )
+			return r
+		q = q.trim().toLowerCase()
+		function _concat(a){
+			r = r.concat(
+				a.filter(function(v){
+					if( e.indexOf( t + v.id ) > -1 )
+						return false
+					e.push( t + v.id )
+					return true
+					//return (r.indexOf(v) < 0)
+				})
+				/*
+				.sort(function(a,b){
+					//return (a._name || a.name[_g.lang]) - (b._name || b.name[_g.lang])
+					return (b.name.suffix||0) - (a.name.suffix||0)
+				})
+				*/
+			)
+		}
+		if( t[q] )
+			_concat(t[q])
+		for( let i in t ){
+			if( q !== i && i.indexOf(q) > -1 ){
+				_concat(t[i])
+			}
+		}
+		return r
+	};
+	_g.searchTest = function( q, t ){
+		let r = []
+		q = _g.search( q, t )
+		for( let i in q ){
+			r.push(q[i]._name || q[i].name[_g.lang])
+		}
+		return r
+	};
 
 class ItemBase {
 	constructor() {
@@ -10776,7 +10857,8 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 				//,html_radios = ''
 				//,html_nav = ''
 				//,html_main = ''
-				,markdown = node.require( "markdown" ).markdown
+				//,markdown = node.require( "markdown" ).markdown
+				,marked = node.require( "marked" )
 				,has_default = false
 				,searchRes
 				,scrapePtrn
@@ -10869,7 +10951,8 @@ _frame.app_main.page['guide'].section['输出'].export = function(dest){
 											+ '" class="main'
 											+ (doc['class-main'] ? ' ' + doc['class-main'] : '')
 											+ '">'
-											+ markdown.toHTML( filter(doc['content']), 'Maruku' )
+											//+ markdown.toHTML( filter(doc['content']), 'Maruku' )
+											+ marked( filter(doc['content']) )
 							
 							if( doc['has-comment'] ){
 								let comment_id = doc['name']
@@ -10999,39 +11082,53 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 							while( (searchRes = scrapePtrn.exec(html)) !== null ){
 								try{
 									let origin = searchRes[1].toUpperCase()
-									if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
+										,matched = _g.index.ships[origin]
+									
+									if( matched && matched.length ){
+										matched = matched[matched.length - 1]
 										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-boss">' + origin + '</span>'
+											`<a href="http://fleet.diablohu.com/ships/${matched.id}">${matched.name.zh_cn}</a>`
 										)
-									}else if( origin.indexOf('改FLAGSHIP') > -1 ){
+									}else if( matched = _g.index.equipments[origin] ){
+										matched = matched[matched.length - 1]
 										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+											`<a href="http://fleet.diablohu.com/equipments/${matched.id}">${matched.name.zh_cn}</a>`
 										)
-									}else if( origin.indexOf('FLAGSHIP') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
-										)
-									}else if( origin.indexOf('ELITE') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
-										)
-									}else if( origin.indexOf('级') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
-									}else if( origin.indexOf('后期') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
-									}else if( origin.indexOf('鬼群') > -1 ){
-										html = html.replace( searchRes[0],
-											'<span class="enemy">' + origin + '</span>'
-										)
+									}else{
+										if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-boss">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('改FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+											)
+										}else if( origin.indexOf('FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
+											)
+										}else if( origin.indexOf('ELITE') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
+											)
+										}else if( origin.indexOf('级') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('后期') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}else if( origin.indexOf('鬼群') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin + '</span>'
+											)
+										}
 									}
 								}catch(e){}
 							}
-				
-							//console.log(html)
+						
+							console.log(html)
 							
 							node.fs.writeFile(dest_file, html, function(err){
 								if(err){
