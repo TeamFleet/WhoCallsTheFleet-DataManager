@@ -795,6 +795,22 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 											*/
 											)
 											break;
+										case 'ac':
+											html = html.replace( searchRes[0],
+`<div class="videoplayer videoplayer-acfun">
+	<div class="videoplayer-body">
+		<iframe src="http://cdn.aixifan.com/player/ACFlashPlayer.out.swf?type=page&url=http://www.acfun.tv/v/ac${id}" id="ACFlashPlayer-re" frameborder="0"></iframe>
+	</div>
+</div>`
+											/*
+												'<div class="videoplayer videoplayer-acfun"><div class="videoplayer-body">'
+												+ '<iframe'
+												+ ' src="https://ssl.acfun.tv/block-player-homura.html#vid=' + id + ';from=http://www.acfun.tv"'
+												+ ' id="ACFlashPlayer-re" frameborder="0"></iframe>'
+												+ '</div></div>'
+											*/
+											)
+											break;
 									}
 								}catch(e){}
 							}
@@ -811,6 +827,9 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 									switch(site){
 										case 'acfun':
 											cont = `<iframe src="https://ssl.acfun.tv/block-player-homura.html#vid=${id};from=http://www.acfun.tv" id="ACFlashPlayer-re" frameborder="0"></iframe>`
+											break;
+										case 'ac':
+											cont = `<iframe src="http://cdn.aixifan.com/player/ACFlashPlayer.out.swf?type=page&url=http://www.acfun.tv/v/ac${id}" id="ACFlashPlayer-re" frameborder="0"></iframe>`
 											break;
 									}
 									html = html.replace( searchRes[0],
@@ -839,7 +858,7 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 							scrapePtrn = /\[\[([^\]\[]+)\]\]/gi
 							while( (searchRes = scrapePtrn.exec(html)) !== null ){
 								try{
-									let origin = searchRes[1].toUpperCase()
+									let origin = searchRes[1].toLowerCase()
 										,matched = _g.index.ships[origin]
 									
 									if( matched && matched.length ){
@@ -853,27 +872,36 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 											`<a href="http://fleet.diablohu.com/equipments/${matched.id}">${matched.name.zh_cn}</a>`
 										)
 									}else{
+										origin = origin.toUpperCase()
 										if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
 											html = html.replace( searchRes[0],
 												'<span class="enemy enemy-boss">' + origin + '</span>'
 											)
 										}else if( origin.indexOf('改FLAGSHIP') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '<em>改Flagship</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/后期型FLAGSHIP/gi, '<em>后期型Flagship</em>') + '</span>'
 											)
 										}else if( origin.indexOf('FLAGSHIP') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
+												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, '<em>Flagship</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型ELITE') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-elite">' + origin.replace(/后期型ELITE/gi, '<em>后期型Elite</em>') + '</span>'
 											)
 										}else if( origin.indexOf('ELITE') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
+												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, '<em>Elite</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin.replace(/后期型/gi, '<em>后期型</em>') + '</span>'
 											)
 										}else if( origin.indexOf('级') > -1 ){
-											html = html.replace( searchRes[0],
-												'<span class="enemy">' + origin + '</span>'
-											)
-										}else if( origin.indexOf('后期') > -1 ){
 											html = html.replace( searchRes[0],
 												'<span class="enemy">' + origin + '</span>'
 											)

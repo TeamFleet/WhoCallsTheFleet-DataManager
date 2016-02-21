@@ -283,7 +283,7 @@ class TablelistShips_v2 extends Tablelist{
 			if( !show_zero && (val == 0 || val == '0') )
 				//return '<small class="zero">-</small>'
 				return '-'
-			if( val == -1 || val == '-1' )
+			if( val <= -1 || val == '-1' )
 				//return '<small class="zero">?</small>'
 				return '?'
 			return val
@@ -367,7 +367,7 @@ class TablelistShips_v2 extends Tablelist{
 					break;
 				case 'luck':
 					$('<dd stat="luck" value="' + _val_data( ship_data['stat']['luck'] ) + '"/>')
-						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
+						.html(ship_data['stat']['luck'] + '<sup>' + _val(ship_data['stat']['luck_max']) + '</sup>')
 						.appendTo(tr)
 					break;
 				case 'consum_fuel':

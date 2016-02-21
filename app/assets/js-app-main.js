@@ -3763,7 +3763,7 @@ class TablelistShips_v2 extends Tablelist{
 			if( !show_zero && (val == 0 || val == '0') )
 				//return '<small class="zero">-</small>'
 				return '-'
-			if( val == -1 || val == '-1' )
+			if( val <= -1 || val == '-1' )
 				//return '<small class="zero">?</small>'
 				return '?'
 			return val
@@ -3847,7 +3847,7 @@ class TablelistShips_v2 extends Tablelist{
 					break;
 				case 'luck':
 					$('<dd stat="luck" value="' + _val_data( ship_data['stat']['luck'] ) + '"/>')
-						.html(ship_data['stat']['luck'] + '<sup>' + ship_data['stat']['luck_max'] + '</sup>')
+						.html(ship_data['stat']['luck'] + '<sup>' + _val(ship_data['stat']['luck_max']) + '</sup>')
 						.appendTo(tr)
 					break;
 				case 'consum_fuel':
@@ -4855,6 +4855,17 @@ class TablelistShips extends Tablelist{
 }
 _frame.app_main.page['init'].exportpic = function( form ){
 	let dest = node.path.normalize(form.find('[name="destfolder"]').val())
+        ,paths = {
+            client: {
+                ships: node.path.join(dest, 'client', 'pics', 'ships' ),
+                equipments: node.path.join(dest, 'client', 'pics', 'items' )
+            },
+            web: {
+                ships: node.path.join(dest, 'web', '!', 'pics', 'ships' ),
+                equipments: node.path.join(dest, 'web', '!', 'pics', 'items' ),
+                entities: node.path.join(dest, 'web', '!', 'pics', 'entities' )
+            }
+        }
 		,ship_ids = node.fs.readdirSync('./pics/ships/')
 		,item_ids = node.fs.readdirSync('./pics/items/')
 		,entities = {}
@@ -4863,10 +4874,11 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		,promise_chain 	= Q.fcall(function(){})
 
 
-	node.mkdirp.sync( node.path.join(dest, '/ships/' ) )
-	node.mkdirp.sync( node.path.join(dest, '/items/' ) )
-	node.mkdirp.sync( node.path.join(dest, '/ships_web/' ) )
-	node.mkdirp.sync( node.path.join(dest, '/items_web/' ) )
+    for( let i in paths ){
+        for( let j in paths[i] ){
+            node.mkdirp.sync( paths[i][j] )
+        }
+    }
 
 
 	function check_do( file, dest, quality, is_lossless ){
@@ -5050,7 +5062,9 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					)
 					files.shift()
 					cb();
-				}
+				}else{
+                    console.log( err )
+                }
 			});
 		}
 
@@ -5107,8 +5121,8 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	// 遍历 ship_ids, item_ids
 		.then(function(picid_by_shipid){
 			for( var i in ship_ids ){
-				node.mkdirp.sync( dest + '/ships/' + ship_ids[i] )
-				node.mkdirp.sync( dest + '/ships_web/' + ship_ids[i] )
+                node.mkdirp.sync( node.path.join( paths.client.ships, `/${ship_ids[i]}` ) )
+                node.mkdirp.sync( node.path.join( paths.web.ships, `/${ship_ids[i]}` ) )
 				var arr = picid_by_shipid[ship_ids[i]] || null
 				if( !arr ){
 					arr = []
@@ -5120,12 +5134,12 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				for(var j in arr){
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
-						dest + '/ships/' + ship_ids[i] + '/' + arr[j][1],
+                        node.path.join( paths.client.ships, `/${ship_ids[i]}`, arr[j][1] ),
 						arr[j][2]
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
-						dest + '/ships_web/' + ship_ids[i] + '/' + arr[j][0],
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, arr[j][0] ),
 						'copy'
 					)
 				}
@@ -5133,13 +5147,13 @@ _frame.app_main.page['init'].exportpic = function( form ){
 				// apply mask for web version
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-						dest + '/ships_web/' + ship_ids[i] + '/' + '0.png',
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '0.png' ),
 						'mask',
 						1
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-						dest + '/ships_web/' + ship_ids[i] + '/' + '0.png',
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '0.png' ),
 						'mask',
 						2
 					)
@@ -5148,49 +5162,51 @@ _frame.app_main.page['init'].exportpic = function( form ){
 					if( is_exists( './pics/ships/' + ship_ids[i] + '/2.jpg' ) ){
 						check_do(
 							'./pics/ships/' + ship_ids[i] + '/2.jpg',
-							dest + '/ships_web/' + ship_ids[i] + '/2.jpg',
+                            node.path.join( paths.web.ships, `/${ship_ids[i]}`, '2.jpg' ),
 							'copy'
 						)
 					}else{
 						check_do(
 							'./pics/ships/' + ship_ids[i] + '/2.png',
-							dest + '/ships_web/' + ship_ids[i] + '/2.jpg',
+                            node.path.join( paths.web.ships, `/${ship_ids[i]}`, '2.jpg' ),
 							'jpeg',
 							81
 						)
 					}
 				
 				// ship illustrations lossless webp for web version
+                /*
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '8.png',
-						dest + '/ships_web/' + ship_ids[i] + '/' + '8.webp',
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '8.webp' ),
 						'webp',
 						true
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '9.png',
-						dest + '/ships_web/' + ship_ids[i] + '/' + '9.webp',
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '9.webp' ),
 						'webp',
 						true
 					)
 					check_do(
 						'./pics/ships/' + ship_ids[i] + '/' + '10.png',
-						dest + '/ships_web/' + ship_ids[i] + '/' + '10.webp',
+                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '10.webp' ),
 						'webp',
 						true
 					)
+                */
 			}
 			for( var i in item_ids ){
-				node.mkdirp.sync( dest + '/items/' + item_ids[i] )
-				node.mkdirp.sync( dest + '/items_web/' + item_ids[i] )
+                node.mkdirp.sync( node.path.join( paths.client.equipments, `/${item_ids[i]}` ) )
+                node.mkdirp.sync( node.path.join( paths.web.equipments, `/${item_ids[i]}` ) )
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
-					dest + '/items/' + item_ids[i] + '/card.webp',
+                    node.path.join( paths.client.equipments, `/${item_ids[i]}`, 'card.webp' ),
 					80
 				)
 				check_do(
 					'./pics/items/' + item_ids[i] + '/card.png',
-					dest + '/items_web/' + item_ids[i] + '/card.png',
+                    node.path.join( paths.web.equipments, `/${item_ids[i]}`, 'card.png' ),
 					'copy'
 				)
 			}
@@ -5203,27 +5219,27 @@ _frame.app_main.page['init'].exportpic = function( form ){
 			_db.entities.find({}, function(err,docs){
 				docs.forEach(function(d){
 					entities[d.id] = new Entity(d)
-					node.mkdirp.sync( dest + '/entities_web/' + d.id )
+                    node.mkdirp.sync( node.path.join( paths.web.entities, `/${d.id}` ) )
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_web/' + d.id + '/0.png',
+                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
 						'entity-resize'
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_web/' + d.id + '/0.png',
+                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
 						'entity-resize-mask',
 						1
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_web/' + d.id + '/0.png',
+                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
 						'entity-resize-mask',
 						2
 					)
 					check_do(
 						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-						dest + '/entities_web/' + d.id + '/2.jpg',
+                        node.path.join( paths.web.entities, `/${d.id}`, '2.jpg' ),
 						'copy'
 					)
 				})
@@ -5233,29 +5249,33 @@ _frame.app_main.page['init'].exportpic = function( form ){
 		})
 
 	// webp
-		.then(function(files){
+		.then(function(){
+            console.log(files)
 			return copyFile_do()
 		})
+        .catch(function(err){
+            console.log(err)
+        })
 
 	return true
 
 	for( var i in ship_ids ){
-		node.mkdirp.sync( dest + '/ships/' + ship_ids[i] )
+        node.mkdirp.sync( node.path.join( paths.client.ships, ship_ids[i] ) )
 		check_do(
 			'./pics/ships/' + ship_ids[i] + '/0.jpg',
-			dest + '/ships/' + ship_ids[i] + '/0.webp',
+            node.path.join( paths.client.ships, ship_ids[i], '0.webp' ),
 			90
 		)
 		check_do(
 			'./pics/ships/' + ship_ids[i] + '/8.png',
-			dest + '/ships/' + ship_ids[i] + '/8.webp',
+            node.path.join( paths.client.ships, ship_ids[i], '8.webp' ),
 			85
 			//100,
 			//true
 		)
 		check_do(
 			'./pics/ships/' + ship_ids[i] + '/9.png',
-			dest + '/ships/' + ship_ids[i] + '/9.webp',
+            node.path.join( paths.client.ships, ship_ids[i], '9.webp' ),
 			85
 			//100,
 			//true
@@ -5273,10 +5293,10 @@ _frame.app_main.page['init'].exportpic = function( form ){
 	}
 
 	for( var i in item_ids ){
-		node.mkdirp.sync( dest + '/items/' + item_ids[i] )
+        node.mkdirp.sync( node.path.join( paths.client.equipments, item_ids[i] ) )
 		check_do(
 			'./pics/items/' + item_ids[i] + '/card.png',
-			dest + '/items/' + item_ids[i] + '/card.webp',
+            node.path.join( paths.client.equipments, item_ids[i], 'card.webp' ),
 			80
 		)
 		/*
@@ -11037,6 +11057,22 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 											*/
 											)
 											break;
+										case 'ac':
+											html = html.replace( searchRes[0],
+`<div class="videoplayer videoplayer-acfun">
+	<div class="videoplayer-body">
+		<iframe src="http://cdn.aixifan.com/player/ACFlashPlayer.out.swf?type=page&url=http://www.acfun.tv/v/ac${id}" id="ACFlashPlayer-re" frameborder="0"></iframe>
+	</div>
+</div>`
+											/*
+												'<div class="videoplayer videoplayer-acfun"><div class="videoplayer-body">'
+												+ '<iframe'
+												+ ' src="https://ssl.acfun.tv/block-player-homura.html#vid=' + id + ';from=http://www.acfun.tv"'
+												+ ' id="ACFlashPlayer-re" frameborder="0"></iframe>'
+												+ '</div></div>'
+											*/
+											)
+											break;
 									}
 								}catch(e){}
 							}
@@ -11053,6 +11089,9 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 									switch(site){
 										case 'acfun':
 											cont = `<iframe src="https://ssl.acfun.tv/block-player-homura.html#vid=${id};from=http://www.acfun.tv" id="ACFlashPlayer-re" frameborder="0"></iframe>`
+											break;
+										case 'ac':
+											cont = `<iframe src="http://cdn.aixifan.com/player/ACFlashPlayer.out.swf?type=page&url=http://www.acfun.tv/v/ac${id}" id="ACFlashPlayer-re" frameborder="0"></iframe>`
 											break;
 									}
 									html = html.replace( searchRes[0],
@@ -11081,7 +11120,7 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 							scrapePtrn = /\[\[([^\]\[]+)\]\]/gi
 							while( (searchRes = scrapePtrn.exec(html)) !== null ){
 								try{
-									let origin = searchRes[1].toUpperCase()
+									let origin = searchRes[1].toLowerCase()
 										,matched = _g.index.ships[origin]
 									
 									if( matched && matched.length ){
@@ -11095,27 +11134,36 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 											`<a href="http://fleet.diablohu.com/equipments/${matched.id}">${matched.name.zh_cn}</a>`
 										)
 									}else{
+										origin = origin.toUpperCase()
 										if( origin.indexOf('姬') > -1 || (origin.indexOf('鬼') > -1 && origin.indexOf('鬼群') <= -1) ){
 											html = html.replace( searchRes[0],
 												'<span class="enemy enemy-boss">' + origin + '</span>'
 											)
 										}else if( origin.indexOf('改FLAGSHIP') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '改Flagship') + '</span>'
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/改FLAGSHIP/gi, '<em>改Flagship</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型FLAGSHIP') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-kaiflagship">' + origin.replace(/后期型FLAGSHIP/gi, '<em>后期型Flagship</em>') + '</span>'
 											)
 										}else if( origin.indexOf('FLAGSHIP') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, 'Flagship') + '</span>'
+												'<span class="enemy enemy-flagship">' + origin.replace(/FLAGSHIP/gi, '<em>Flagship</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型ELITE') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy enemy-elite">' + origin.replace(/后期型ELITE/gi, '<em>后期型Elite</em>') + '</span>'
 											)
 										}else if( origin.indexOf('ELITE') > -1 ){
 											html = html.replace( searchRes[0],
-												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, 'Elite') + '</span>'
+												'<span class="enemy enemy-elite">' + origin.replace(/ELITE/gi, '<em>Elite</em>') + '</span>'
+											)
+										}else if( origin.indexOf('后期型') > -1 ){
+											html = html.replace( searchRes[0],
+												'<span class="enemy">' + origin.replace(/后期型/gi, '<em>后期型</em>') + '</span>'
 											)
 										}else if( origin.indexOf('级') > -1 ){
-											html = html.replace( searchRes[0],
-												'<span class="enemy">' + origin + '</span>'
-											)
-										}else if( origin.indexOf('后期') > -1 ){
 											html = html.replace( searchRes[0],
 												'<span class="enemy">' + origin + '</span>'
 											)
