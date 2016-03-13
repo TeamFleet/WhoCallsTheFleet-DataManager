@@ -178,7 +178,7 @@ class TablelistEquipments_v2 extends Tablelist{
 					).appendTo(tr)
 					break;
 				case 'range':
-					$('<dd stat="range" value="' + equipment_data['stat']['range'] + '"/>')
+					$('<dd stat="range" value="' + (equipment_data['stat']['range'] || '0') + '"/>')
 						.html(
 							equipment_data['stat']['range']
 								? _g.getStatRange( equipment_data['stat']['range'] )
@@ -196,7 +196,7 @@ class TablelistEquipments_v2 extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<dd stat="'+currentValue[1]+'" value="' + (equipment_data['stat'][currentValue[1]] || 0) + '"/>')
+					$('<dd stat="'+currentValue[1]+'" value="' + (equipment_data['stat'][currentValue[1]] || '0') + '"/>')
 						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
 						.html( _val( equipment_data['stat'][currentValue[1]] ) )
 						.appendTo(tr)
