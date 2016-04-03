@@ -348,8 +348,9 @@ html{
 				&>aside>nav, &>main{
 					@animation_value: 	layout-ready-main_nav @readyanimation_mainswipe_duration linear @readyanimation_boatmove_duration
 										,layout-ready-after-main_nav 0 linear (@readyanimation_boatmove_duration + @readyanimation_mainswipe_duration);
-					.animation(@animation_value);
-					.animation-fill-mode(forwards);
+                    animation: layout-ready-main_nav @readyanimation_mainswipe_duration linear @readyanimation_boatmove_duration
+                                ,layout-ready-after-main_nav 0 linear (@readyanimation_boatmove_duration + @readyanimation_mainswipe_duration);
+                    animation-fill-mode: forwards;
 				}
 				&>aside>.logo{
 					@animation_value: 	layout-ready-logo @readyanimation_boatmove_duration ease-in-out;
@@ -1153,24 +1154,16 @@ form section.form_section{
 	0% {
 	}
 	100% {
-		.mask-size(100% ~"calc(100% + 50px)");
-	}
-}
-@-webkit-keyframes layout-ready-main_nav {
-	0% {
-	}
-	100% {
-		.mask-size(100% ~"calc(100% + 50px)");
+        mask-size:  100% ~"calc(100% + 50px)";
+        -webkit-mask-size:  100% ~"calc(100% + 50px)";
 	}
 }
 
 @keyframes layout-ready-after-main_nav {
 	100% {
-		.mask(none);
-	}
-}
-@-webkit-keyframes layout-ready-after-main_nav {
-	100% {
-		.mask(none);
+		//mask:   none;
+        mask-image: none;
+        -webkit-mask-image: none;
+		//-webkit-mask:   none;
 	}
 }

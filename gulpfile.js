@@ -1,119 +1,150 @@
-var fs = require('fs');
-var path = require('path');
+"use strict";
 
-var dir = {
-	'root':		'.'
-};
-dir.source	= path.join( dir.root, 'source' );
-dir.output	= path.join( dir.root, 'app', 'assets' );
+const fs = require('fs');
+const path = require('path');
+
+const dirSource = './source';
+const dirOutput = './app/assets';
+
+
+
+
+/*
+ * INCLUDE
+ */
 
 // Include gulp
-var gulp = require('gulp'); 
+const gulp = require('gulp');
 
 // Include Plugins
-var concat = require('gulp-concat');
-var uglify = require('gulp-uglify');
-var less = require('gulp-less');
-var minifyCSS = require('gulp-minify-css');
-var postcss = require('gulp-postcss');
-var autoprefixer = require('autoprefixer');
-var LessPluginCleanCSS = require('less-plugin-clean-css');
-var cleanCSSPlugin = new LessPluginCleanCSS({advanced: true});
-var babel = require('gulp-babel');
-var rename = require('gulp-rename');
-var notify = require("gulp-notify");
+const concat = require('gulp-concat');
+const uglify = require('gulp-uglify');
+const less = require('gulp-less');
+const nano = require('gulp-cssnano');
+//const postcss = require('gulp-postcss');
+//const autoprefixer = require('autoprefixer');
+const babel = require('gulp-babel');
+const rename = require('gulp-rename');
+const watchLess = require('gulp-watch-less2');
+const notify = require("gulp-notify");
+
+
+
+
+/*
+ * FUNCTIONS
+ */
 
 function parseKoalaJS(){
-	var filename = Array.prototype.pop.call(arguments);
-	var dir = Array.prototype.join.call(arguments, '/');
-	return fs.readFileSync( path.join( dir, filename ), 'utf-8')
-				.replace(/\r?\n|\r/g, '')
-				.split('// @koala-prepend ')
-				.filter(function(value){
-					return value
-				})
-				.map(function(value){
-					if( value )
-						return path.join(dir, value.replace(/^\"(.+)\"$/g, '$1') )
-				});
-};
+    let filename = Array.prototype.pop.call(arguments);
+    let dir = Array.prototype.join.call(arguments, '/');
+    return fs.readFileSync( path.join( dir, filename ), 'utf-8')
+                .replace(/\r?\n|\r/g, '')
+                .split('// @koala-prepend ')
+                .filter(function(value){
+                    return value
+                })
+                .map(function(value){
+                    if( value )
+                        return path.join(dir, value.replace(/^\"(.+)\"$/g, '$1') )
+                });
+}
+
+function lessCompile( file, outputPath, options ){
+    options = options || {}
+    
+    function log(){
+        console.log(`Compiled LESS ${file}`)
+    }
+    
+    if( options.onlyMinify ){
+        return gulp.src(file)
+            .pipe(less())
+            .pipe(nano( options.nano ))
+            .pipe(gulp.dest( outputPath ))
+            .on('end', log)
+            .on('error', log);
+    }else{
+        return gulp.src(file)
+            .pipe(less())
+            .pipe(gulp.dest( outputPath ))
+            .pipe(nano( options.nano ))
+            .pipe(rename({ extname: '.min.css' }))
+            .pipe(gulp.dest( outputPath ))
+            .on('end', log)
+            .on('error', log);
+    }
+}
 
 
+
+
+/*
+ * TASKS
+ */
 
 gulp.task('js-base', function(){
-	return gulp.src(parseKoalaJS( dir.source, 'js-base.js' ))
-		.pipe(concat('js-base.js'))
-		/*
-		.pipe(babel({
-			'highlightCode':	false,
-			'comments':			false,
-			'compact':			false,
-			'ast':				false
-		}))
-		*/
-		.pipe(uglify())
-		.pipe(gulp.dest( dir.output ))
-		.pipe(notify("[COMPLETE] <%= file.relative %>!"));
-		/*
-		.pipe(rename({ extname: '.min.js' }))
-		.pipe(gulp.dest( dir.output ));
-		*/
+    return gulp.src( parseKoalaJS( dirSource, 'js-base.js' ) )
+        .pipe( concat('js-base.js') )
+        /*
+        .pipe(babel({
+            'highlightCode':	false,
+            'comments':			false,
+            'compact':			false,
+            'ast':				false
+        }))
+        */
+        .pipe( uglify() )
+        .pipe( gulp.dest( dirOutput ) )
+        //.pipe( notify("[COMPLETE] <%= file.relative %>!") );
+        /*
+        .pipe(rename({ extname: '.min.js' }))
+        .pipe(gulp.dest( dir.output ));
+        */
 });
 
 gulp.task('js-app-main', function(){
-	return gulp.src(parseKoalaJS( dir.source, 'js-app-main.js' ))
-		.pipe(concat('js-app-main.js'))
-		//.pipe(uglify())
-		.pipe(gulp.dest( dir.output ))
-		.pipe(notify("[COMPLETE] <%= file.relative %>!"));
+    return gulp.src( parseKoalaJS( dirSource, 'js-app-main.js' ) )
+        .pipe( concat('js-app-main.js') )
+        //.pipe(uglify())
+        .pipe( gulp.dest( dirOutput ) )
+        //.pipe( notify("[COMPLETE] <%= file.relative %>!")) ;
 });
 
-gulp.task('css-base', function(){
-	return gulp.src( path.join( dir.source, 'css-base.less' ) )
-		.pipe(less())
-		.pipe(minifyCSS())
-		//.pipe(postcss([
-		//	autoprefixer()
-		//]))
-		.pipe(gulp.dest( dir.output ))
-		.pipe(notify("[COMPLETE] <%= file.relative %>!"));
-});
-
-gulp.task('css-app-main', function(){
-	return gulp.src( path.join( dir.source, 'css-app-main.less' ) )
-		.pipe(less())
-		//.pipe(less({
-		//	'plugins':	[cleanCSSPlugin]
-		//}))
-		.pipe(postcss([
-			autoprefixer({browsers: ['Chrome >= 41']})
-		]))
-		.pipe(minifyCSS({
-			aggressiveMerging:	false
-		}))
-		.pipe(gulp.dest( dir.output ))
-		.pipe(notify("[COMPLETE] <%= file.relative %>!"));
-		/*
-		.pipe(rename({ extname: '.min.css' }))
-		.pipe(gulp.dest( path.join( rootOutput, 'assets-output' ) ));
-		*/
+gulp.task('less-watch', function(){
+    let f = path.join( dirSource, '*.less' );
+    return gulp.src(f)
+        .pipe(watchLess(f, {verbose: true}, function(File){
+            lessCompile(File.history[0], dirOutput, {
+                nano: {
+                    autoprefixer: {
+                        'browsers': [
+                            'Android >= 2',
+                            'Chrome >= 20',
+                            'Firefox >= 20',
+                            'ie >= 11',
+                            'Edge >= 12',
+                            'iOS >= 5',
+                            'ChromeAndroid >= 20',
+                            'ExplorerMobile >= 11'
+                        ],
+                        add: true
+                    }
+                }
+            })
+        }))
 });
 
 gulp.task('watch', function(){
-	gulp.watch(
-			path.join( dir.source, '**/*.js' ),
-			['js-base', 'js-app-main']
-		);
-	gulp.watch(
-			path.join( dir.source, '**/*.less' ),
-			['css-base', 'css-app-main']
-		);
+    gulp.watch(
+            path.join( dirSource, '**/*.js' ),
+            ['js-base', 'js-app-main']
+        );
 });
 
 gulp.task('default',[
-	'js-base',
-	'js-app-main',
-	'css-base',
-	'css-app-main',
-	'watch'
+    'js-base',
+    'js-app-main',
+    'less-watch',
+    'watch'
 ]);

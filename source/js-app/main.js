@@ -11,7 +11,7 @@
 
 	var Q 			= node.require('q')
 		,request 	= node.require('request')
-		,jf 		= require('jsonfile')
+		,jf 		= node.require('jsonfile')
 
 var server_ip 	= '203.104.209.23'
 	//,proxy 		= 'http://127.0.0.1:8087'

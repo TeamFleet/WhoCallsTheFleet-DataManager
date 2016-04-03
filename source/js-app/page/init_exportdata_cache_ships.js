@@ -415,6 +415,10 @@ class TablelistShips_v2 extends Tablelist{
 			&& _g.data.ships[ ship_data.remodel.next ]
 			&& _g.ship_type_order_map[ship_data['type']] == _g.ship_type_order_map[_g.data.ships[ ship_data.remodel.next ]['type']]
 			&& ship_data['name']['ja_jp'] == _g.data.ships[ ship_data.remodel.next ]['name']['ja_jp']
+			&& !(
+                _g.data.ships[ ship_data.remodel.next ].remodel
+                && _g.data.ships[ ship_data.remodel.next ].remodel.prev_loop
+            )
 		){
 			tr.addClass('premodeled')
 		}
