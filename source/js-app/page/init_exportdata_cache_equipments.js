@@ -305,6 +305,8 @@ class TablelistEquipments_v2 extends Tablelist{
 }
 
 TablelistEquipments_v2.gen_helper_equipable_on = function( type_id ){
+	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
 		var item_type_id = _g.data.item_types[type_id]['equipable_on_type'][i]
@@ -314,6 +316,7 @@ TablelistEquipments_v2.gen_helper_equipable_on = function( type_id ){
 						+ '</span>'
 	})
 	return '<em class="helper" data-tip="<h4 class=item_equipable_on>可装备于</h4>' + equipable_on + '">?</em>'
+	*/
 }
 
 TablelistEquipments_v2.types = []
@@ -584,6 +587,8 @@ class TablelistEquipments extends Tablelist{
 }
 
 TablelistEquipments.gen_helper_equipable_on = function( type_id ){
+	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
 		var item_type_id = _g.data.item_types[type_id]['equipable_on_type'][i]
@@ -593,6 +598,7 @@ TablelistEquipments.gen_helper_equipable_on = function( type_id ){
 						+ '</span>'
 	})
 	return '<em class="helper" data-tip="<h4 class=item_equipable_on>可装备于</h4>' + equipable_on + '">?</em>'
+	*/
 }
 
 TablelistEquipments.types = []
