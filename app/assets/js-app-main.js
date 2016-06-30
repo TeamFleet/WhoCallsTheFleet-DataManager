@@ -2003,7 +2003,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
                     _db.item_types.update(find, set_data, {}, function(err, numReplaced){
                         if( _index >= length - 1 ){
                             __log('= 批处理完毕')
-                            //deferred.resolve()
+                            deferred.resolve()
                         }
                     })
                 }
@@ -2029,6 +2029,73 @@ _frame.app_main.page['init'].exportdata = function( form ){
             }
             
             _db_do_all()
+
+            return deferred.promise
+        })
+    
+    // 舰种 - 添加隐藏标记
+        .then(function(){
+            let deferred = Q.defer()
+                ,countByType = {}
+
+            __log('&nbsp;')
+            __log('========== 舰种 - 添加隐藏标记 ==========')
+            __log('= 批处理开始')
+            
+            _db.ship_types.find({}, function(err, docs){
+                for( var i in docs ){
+                    countByType[docs[i]['id']] = 0
+                }
+            
+                for( let i in _ship ){
+                    let ship = _ship[i]
+                        ,ship_type = ship.type
+                    
+                    if( !countByType[ship_type] )
+                        countByType[ship_type] = 0
+                        
+                    countByType[ship_type]++
+                }
+                
+                //console.log( countByType )
+                
+                function _db_do_all(){
+                    let index = 0
+                        ,length = countByType._size
+                    function _db_do( find, set_data, _index ){
+                        _db.ship_types.update(find, set_data, {}, function(err, numReplaced){
+                            if( _index >= length - 1 ){
+                                __log('= 批处理完毕')
+                                deferred.resolve()
+                            }
+                        })
+                    }
+                    for(let i in countByType){
+                        let unset = {}
+                            ,set = {}
+                        if( countByType[i] ){
+                            unset.hide = true
+                        }else{
+                            set = {
+                                'hide': true
+                            }
+                        }
+                        _db_do(
+                            {
+                                'id': parseInt(i)
+                            },
+                            {
+                                $set: set,
+                                $unset: unset
+                            },
+                            index
+                        )
+                        index++
+                    }
+                }
+                
+                _db_do_all()
+            })
 
             return deferred.promise
         })
@@ -2996,6 +3063,7 @@ class TablelistEquipments_v2 extends Tablelist{
 			['回避',	'evasion'],
 			['索敌',	'los'],
 			['射程',	'range'],
+			['航程',	'distance'],
 			['可改修','improvable']
 		]
 
@@ -3135,9 +3203,10 @@ class TablelistEquipments_v2 extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<dd stat="'+currentValue[1]+'" value="' + (equipment_data['stat'][currentValue[1]] || '0') + '"/>')
-						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
-						.html( _val( equipment_data['stat'][currentValue[1]] ) )
+					var value = equipment_data['stat'][currentValue[1]]
+					$('<dd stat="'+currentValue[1]+'" value="' + (value || '0') + '"/>')
+						.addClass( value < 0 ? 'negative' : '' )
+						.html( _val( value ) )
 						.appendTo(tr)
 					break;
 			}
@@ -3244,7 +3313,7 @@ class TablelistEquipments_v2 extends Tablelist{
 }
 
 TablelistEquipments_v2.gen_helper_equipable_on = function( type_id ){
-	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	return `<em class="helper" data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
 	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
@@ -3526,7 +3595,7 @@ class TablelistEquipments extends Tablelist{
 }
 
 TablelistEquipments.gen_helper_equipable_on = function( type_id ){
-	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	return `<em class="helper" data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
 	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
@@ -8327,6 +8396,7 @@ _frame.app_main.page['items'].show_item_form = function(d){
 		_stat('hit', '命中').appendTo(details_stat)
 		_stat('los', '索敌').appendTo(details_stat)
 		_stat('range', '射程').appendTo(details_stat)
+		_stat('distance', '距离').appendTo(details_stat)
 
 		$('<h4/>').html('废弃资源').appendTo(details_stat)
 		_stat('dismantle').appendTo(details_stat)
@@ -10252,6 +10322,114 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 _frame.app_main.page['gamedata'].init_slotitem = function( data ){
 	var section = $('<section class="list" data-tabname="Equipments"/>').appendTo(this.tabview)
 
+
+	// 按钮 & 功能: 根据游戏数据更新舰娘数据库
+		$('<button type="button"/>')
+			.html('更新装备数据库')
+			.on('click', function(){
+				let promise_chain 	= Q.fcall(function(){})
+					,thisDb = _db.items
+
+				function _log( msg ){
+					console.log(msg)
+				}
+
+				// 开始异步函数链
+					promise_chain
+
+				// 获取全部 _id & id
+					.then(function(){
+						var deferred = Q.defer()
+						thisDb.find({}, function(err, docs){
+							if( err ){
+								deferred.reject(err)
+							}else{
+								var d = {}
+								for(var i in docs){
+									d[docs[i].id] = docs[i]._id
+								}
+								deferred.resolve(d)
+							}
+						})
+						return deferred.promise
+					})
+
+				// 更新数据
+					.then(function(map){
+						_log(map)
+						_log('开始遍历装备数据')
+
+						var count = 0
+							,list = _frame.app_main.page['gamedata'].data['api_mst_slotitem']
+							,max = list.length
+
+						list.forEach(function(data){
+							(function(data){
+								function _done( cur ){
+									if(cur >= max){
+										promise_chain.fin(function(){
+											_log('遍历装备数据完成')
+										})
+									}
+								}
+								promise_chain = promise_chain.then(function(){
+									var deferred = Q.defer()
+									if( map[data.api_id] ){
+										_log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
+										count++
+
+										let modified = {}
+											,unset = {}
+										// base
+											modified['rarity'] 		= data['api_rare']
+										// stat
+											modified['stat.fire'] 			= data['api_houg']
+											modified['stat.torpedo'] 		= data['api_raig']
+											modified['stat.bomb'] 			= data['api_baku']
+											modified['stat.asw']			= data['api_tais']
+											modified['stat.aa'] 			= data['api_tyku']
+											modified['stat.armor'] 			= data['api_souk']
+											modified['stat.evasion'] 		= data['api_houk']
+											modified['stat.hit'] 			= data['api_houm']
+											modified['stat.los'] 			= data['api_saku']
+											modified['stat.range'] 			= data['api_leng']
+											modified['stat.distance'] 		= data['api_distance']
+										// misc
+											modified['dismantle']			= data['api_broken']
+											modified['time_modified'] 		= _g.timeNow()
+
+										_log( modified )
+										thisDb.update({
+											'_id': map[data['api_id']]
+										}, {
+											$set: modified,
+											$unset: unset
+										}, function(){
+											deferred.resolve()
+											_done(count)
+										})
+									}else{
+										_log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
+										count++
+										deferred.resolve()
+										_done(count)
+									}
+									return deferred.promise
+								})
+							})(data)
+						})
+						return true
+					})
+				
+				// 错误处理
+					.catch(function (err) {
+						_log(err)
+					})
+					.done(function(){
+						_log('ALL DONE')
+					})
+			}).appendTo( section )
+			
 	for( var i in data ){
 		/*
 			基本信息
@@ -10315,7 +10493,8 @@ _frame.app_main.page['gamedata'].init_slotitem = function( data ){
 											'evasion': 	d['api_houk'],
 											'hit': 		d['api_houm'],
 											'los': 		d['api_saku'],
-											'range': 	d['api_leng']
+											'range': 	d['api_leng'],
+											'distance': d['api_distance']
 										},
 										'dismantle':d['api_broken']
 									})

@@ -57,6 +57,7 @@ class TablelistEquipments_v2 extends Tablelist{
 			['回避',	'evasion'],
 			['索敌',	'los'],
 			['射程',	'range'],
+			['航程',	'distance'],
 			['可改修','improvable']
 		]
 
@@ -196,9 +197,10 @@ class TablelistEquipments_v2 extends Tablelist{
 						.appendTo(tr)
 					break;
 				default:
-					$('<dd stat="'+currentValue[1]+'" value="' + (equipment_data['stat'][currentValue[1]] || '0') + '"/>')
-						.addClass( equipment_data['stat'][currentValue[1]] < 0 ? 'negative' : '' )
-						.html( _val( equipment_data['stat'][currentValue[1]] ) )
+					var value = equipment_data['stat'][currentValue[1]]
+					$('<dd stat="'+currentValue[1]+'" value="' + (value || '0') + '"/>')
+						.addClass( value < 0 ? 'negative' : '' )
+						.html( _val( value ) )
 						.appendTo(tr)
 					break;
 			}
@@ -305,7 +307,7 @@ class TablelistEquipments_v2 extends Tablelist{
 }
 
 TablelistEquipments_v2.gen_helper_equipable_on = function( type_id ){
-	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	return `<em class="helper" data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
 	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
@@ -587,7 +589,7 @@ class TablelistEquipments extends Tablelist{
 }
 
 TablelistEquipments.gen_helper_equipable_on = function( type_id ){
-	return `<em class="helper" data-tip="data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
+	return `<em class="helper" data-tip="[[EQUIPABLE::${type_id}]]">?</em>`
 	/*
 	var equipable_on = ''
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){

@@ -494,6 +494,114 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 _frame.app_main.page['gamedata'].init_slotitem = function( data ){
 	var section = $('<section class="list" data-tabname="Equipments"/>').appendTo(this.tabview)
 
+
+	// 按钮 & 功能: 根据游戏数据更新舰娘数据库
+		$('<button type="button"/>')
+			.html('更新装备数据库')
+			.on('click', function(){
+				let promise_chain 	= Q.fcall(function(){})
+					,thisDb = _db.items
+
+				function _log( msg ){
+					console.log(msg)
+				}
+
+				// 开始异步函数链
+					promise_chain
+
+				// 获取全部 _id & id
+					.then(function(){
+						var deferred = Q.defer()
+						thisDb.find({}, function(err, docs){
+							if( err ){
+								deferred.reject(err)
+							}else{
+								var d = {}
+								for(var i in docs){
+									d[docs[i].id] = docs[i]._id
+								}
+								deferred.resolve(d)
+							}
+						})
+						return deferred.promise
+					})
+
+				// 更新数据
+					.then(function(map){
+						_log(map)
+						_log('开始遍历装备数据')
+
+						var count = 0
+							,list = _frame.app_main.page['gamedata'].data['api_mst_slotitem']
+							,max = list.length
+
+						list.forEach(function(data){
+							(function(data){
+								function _done( cur ){
+									if(cur >= max){
+										promise_chain.fin(function(){
+											_log('遍历装备数据完成')
+										})
+									}
+								}
+								promise_chain = promise_chain.then(function(){
+									var deferred = Q.defer()
+									if( map[data.api_id] ){
+										_log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
+										count++
+
+										let modified = {}
+											,unset = {}
+										// base
+											modified['rarity'] 		= data['api_rare']
+										// stat
+											modified['stat.fire'] 			= data['api_houg']
+											modified['stat.torpedo'] 		= data['api_raig']
+											modified['stat.bomb'] 			= data['api_baku']
+											modified['stat.asw']			= data['api_tais']
+											modified['stat.aa'] 			= data['api_tyku']
+											modified['stat.armor'] 			= data['api_souk']
+											modified['stat.evasion'] 		= data['api_houk']
+											modified['stat.hit'] 			= data['api_houm']
+											modified['stat.los'] 			= data['api_saku']
+											modified['stat.range'] 			= data['api_leng']
+											modified['stat.distance'] 		= data['api_distance']
+										// misc
+											modified['dismantle']			= data['api_broken']
+											modified['time_modified'] 		= _g.timeNow()
+
+										_log( modified )
+										thisDb.update({
+											'_id': map[data['api_id']]
+										}, {
+											$set: modified,
+											$unset: unset
+										}, function(){
+											deferred.resolve()
+											_done(count)
+										})
+									}else{
+										_log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
+										count++
+										deferred.resolve()
+										_done(count)
+									}
+									return deferred.promise
+								})
+							})(data)
+						})
+						return true
+					})
+				
+				// 错误处理
+					.catch(function (err) {
+						_log(err)
+					})
+					.done(function(){
+						_log('ALL DONE')
+					})
+			}).appendTo( section )
+			
 	for( var i in data ){
 		/*
 			基本信息
@@ -557,7 +665,8 @@ _frame.app_main.page['gamedata'].init_slotitem = function( data ){
 											'evasion': 	d['api_houk'],
 											'hit': 		d['api_houm'],
 											'los': 		d['api_saku'],
-											'range': 	d['api_leng']
+											'range': 	d['api_leng'],
+											'distance': d['api_distance']
 										},
 										'dismantle':d['api_broken']
 									})

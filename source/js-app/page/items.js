@@ -445,6 +445,7 @@ _frame.app_main.page['items'].show_item_form = function(d){
 		_stat('hit', '命中').appendTo(details_stat)
 		_stat('los', '索敌').appendTo(details_stat)
 		_stat('range', '射程').appendTo(details_stat)
+		_stat('distance', '距离').appendTo(details_stat)
 
 		$('<h4/>').html('废弃资源').appendTo(details_stat)
 		_stat('dismantle').appendTo(details_stat)

@@ -843,7 +843,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
                     _db.item_types.update(find, set_data, {}, function(err, numReplaced){
                         if( _index >= length - 1 ){
                             __log('= 批处理完毕')
-                            //deferred.resolve()
+                            deferred.resolve()
                         }
                     })
                 }
@@ -869,6 +869,73 @@ _frame.app_main.page['init'].exportdata = function( form ){
             }
             
             _db_do_all()
+
+            return deferred.promise
+        })
+    
+    // 舰种 - 添加隐藏标记
+        .then(function(){
+            let deferred = Q.defer()
+                ,countByType = {}
+
+            __log('&nbsp;')
+            __log('========== 舰种 - 添加隐藏标记 ==========')
+            __log('= 批处理开始')
+            
+            _db.ship_types.find({}, function(err, docs){
+                for( var i in docs ){
+                    countByType[docs[i]['id']] = 0
+                }
+            
+                for( let i in _ship ){
+                    let ship = _ship[i]
+                        ,ship_type = ship.type
+                    
+                    if( !countByType[ship_type] )
+                        countByType[ship_type] = 0
+                        
+                    countByType[ship_type]++
+                }
+                
+                //console.log( countByType )
+                
+                function _db_do_all(){
+                    let index = 0
+                        ,length = countByType._size
+                    function _db_do( find, set_data, _index ){
+                        _db.ship_types.update(find, set_data, {}, function(err, numReplaced){
+                            if( _index >= length - 1 ){
+                                __log('= 批处理完毕')
+                                deferred.resolve()
+                            }
+                        })
+                    }
+                    for(let i in countByType){
+                        let unset = {}
+                            ,set = {}
+                        if( countByType[i] ){
+                            unset.hide = true
+                        }else{
+                            set = {
+                                'hide': true
+                            }
+                        }
+                        _db_do(
+                            {
+                                'id': parseInt(i)
+                            },
+                            {
+                                $set: set,
+                                $unset: unset
+                            },
+                            index
+                        )
+                        index++
+                    }
+                }
+                
+                _db_do_all()
+            })
 
             return deferred.promise
         })
