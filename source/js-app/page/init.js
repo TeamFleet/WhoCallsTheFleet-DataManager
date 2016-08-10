@@ -419,6 +419,74 @@ _frame.app_main.page['init'].exportdata = function( form ){
             return deferred.promise
         })
 
+    // 装备 - 改修材料关系
+        .then(function(){
+            var deferred = Q.defer()
+                ,_upgrade_for = {}
+                ,length = 0
+
+            __log('&nbsp;')
+            __log('========== 装备 - 改修材料关系 ==========')
+            __log('= 批处理开始')
+
+            _db.items.find({}, function(err, docs){
+                for( var i in docs ){
+                    var d = docs[i]
+
+                    if( !_upgrade_for[d['id']] )
+                        _upgrade_for[d['id']] = [null, []];
+                    _upgrade_for[d['id']][0] = d._id
+
+                    length++
+
+                    if( d['improvement'] && d['improvement'].length && d['improvement'].push ){
+                        var o = _upgrade_for[d['id']]
+                        d['improvement'].forEach( function( improvement ){
+                            if( improvement.resource && improvement.resource.length && improvement.resource.push ){
+                                improvement.resource.forEach( function( resource, index ){
+                                    if( index && resource[4] ){
+                                        if( !_upgrade_for[resource[4]] )
+                                            _upgrade_for[resource[4]] = [null, []];
+                                        if( resource[4] != d.id )
+                                            _upgrade_for[resource[4]][1].push( d.id )
+                                    }
+                                })
+                            }
+                        } )
+                    }
+                }
+                console.log( _upgrade_for )
+                _db_do_all()
+            })
+            function _db_do_all(){
+                function _db_do( _id, update, _index ){
+                    console.log( _id, update )
+                    _db.items.update({
+                        '_id': 	_id
+                    }, update, {}, function(err, numReplaced){
+                        if( _index >= length - 1 ){
+                            __log('= 批处理完毕')
+                            deferred.resolve()
+                        }
+                    })
+                }
+                var index = 0
+                for(var i in _upgrade_for){
+                    _db_do(
+                        _upgrade_for[i][0],
+                        {
+                            $set: {
+                                'upgrade_for': _upgrade_for[i][1]
+                            }
+                        },
+                        index
+                    )
+                    index++
+                }
+            }
+            return deferred.promise
+        })
+
     // 改修工厂 - 每日改修 & 改修明细
         .then(function(){
             var deferred 		= Q.defer()
@@ -937,6 +1005,68 @@ _frame.app_main.page['init'].exportdata = function( form ){
                 _db_do_all()
             })
 
+            return deferred.promise
+        })
+    
+    // 装备 - 数据清理
+        .then(function(){
+            var deferred = Q.defer()
+                ,update = {}
+                ,length = 0
+                ,keys = [
+                    'default_equipped_on',
+                    'improvement',
+                    'upgrade_to',
+                    'upgrade_from',
+                    'upgrade_for'
+                ]
+
+            __log('&nbsp;')
+            __log('========== 装备 - 数据清理 ==========')
+            __log('= 批处理开始')
+
+            _db.items.find({}, function(err, docs){
+                for( var i in docs ){
+                    var d = docs[i]
+
+                    keys.forEach( function(key){
+                        if( typeof d[key] != 'undefined' && ( !d[key] || d[key].length === 0 ) ){
+                            if( !update[d['_id']] ){
+                                update[d['_id']] = {
+                                    $unset: {}
+                                };
+                                length++;
+                            }
+                            
+                            update[d['_id']].$unset[key] = true
+                        }
+                    } )
+                }
+                console.log( update )
+                _db_do_all()
+            })
+            function _db_do_all(){
+                function _db_do( _id, $update, _index ){
+                    _db.items.update({
+                        '_id': 	_id
+                    }, $update, {}, function(err, numReplaced){
+                        console.log( _index, length )
+                        if( _index >= length - 1 ){
+                            __log('= 批处理完毕')
+                            deferred.resolve()
+                        }
+                    })
+                }
+                var index = 0
+                for(var i in update){
+                    _db_do(
+                        i,
+                        update[i],
+                        index
+                    )
+                    index++
+                }
+            }
             return deferred.promise
         })
 
