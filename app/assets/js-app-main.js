@@ -1607,7 +1607,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
                                     if( index && resource[4] ){
                                         if( !_upgrade_for[resource[4]] )
                                             _upgrade_for[resource[4]] = [null, []];
-                                        if( resource[4] != d.id )
+                                        if( resource[4] != d.id && _upgrade_for[resource[4]][1].indexOf( d.id ) < 0 )
                                             _upgrade_for[resource[4]][1].push( d.id )
                                     }
                                 })
