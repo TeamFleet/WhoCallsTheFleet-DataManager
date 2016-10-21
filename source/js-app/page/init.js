@@ -1321,9 +1321,10 @@ _frame.app_main.page['init'].init = function( page ){
                 api_verno:1
             */
 
-            var ip 			= form.find('[name="server_ip"]').val()
-                ,api_token 	= form.find('[name="api_token"]').val()
-                ,url 		= node.url.parse( 'http://'+ ip +'/kcsapi/api_start2' )
+            var ip 			    = form.find('[name="server_ip"]').val()
+                ,api_token 	    = form.find('[name="api_token"]').val()
+                ,enable_proxy   = form.find('[name="enable_proxy"]').prop('checked')
+                ,url 		    = node.url.parse( 'http://'+ ip +'/kcsapi/api_start2' )
 
                 ,promise_chain 	= Q.fcall(function(){})
 
@@ -1351,7 +1352,7 @@ _frame.app_main.page['init'].init = function( page ){
                             'api_token': 	api_token,
                             'api_verno': 	1
                         },
-                        'proxy': 	proxy
+                        'proxy': 	enable_proxy ? proxy : null
                     }, function(err, response, body){
                         if(err || response.statusCode != 200){
                             console.log(err, response)

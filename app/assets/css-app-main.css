@@ -2081,6 +2081,9 @@ form.new_entity .avatar div.old:before {
   -moz-box-sizing: border-box;
   padding: 1.25rem 0rem;
 }
+#layout > main > .page[page="init"] h2 ~ h2 {
+  margin-top: 2.5rem;
+}
 #layout > main > .page[page="ships"] section .flexgrid > .unit {
   flex: 1 0 200px;
   height: 2.5rem;

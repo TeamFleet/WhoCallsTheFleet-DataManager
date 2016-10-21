@@ -2481,9 +2481,10 @@ _frame.app_main.page['init'].init = function( page ){
                 api_verno:1
             */
 
-            var ip 			= form.find('[name="server_ip"]').val()
-                ,api_token 	= form.find('[name="api_token"]').val()
-                ,url 		= node.url.parse( 'http://'+ ip +'/kcsapi/api_start2' )
+            var ip 			    = form.find('[name="server_ip"]').val()
+                ,api_token 	    = form.find('[name="api_token"]').val()
+                ,enable_proxy   = form.find('[name="enable_proxy"]').prop('checked')
+                ,url 		    = node.url.parse( 'http://'+ ip +'/kcsapi/api_start2' )
 
                 ,promise_chain 	= Q.fcall(function(){})
 
@@ -2511,7 +2512,7 @@ _frame.app_main.page['init'].init = function( page ){
                             'api_token': 	api_token,
                             'api_verno': 	1
                         },
-                        'proxy': 	proxy
+                        'proxy': 	enable_proxy ? proxy : null
                     }, function(err, response, body){
                         if(err || response.statusCode != 200){
                             console.log(err, response)
@@ -9981,7 +9982,8 @@ _frame.app_main.page['gamedata'].init = function( page ){
 }
 
 _frame.app_main.page['gamedata'].init_ship = function( data ){
-	var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview)
+	var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview);
+	var enable_proxy = false;
 	//console.log(data)
 
 	/*
@@ -10151,7 +10153,7 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 												request({
 													'uri': 		file,
 													'method': 	'GET',
-													'proxy': 	proxy
+													'proxy': 	enable_proxy ? proxy : null
 												}).on('error',function(err){
 													deferred2.reject(new Error(err))
 												}).on('response', function(response){
@@ -10447,6 +10449,15 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 						_log('ALL DONE')
 					})
 			}).appendTo( section )
+	
+	// 选项：代理
+		var _enable_proxy = $('<input name="enable_proxy" type="checkbox" />')			
+		$('<label/>')
+			.append( _enable_proxy.on('change', function(){
+				enable_proxy = _enable_proxy.prop('checked')
+			}) )
+			.append( $('<span>使用代理</span>') )
+			.appendTo( section )
 }
 
 _frame.app_main.page['gamedata'].init_slotitem = function( data ){

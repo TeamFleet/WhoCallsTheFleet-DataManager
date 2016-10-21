@@ -23,7 +23,8 @@ _frame.app_main.page['gamedata'].init = function( page ){
 }
 
 _frame.app_main.page['gamedata'].init_ship = function( data ){
-	var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview)
+	var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview);
+	var enable_proxy = false;
 	//console.log(data)
 
 	/*
@@ -193,7 +194,7 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 												request({
 													'uri': 		file,
 													'method': 	'GET',
-													'proxy': 	proxy
+													'proxy': 	enable_proxy ? proxy : null
 												}).on('error',function(err){
 													deferred2.reject(new Error(err))
 												}).on('response', function(response){
@@ -489,6 +490,15 @@ _frame.app_main.page['gamedata'].init_ship = function( data ){
 						_log('ALL DONE')
 					})
 			}).appendTo( section )
+	
+	// 选项：代理
+		var _enable_proxy = $('<input name="enable_proxy" type="checkbox" />')			
+		$('<label/>')
+			.append( _enable_proxy.on('change', function(){
+				enable_proxy = _enable_proxy.prop('checked')
+			}) )
+			.append( $('<span>使用代理</span>') )
+			.appendTo( section )
 }
 
 _frame.app_main.page['gamedata'].init_slotitem = function( data ){
