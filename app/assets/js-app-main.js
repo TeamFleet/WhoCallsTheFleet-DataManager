@@ -1525,6 +1525,8 @@ _frame.app_main.page['init'].exportdata = function( form ){
                 ,_upgrade_from = {}
                 ,length = 0
 
+            //let lll = 0;
+
             __log('&nbsp;')
             __log('========== 装备 - 改修升级前后关系 ==========')
             __log('= 批处理开始')
@@ -1536,8 +1538,10 @@ _frame.app_main.page['init'].exportdata = function( form ){
                     if( !_upgrade_from[d['id']] )
                         _upgrade_from[d['id']] = [null, []]
                     _upgrade_from[d['id']][0] = d['_id']
+                    _upgrade_from[d['id']][2] = d['id']
 
                     length++
+                    //console.log(d['id'], length)
 
                     if( d['upgrade_to'] && d['upgrade_to'].length ){
                         for( var j in d['upgrade_to'] ){
@@ -1552,12 +1556,16 @@ _frame.app_main.page['init'].exportdata = function( form ){
                 _db_do_all()
             })
             function _db_do_all(){
-                function _db_do( _id, set_data, _index ){
+                function _db_do( _id, set_data, _index, id ){
                     _db.items.update({
                         '_id': 		_id
                     },{
                         $set: set_data
                     },{}, function(err, numReplaced){
+                        if( err ){
+                            console.log(err)
+                        }
+                        //console.log( length, id, _index, ++lll )
                         if( _index >= length - 1 ){
                             __log('= 批处理完毕')
                             deferred.resolve()
@@ -1571,7 +1579,8 @@ _frame.app_main.page['init'].exportdata = function( form ){
                         {
                             'upgrade_from': _upgrade_from[i][1]
                         },
-                        index
+                        index,
+                        _upgrade_from[i][2]
                     )
                     index++
                 }
