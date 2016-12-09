@@ -63,7 +63,9 @@ var server_ip 	= '203.104.209.23'
         'ship_id_by_type': [], 			// refer to _g.ship_type_order
         'ship_types': {},
         'ship_type_order': {},
-        'ship_classes': {}
+        'ship_classes': {},
+
+        'consumables': {}
     }
 
     var _db = {
@@ -548,6 +550,9 @@ _frame.app_main = {
                                                     case 'items':
                                                         _g.data[db_name][docs[i]['id']] = new Equipment(docs[i])
                                                         break;
+                                                    case 'consumables':
+                                                        _g.data[db_name][docs[i]['id']] = new ItemBase(docs[i])
+                                                        break;
                                                     default:
                                                         _g.data[db_name][docs[i]['id']] = docs[i]
                                                         break;
@@ -770,13 +775,14 @@ _frame.app_main = {
     };
 
 class ItemBase {
-	constructor() {
+	constructor(data) {
+		$.extend(true, this, data)
 	}
 
 	getName(language){
 		language = language || _g.lang
 		return this['name']
-				? (this['name'][language] || this['name'])
+				? (this['name'][language] || this['name'].ja_jp || this.name)
 				: null
 	}
 	
@@ -2421,43 +2427,7 @@ _frame.app_main.page['init'].init = function( page ){
     })
 
     // 导出图片
-    page.find('form#init_exportpic').each( function(){
-        var form = $(this)
-            ,folder_input = form.find('[name="destfolder"]')
-            ,btn_browse = form.find('[value="Browse..."]')
-            ,file_selector = form.find('[type="file"]')
-
-        form.on('submit', function(e){
-            e.preventDefault()
-            form.addClass('submitting')
-            form.find('[type="submit"]').on('click',function(e){
-                e.preventDefault()
-            })
-            _frame.app_main.page['init'].exportpic( form )
-        })
-
-        folder_input
-            .val( _config.get( 'pics_export_to' ) )
-            .on({
-                'change': function(){
-                    _config.set( 'pics_export_to', $(this).val() )
-                },
-                'click': function(){
-                    btn_browse.trigger('click')
-                }
-            })
-
-        btn_browse
-            .on('click', function(){
-                //console.log(123)
-                //form.find('[type="file"]').trigger('click')
-            })
-
-        file_selector
-            .on('change', function(){
-                folder_input.val( $(this).val() ).trigger('change')
-            })
-    })
+    _frame.app_main.page['init'].exportpicInit(page.find('form#init_exportpic'))
 
     // 获取官方数据
         page.find('form#fetch_official').on('submit', function(e){
@@ -5131,461 +5101,540 @@ class TablelistShips extends Tablelist{
 		TablelistShips.contextmenu.show($el)
 	}
 }
-_frame.app_main.page['init'].exportpic = function( form ){
-	let dest = node.path.normalize(form.find('[name="destfolder"]').val())
-        ,paths = {
-            client: {
-                ships: node.path.join(dest, 'client', 'pics', 'ships' ),
-                equipments: node.path.join(dest, 'client', 'pics', 'items' )
+_frame.app_main.page['init'].exportpicInit = form => {
+    var folder_input = form.find('[name="destfolder"]')
+        , btn_browse = form.find('[value="Browse..."]')
+        , file_selector = form.find('[type="file"]')
+        , export_options = {
+            ships: {
+                name: 'Ships',
+                path: 'pics-ships',
+                checked: true
             },
-            web: {
-                ships: node.path.join(dest, 'web', '!', 'pics', 'ships' ),
-                equipments: node.path.join(dest, 'web', '!', 'pics', 'items' ),
-                entities: node.path.join(dest, 'web', '!', 'pics', 'entities' )
+            shipsExtra: {
+                name: 'Ships (Extra)',
+                path: 'pics-ships-extra',
+                checked: true
+            },
+            enemies: {
+                name: 'Enemies',
+                path: 'pics-enemies',
+                checked: true
+            },
+            equipments: {
+                name: 'Equipments',
+                path: 'pics/items',
+                checked: true
+            },
+            entities: {
+                name: 'Entities',
+                path: 'pics/entities',
+                checked: true,
+                client: false
             }
         }
-		,ship_ids = node.fs.readdirSync('./pics/ships/')
-		,item_ids = node.fs.readdirSync('./pics/items/')
-		,entities = {}
-		,files = []
-		,picid_by_shipid = {}
-		,promise_chain 	= Q.fcall(function(){})
+        , _export_options = []
+        , enemy_id_start = 501
+        , aoki_hagane_start = 9181
 
+    form.on('submit', function (e) {
+        e.preventDefault()
+        form.addClass('submitting')
+        form.find('[type="submit"]').on('click', function (e) {
+            e.preventDefault()
+        })
+        exportpic()
+    })
 
-    for( let i in paths ){
-        for( let j in paths[i] ){
-            node.mkdirp.sync( paths[i][j] )
-        }
-    }
-
-
-	function check_do( file, dest, quality, is_lossless ){
-		if( is_exists(file) )
-			files.push([
-				file,
-				dest,
-				quality,
-				is_lossless
-			])
-		/*
-		try{
-			var stat = node.fs.lstatSync(file)
-			if( stat && stat.isFile() ){
-				files.push([
-					file,
-					dest,
-					quality,
-					is_lossless
-				])
-			}
-		}catch(e){}
-		*/
-	}
-	
-	
-	
-	function is_exists( file, isDirectory ){
-		try{
-			let stat = node.fs.lstatSync(file)
-			if( stat ){
-				if( !isDirectory && stat.isFile() )
-					return true
-				
-				if( isDirectory && stat.isDirectory() )
-					return true
-				
-				if( isDirectory && !stat.isDirectory() )
-					return false
-				
-				return true
-			}
-		}catch(e){
-			return false
-		}
-		return false
-	}
-	
-
-
-	function copyFile_do(source, target, quality, is_lossless) {
-		if( !source && !files.length )
-			return __log('PIC EXPORT COMPLETE')
-			
-		source = source || files[0][0]
-		target = target || files[0][1]
-		quality = (quality || files[0][2]) || 75
-		is_lossless = (is_lossless || files[0][3]) || false
-		
-		function cb(){
-			copyFile_do()
-		}
-		
-		if( quality == 'jpg' )
-			quality = 'jpeg'
-		
-		if( quality == 'copy' ){
-			var cbCalled = false;
-	
-			var rd = node.fs.createReadStream(source);
-			rd.on("error", function(err) {
-				done(err);
-			});
-	
-			var wr = node.fs.createWriteStream(target);
-				wr.on("error", function(err) {
-				done(err);
-			});
-			wr.on("close", function(ex) {
-				done();
-			});
-	
-			rd.pipe(wr);
-	
-			function done(err) {
-				if( err )
-					console.log(err)
-				if (!cbCalled) {
-					__log(
-						'pic file copied to ' + target
-					)
-					files.shift()
-					cbCalled = true;
-					
-					cb();
-				}
-			}
-		}else if(quality == 'mask'){
-			let target_mask_1 = node.path.parse(target)
-				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
-			let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
-			let exec = require('child_process').exec
-			
-			var gmComposite = 'gm composite -compose in "' + source + '" ' + mask + ' ' + target_mask_1
-			
-			exec(gmComposite, function(err) {
-				if (err) throw err
-				__log(
-					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
-				)
-				files.shift()
-				cb();
-			})
-			/*
-			node.gm( source )
-				.mask(node.path.join(_g.root, '!designs/mask-1.png'))
-				.write(target_mask_1, function (err) {
-					console.log(err)
-					__log(
-						'pic file copied to ' + target_mask_1 + ' (mask-1)'
-					)
-					files.shift()
-					cb();
-				})
-			*/
-		}else if(quality == 'entity-resize'){
-			let target_mask_1 = node.path.parse(target)
-				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + target_mask_1.ext )
-			let mask = node.path.join(_g.root, '!designs/mask-0.png')
-			let exec = require('child_process').exec
-			
-			var gmComposite = 'gm composite -geometry 90x90+35-17 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
-			
-			exec(gmComposite, function(err) {
-				if (err) throw err
-				__log(
-					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
-				)
-				files.shift()
-				cb();
-			})
-		}else if(quality == 'entity-resize-mask'){
-			let target_mask_1 = node.path.parse(target)
-				target_mask_1 = node.path.join( target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext )
-			let mask = node.path.join(_g.root, '!designs/mask-entity-' + is_lossless + '.png')
-			let exec = require('child_process').exec
-			
-			var gmComposite = 'gm composite -geometry 90x90+35-16 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
-			
-			exec(gmComposite, function(err) {
-				if (err) throw err
-				__log(
-					'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
-				)
-				files.shift()
-				cb();
-			})
-		}else if(quality == 'jpeg'){
-			let exec = require('child_process').exec
-				,q = is_lossless || 75
-				,gmComposite = `gm convert -quality ${q} "${source}" "${target}"`
-			
-			exec(gmComposite, function(err) {
-				if (err) throw err
-				__log(
-					'pic file copied to ' + target
-				)
-				files.shift()
-				cb();
-			})
-		}else{
-			//var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
-			let cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
-				,execFile = require('child_process').execFile
-				,binPath = require('webp-bin').path
-			//var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
-			execFile(binPath, cmd, function(err, stdout, stderr) {
-				if( !err ){
-					__log(
-						'pic file copied to ' + target
-					)
-					files.shift()
-					cb();
-				}else{
-                    console.log( err )
-                }
-			});
-		}
-
-		/*
-
-		var CWebp = require('cwebp').CWebp
-			,encoder = new CWebp(source)
-
-		encoder.write(target, function(err) {
-			console.log(err || 'encoded successfully');
-			__log(
-				'pic file copied to ' + target
-			)
-			files.shift()
-			copyFile_do();
-		});
-		*/
-	}
-
-	// 开始异步函数链
-		promise_chain
-
-	// 遍历 ship_series
-		.then(function(){
-			let deferred = Q.defer()
-			_db.ship_series.find({}, function(err,docs){
-				for(var i in docs){
-					var ships = docs[i].ships || []
-					for(var j in ships){
-						if( !parseInt(ships[j]['id'])
-							|| (parseInt(ships[j]['id']) < 500 || parseInt(ships[j]['id']) > 9000)
-						){
-							picid_by_shipid[ships[j]['id']] = []
-							picid_by_shipid[ships[j]['id']].push(['0.png', '0.webp', 90])
-							if( !ships[j]['illust_delete'] ){
-								picid_by_shipid[ships[j]['id']].push(['8.png', '8.webp', 85])
-								picid_by_shipid[ships[j]['id']].push(['9.png', '9.webp', 85])
-								picid_by_shipid[ships[j]['id']].push(['10.png', '10.webp', 75])
-							}
-							var extra = ships[j]['illust_extra'] || []
-							for(var l in extra){
-								picid_by_shipid['extra_' + extra[l]] = []
-								picid_by_shipid['extra_' + extra[l]].push(['8.png', '8.webp', 85])
-								picid_by_shipid['extra_' + extra[l]].push(['9.png', '9.webp', 85])
-							}
-						}
-					}
-				}
-				deferred.resolve(picid_by_shipid)
-			})
-			return deferred.promise
-		})
-
-	// 遍历 ship_ids, item_ids
-		.then(function(picid_by_shipid){
-			for( var i in ship_ids ){
-                node.mkdirp.sync( node.path.join( paths.client.ships, `/${ship_ids[i]}` ) )
-                node.mkdirp.sync( node.path.join( paths.web.ships, `/${ship_ids[i]}` ) )
-				var arr = picid_by_shipid[ship_ids[i]] || null
-				if( !arr ){
-					arr = []
-					arr.push(['0.png', '0.webp', 90])
-					arr.push(['8.png', '8.webp', 85])
-					arr.push(['9.png', '9.webp', 85])
-					arr.push(['10.png', '10.webp', 75])
-				}
-				for(var j in arr){
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
-                        node.path.join( paths.client.ships, `/${ship_ids[i]}`, arr[j][1] ),
-						arr[j][2]
-					)
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + arr[j][0],
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, arr[j][0] ),
-						'copy'
-					)
-				}
-				
-				// apply mask for web version
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '0.png' ),
-						'mask',
-						1
-					)
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + '0.png',
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '0.png' ),
-						'mask',
-						2
-					)
-				
-				// ship card
-					if( is_exists( './pics/ships/' + ship_ids[i] + '/2.jpg' ) ){
-						check_do(
-							'./pics/ships/' + ship_ids[i] + '/2.jpg',
-                            node.path.join( paths.web.ships, `/${ship_ids[i]}`, '2.jpg' ),
-							'copy'
-						)
-					}else{
-						check_do(
-							'./pics/ships/' + ship_ids[i] + '/2.png',
-                            node.path.join( paths.web.ships, `/${ship_ids[i]}`, '2.jpg' ),
-							'jpeg',
-							81
-						)
-					}
-				
-				// ship illustrations lossless webp for web version
-                /*
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + '8.png',
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '8.webp' ),
-						'webp',
-						true
-					)
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + '9.png',
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '9.webp' ),
-						'webp',
-						true
-					)
-					check_do(
-						'./pics/ships/' + ship_ids[i] + '/' + '10.png',
-                        node.path.join( paths.web.ships, `/${ship_ids[i]}`, '10.webp' ),
-						'webp',
-						true
-					)
-                */
-			}
-			for( var i in item_ids ){
-                node.mkdirp.sync( node.path.join( paths.client.equipments, `/${item_ids[i]}` ) )
-                node.mkdirp.sync( node.path.join( paths.web.equipments, `/${item_ids[i]}` ) )
-				check_do(
-					'./pics/items/' + item_ids[i] + '/card.png',
-                    node.path.join( paths.client.equipments, `/${item_ids[i]}`, 'card.webp' ),
-					80
-				)
-				check_do(
-					'./pics/items/' + item_ids[i] + '/card.png',
-                    node.path.join( paths.web.equipments, `/${item_ids[i]}`, 'card.png' ),
-					'copy'
-				)
-			}
-			return files
-		})
-	
-	// 遍历_db.entities
-		.then(function(){
-			let deferred = Q.defer()
-			_db.entities.find({}, function(err,docs){
-				docs.forEach(function(d){
-					entities[d.id] = new Entity(d)
-                    node.mkdirp.sync( node.path.join( paths.web.entities, `/${d.id}` ) )
-					check_do(
-						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
-						'entity-resize'
-					)
-					check_do(
-						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
-						'entity-resize-mask',
-						1
-					)
-					check_do(
-						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-                        node.path.join( paths.web.entities, `/${d.id}`, '0.png' ),
-						'entity-resize-mask',
-						2
-					)
-					check_do(
-						'./pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
-                        node.path.join( paths.web.entities, `/${d.id}`, '2.jpg' ),
-						'copy'
-					)
-				})
-				deferred.resolve(entities)
-			})
-			return deferred.promise
-		})
-
-	// webp
-		.then(function(){
-            console.log(files)
-			return copyFile_do()
-		})
-        .catch(function(err){
-            console.log(err)
+    folder_input
+        .val(_config.get('pics_export_to'))
+        .on({
+            'change': function () {
+                _config.set('pics_export_to', $(this).val())
+            },
+            'click': function () {
+                btn_browse.trigger('click')
+            }
         })
 
-	return true
+    btn_browse
+        .on('click', function () {
+            //console.log(123)
+            //form.find('[type="file"]').trigger('click')
+        })
 
-	for( var i in ship_ids ){
-        node.mkdirp.sync( node.path.join( paths.client.ships, ship_ids[i] ) )
-		check_do(
-			'./pics/ships/' + ship_ids[i] + '/0.jpg',
-            node.path.join( paths.client.ships, ship_ids[i], '0.webp' ),
-			90
-		)
-		check_do(
-			'./pics/ships/' + ship_ids[i] + '/8.png',
-            node.path.join( paths.client.ships, ship_ids[i], '8.webp' ),
-			85
-			//100,
-			//true
-		)
-		check_do(
-			'./pics/ships/' + ship_ids[i] + '/9.png',
-            node.path.join( paths.client.ships, ship_ids[i], '9.webp' ),
-			85
-			//100,
-			//true
-		)
-		/*
-		files.push([
-			'./pics/ships/' + ship_ids[i] + '/0.jpg',
-			dest + '/ships/' + ship_ids[i] + '/0.jpg'
-		])
-		files.push([
-			'./pics/ships/' + ship_ids[i] + '/2.jpg',
-			dest + '/ships/' + ship_ids[i] + '/2.jpg'
-		])
-		*/
-	}
+    file_selector
+        .on('change', function () {
+            folder_input.val($(this).val()).trigger('change')
+        })
 
-	for( var i in item_ids ){
-        node.mkdirp.sync( node.path.join( paths.client.equipments, item_ids[i] ) )
-		check_do(
-			'./pics/items/' + item_ids[i] + '/card.png',
-            node.path.join( paths.client.equipments, item_ids[i], 'card.webp' ),
-			80
-		)
-		/*
-		files.push([
-			'./pics/items/' + item_ids[i] + '/card.png',
-			dest + '/items/' + item_ids[i] + '/card.png'
-		])
-		*/
-	}
 
-	copyFile_do()
+    /*
+     * Create options
+     */
+    let actions = form.find('.actions')
+    for (let i in export_options) {
+        _export_options.push(i)
+    }
+    _export_options = _export_options.sort().map(name => {
+        return export_options[name]
+    })
+    _export_options.forEach(item => {
+        $(`<input name="enable_${item.name}" type="checkbox" checked />`)
+            .on({
+                change: e => {
+                    item.checked = e.target.checked
+                }
+            })
+            .insertBefore(actions)
+            .wrap(`<dl><dt><label></label></dt></dl>`)
+            .after($(`<span>${item.name}</span>`))
+    })
+
+    const exportpic = () => {
+        let dest = node.path.normalize(form.find('[name="destfolder"]').val())
+            , paths = {
+                client: {
+                    // ships: node.path.join(dest, 'client', 'pics', 'ships'),
+                    // equipments: node.path.join(dest, 'client', 'pics', 'items')
+                },
+                web: {
+                    // ships: node.path.join(dest, 'web', '!', 'pics', 'ships'),
+                    // equipments: node.path.join(dest, 'web', '!', 'pics', 'items'),
+                    // entities: node.path.join(dest, 'web', '!', 'pics', 'entities')
+                }
+            }
+            , ship_ids = node.fs.readdirSync('./pics/ships/')
+            , item_ids = node.fs.readdirSync('./pics/items/')
+            , entities = {}
+            , files = []
+            , picid_by_shipid = {}
+            , promise_chain = Q.fcall(function () { })
+
+
+        /*
+         * join export paths
+         */
+        for (let i in export_options) {
+            let item = export_options[i]
+            for (let type in paths) {
+                if (item[type] !== false) {
+                    paths[type][i] = node.path.join(dest, type, item.path)
+                    node.mkdirp.sync(paths[type][i])
+                }
+            }
+        }
+
+
+        function check_do(file, dest, quality, is_lossless) {
+            if (is_exists(file))
+                files.push([
+                    file,
+                    dest,
+                    quality,
+                    is_lossless
+                ])
+            /*
+            try{
+                var stat = node.fs.lstatSync(file)
+                if( stat && stat.isFile() ){
+                    files.push([
+                        file,
+                        dest,
+                        quality,
+                        is_lossless
+                    ])
+                }
+            }catch(e){}
+            */
+        }
+
+
+
+        function is_exists(file, isDirectory) {
+            try {
+                let stat = node.fs.lstatSync(file)
+                if (stat) {
+                    if (!isDirectory && stat.isFile())
+                        return true
+
+                    if (isDirectory && stat.isDirectory())
+                        return true
+
+                    if (isDirectory && !stat.isDirectory())
+                        return false
+
+                    return true
+                }
+            } catch (e) {
+                return false
+            }
+            return false
+        }
+
+
+
+        function copyFile_do(source, target, quality, is_lossless) {
+            if (!source && !files.length)
+                return __log('PIC EXPORT COMPLETE')
+
+            source = source || files[0][0]
+            target = target || files[0][1]
+            quality = (quality || files[0][2]) || 75
+            is_lossless = (is_lossless || files[0][3]) || false
+
+            function cb() {
+                copyFile_do()
+            }
+
+            if (quality == 'jpg')
+                quality = 'jpeg'
+
+            if (quality == 'copy') {
+                var cbCalled = false;
+
+                var rd = node.fs.createReadStream(source);
+                rd.on("error", function (err) {
+                    done(err);
+                });
+
+                var wr = node.fs.createWriteStream(target);
+                wr.on("error", function (err) {
+                    done(err);
+                });
+                wr.on("close", function (ex) {
+                    done();
+                });
+
+                rd.pipe(wr);
+
+                const done = (err) => {
+                    if (err)
+                        console.log(err)
+                    if (!cbCalled) {
+                        __log(
+                            'pic file copied to ' + target
+                        )
+                        files.shift()
+                        cbCalled = true;
+
+                        cb();
+                    }
+                }
+            } else if (quality == 'mask') {
+                let target_mask_1 = node.path.parse(target)
+                target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext)
+                let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
+                let exec = require('child_process').exec
+
+                let gmComposite = 'gm composite -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+
+                exec(gmComposite, function (err) {
+                    if (err) throw err
+                    __log(
+                        'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+                    )
+                    files.shift()
+                    cb();
+                })
+                /*
+                node.gm( source )
+                    .mask(node.path.join(_g.root, '!designs/mask-1.png'))
+                    .write(target_mask_1, function (err) {
+                        console.log(err)
+                        __log(
+                            'pic file copied to ' + target_mask_1 + ' (mask-1)'
+                        )
+                        files.shift()
+                        cb();
+                    })
+                */
+            } else if (quality == 'entity-resize') {
+                let target_mask_1 = node.path.parse(target)
+                target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + target_mask_1.ext)
+                let mask = node.path.join(_g.root, '!designs/mask-0.png')
+                let exec = require('child_process').exec
+
+                let gmComposite = 'gm composite -geometry 90x90+35-17 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+
+                exec(gmComposite, function (err) {
+                    if (err) throw err
+                    __log(
+                        'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+                    )
+                    files.shift()
+                    cb();
+                })
+            } else if (quality == 'entity-resize-mask') {
+                let target_mask_1 = node.path.parse(target)
+                target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext)
+                let mask = node.path.join(_g.root, '!designs/mask-entity-' + is_lossless + '.png')
+                let exec = require('child_process').exec
+
+                let gmComposite = 'gm composite -geometry 90x90+35-16 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
+
+                exec(gmComposite, function (err) {
+                    if (err) throw err
+                    __log(
+                        'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
+                    )
+                    files.shift()
+                    cb();
+                })
+            } else if (quality == 'jpeg') {
+                let exec = require('child_process').exec
+                    , q = is_lossless || 75
+                    , gmComposite = `gm convert -quality ${q} "${source}" "${target}"`
+
+                exec(gmComposite, function (err) {
+                    if (err) throw err
+                    __log(
+                        'pic file copied to ' + target
+                    )
+                    files.shift()
+                    cb();
+                })
+            } else {
+                //var cmd = (source + ' -lossless -q 100 -o ' + target).split(/\s+/)
+                let cmd = (source + (is_lossless ? ' -lossless' : '') + ' -q ' + quality + ' -o ' + target).split(/\s+/)
+                    , execFile = require('child_process').execFile
+                    , binPath = require('webp-bin').path
+                //var cmd = (source + ' -q 85 -o ' + target).split(/\s+/)
+                execFile(binPath, cmd, function (err, stdout, stderr) {
+                    if (!err) {
+                        __log(
+                            'pic file copied to ' + target
+                        )
+                        files.shift()
+                        cb();
+                    } else {
+                        console.log(err)
+                    }
+                });
+            }
+
+            /*
+    
+            var CWebp = require('cwebp').CWebp
+                ,encoder = new CWebp(source)
+    
+            encoder.write(target, function(err) {
+                console.log(err || 'encoded successfully');
+                __log(
+                    'pic file copied to ' + target
+                )
+                files.shift()
+                copyFile_do();
+            });
+            */
+        }
+
+        // 开始异步函数链
+        promise_chain
+
+            // 遍历 ship_series
+            .then(function () {
+                let deferred = Q.defer()
+                _db.ship_series.find({}, function (err, docs) {
+                    for (var i in docs) {
+                        var ships = docs[i].ships || []
+                        for (var j in ships) {
+                            if (!parseInt(ships[j]['id'])
+                                || (parseInt(ships[j]['id']) < 500 || parseInt(ships[j]['id']) > 9000)
+                            ) {
+                                picid_by_shipid[ships[j]['id']] = []
+                                picid_by_shipid[ships[j]['id']].push(['0.png', '0.webp', 90])
+                                if (!ships[j]['illust_delete']) {
+                                    picid_by_shipid[ships[j]['id']].push(['8.png', '8.webp', 85])
+                                    picid_by_shipid[ships[j]['id']].push(['9.png', '9.webp', 85])
+                                    picid_by_shipid[ships[j]['id']].push(['10.png', '10.webp', 75])
+                                }
+                                var extra = ships[j]['illust_extra'] || []
+                                for (var l in extra) {
+                                    picid_by_shipid['extra_' + extra[l]] = []
+                                    picid_by_shipid['extra_' + extra[l]].push(['8.png', '8.webp', 85])
+                                    picid_by_shipid['extra_' + extra[l]].push(['9.png', '9.webp', 85])
+                                }
+                            }
+                        }
+                    }
+                    deferred.resolve(picid_by_shipid)
+                })
+                return deferred.promise
+            })
+
+            // 遍历 ship_ids, item_ids
+            .then(function (picid_by_shipid) {
+                for (let i in ship_ids) {
+                    /*
+                     * check id type: ships, ships-extra, enemies
+                     */
+                    let type = 'ships'
+                        , id = ship_ids[i]
+                        , pathId = `/${id}`
+                    if (isNaN(id)) {
+                        var match = /^extra_([0-9]+)$/.exec(id)
+                        if (match && match.length > 1) {
+                            if (!export_options.shipsExtra.checked)
+                                continue;
+                            type = 'shipsExtra'
+                            pathId = `/${match[1]}`
+                        }
+                    } else {
+                        id = parseInt(id)
+                        if (id >= enemy_id_start && id < aoki_hagane_start) {
+                            if (!export_options.enemies.checked)
+                                continue;
+                            type = 'enemies'
+                        }
+                    }
+                    if (type == 'ships' && !export_options.ships.checked)
+                        continue;
+                    // secure path
+                    for (let i in paths) {
+                        node.mkdirp.sync(node.path.join(paths[i][type], pathId))
+                    }
+                    var arr = picid_by_shipid[id] || null
+                    if (!arr) {
+                        arr = []
+                        arr.push(['0.png', '0.webp', 90])
+                        arr.push(['8.png', '8.webp', 85])
+                        arr.push(['9.png', '9.webp', 85])
+                        arr.push(['10.png', '10.webp', 75])
+                    }
+                    for (var j in arr) {
+                        check_do(
+                            './pics/ships/' + id + '/' + arr[j][0],
+                            node.path.join(paths.client[type], pathId, arr[j][1]),
+                            arr[j][2]
+                        )
+                        check_do(
+                            './pics/ships/' + id + '/' + arr[j][0],
+                            node.path.join(paths.web[type], pathId, arr[j][0]),
+                            'copy'
+                        )
+                    }
+
+                    // apply mask for web version
+                    check_do(
+                        './pics/ships/' + id + '/' + '0.png',
+                        node.path.join(paths.web[type], pathId, '0.png'),
+                        'mask',
+                        1
+                    )
+                    check_do(
+                        './pics/ships/' + id + '/' + '0.png',
+                        node.path.join(paths.web[type], pathId, '0.png'),
+                        'mask',
+                        2
+                    )
+
+                    // ship card
+                    if (is_exists('./pics/ships/' + id + '/2.jpg')) {
+                        check_do(
+                            './pics/ships/' + id + '/2.jpg',
+                            node.path.join(paths.web[type], pathId, '2.jpg'),
+                            'copy'
+                        )
+                    } else {
+                        check_do(
+                            './pics/ships/' + id + '/2.png',
+                            node.path.join(paths.web[type], pathId, '2.jpg'),
+                            'jpeg',
+                            81
+                        )
+                    }
+
+                    // ship illustrations lossless webp for web version
+                    /*
+                        check_do(
+                            './pics/ships/' + id + '/' + '8.png',
+                            node.path.join( paths.web.ships, pathId, '8.webp' ),
+                            'webp',
+                            true
+                        )
+                        check_do(
+                            './pics/ships/' + id + '/' + '9.png',
+                            node.path.join( paths.web.ships, pathId, '9.webp' ),
+                            'webp',
+                            true
+                        )
+                        check_do(
+                            './pics/ships/' + id + '/' + '10.png',
+                            node.path.join( paths.web.ships, pathId, '10.webp' ),
+                            'webp',
+                            true
+                        )
+                    */
+                }
+                if (export_options.equipments.checked) {
+                    for (let i in item_ids) {
+                        for (let _i in paths) {
+                            node.mkdirp.sync(node.path.join(paths[_i].equipments, `/${item_ids[i]}`))
+                        }
+                        check_do(
+                            './pics/items/' + item_ids[i] + '/card.png',
+                            node.path.join(paths.client.equipments, `/${item_ids[i]}`, 'card.webp'),
+                            80
+                        )
+                        check_do(
+                            './pics/items/' + item_ids[i] + '/card.png',
+                            node.path.join(paths.web.equipments, `/${item_ids[i]}`, 'card.png'),
+                            'copy'
+                        )
+                    }
+                }
+                return files
+            })
+
+            // 遍历_db.entities
+            .then(function () {
+                if (!export_options.entities.checked)
+                    return true;
+                let deferred = Q.defer()
+                _db.entities.find({}, function (err, docs) {
+                    docs.forEach(function (d) {
+                        entities[d.id] = new Entity(d)
+                        node.mkdirp.sync(node.path.join(paths.web.entities, `/${d.id}`))
+                        check_do(
+                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
+                            'entity-resize'
+                        )
+                        check_do(
+                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
+                            'entity-resize-mask',
+                            1
+                        )
+                        check_do(
+                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
+                            'entity-resize-mask',
+                            2
+                        )
+                        check_do(
+                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            node.path.join(paths.web.entities, `/${d.id}`, '2.jpg'),
+                            'copy'
+                        )
+                    })
+                    deferred.resolve(entities)
+                })
+                return deferred.promise
+            })
+
+            // webp
+            .then(function () {
+                console.log(files)
+                return copyFile_do()
+            })
+            .catch(function (err) {
+                console.log(err)
+            })
+
+        return true
+    }
 }
 _frame.app_main.page['ships'] = {}
 _frame.app_main.page['ships'].section = {}
@@ -8091,8 +8140,8 @@ _frame.app_main.page['ships'].section['舰种集合 (舰娘选择器)'] = {
 
 /*
 batch:
-	EQUIPMENT.upgrade_from
-	arsenal_by_day
+    EQUIPMENT.upgrade_from
+    arsenal_by_day
 */
 
 
@@ -8108,671 +8157,675 @@ _frame.app_main.page['items'].section = {}
 
 
 
-_frame.app_main.page['items'].show_item_form = function(d){
-	console.log(d)
-	d['default_equipped_on'] = d['default_equipped_on'] || []
+_frame.app_main.page['items'].show_item_form = function (d) {
+    console.log(d)
+    d['default_equipped_on'] = d['default_equipped_on'] || []
 
-	function _input(name, label, suffix, options){
-		return _frame.app_main.page['ships'].gen_form_line(
-			'text', name, label, eval( 'd.' + name ) || '', suffix, options
-		)
-	}
-	function _stat(stat, label){
-		var line = $('<p/>')
-			,id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
+    function _input(name, label, suffix, options) {
+        return _frame.app_main.page['ships'].gen_form_line(
+            'text', name, label, eval('d.' + name) || '', suffix, options
+        )
+    }
+    function _stat(stat, label) {
+        var line = $('<p/>')
+            , id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
 
-		switch( stat ){
-			case 'dismantle':
-				$('<label for="'+id+'"/>').html( '燃料' ).appendTo(line)
-				var input = _frame.app_main.page['ships'].gen_input(
-						'number',
-						'dismantle',
-						id,
-						d.dismantle[0]
-					).appendTo(line)
+        switch (stat) {
+            case 'dismantle':
+                $('<label for="' + id + '"/>').html('燃料').appendTo(line)
+                var input = _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    'dismantle',
+                    id,
+                    d.dismantle[0]
+                ).appendTo(line)
 
-				id = '_input_g' + _g.inputIndex
-				_g.inputIndex++
-				$('<label for="'+id+'"/>').html( '弹药' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'dismantle',
-						id,
-						d.dismantle[1]
-					).appendTo(line)
+                id = '_input_g' + _g.inputIndex
+                _g.inputIndex++
+                $('<label for="' + id + '"/>').html('弹药').appendTo(line)
+                _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    'dismantle',
+                    id,
+                    d.dismantle[1]
+                ).appendTo(line)
 
-				id = '_input_g' + _g.inputIndex
-				_g.inputIndex++
-				$('<label for="'+id+'"/>').html( '钢材' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'dismantle',
-						id,
-						d.dismantle[2]
-					).appendTo(line)
+                id = '_input_g' + _g.inputIndex
+                _g.inputIndex++
+                $('<label for="' + id + '"/>').html('钢材').appendTo(line)
+                _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    'dismantle',
+                    id,
+                    d.dismantle[2]
+                ).appendTo(line)
 
-				id = '_input_g' + _g.inputIndex
-				_g.inputIndex++
-				$('<label for="'+id+'"/>').html( '铝土' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'dismantle',
-						id,
-						d.dismantle[3]
-					).appendTo(line)
-				break;
-			case 'range':
-				var value = d.stat[stat]
+                id = '_input_g' + _g.inputIndex
+                _g.inputIndex++
+                $('<label for="' + id + '"/>').html('铝土').appendTo(line)
+                _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    'dismantle',
+                    id,
+                    d.dismantle[3]
+                ).appendTo(line)
+                break;
+            case 'range':
+                var value = d.stat[stat]
 
-				$('<label for="'+id+'"/>').html( label ).appendTo(line)
-				var input = _frame.app_main.page['ships'].gen_input(
-						'select',
-						'stat.'+stat,
-						id,
-						[
-							{
-								'value': 	'1',
-								'title': 	'短'
-							},
-							{
-								'value': 	'2',
-								'title': 	'中'
-							},
-							{
-								'value': 	'3',
-								'title': 	'长'
-							},
-							{
-								'value': 	'4',
-								'title': 	'超长'
-							}
-						],
-						{
-							'default': 	value
-						}
-					).appendTo(line)
-				$('<label for="'+id+'"/>').html( '当前值: ' + value ).appendTo(line)
-				break;
-			default:
-				var value = d.stat[stat]
-				$('<label for="'+id+'"/>').html( label ).appendTo(line)
-				var input = _frame.app_main.page['ships'].gen_input(
-						'number',
-						'stat.'+stat,
-						id,
-						value
-					).appendTo(line)
-				break;
-		}
+                $('<label for="' + id + '"/>').html(label).appendTo(line)
+                var input = _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    'stat.' + stat,
+                    id,
+                    [
+                        {
+                            'value': '1',
+                            'title': '短'
+                        },
+                        {
+                            'value': '2',
+                            'title': '中'
+                        },
+                        {
+                            'value': '3',
+                            'title': '长'
+                        },
+                        {
+                            'value': '4',
+                            'title': '超长'
+                        }
+                    ],
+                    {
+                        'default': value
+                    }
+                ).appendTo(line)
+                $('<label for="' + id + '"/>').html('当前值: ' + value).appendTo(line)
+                break;
+            default:
+                var value = d.stat[stat]
+                $('<label for="' + id + '"/>').html(label).appendTo(line)
+                var input = _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    'stat.' + stat,
+                    id,
+                    value
+                ).appendTo(line)
+                break;
+        }
 
-		return line
-	}
-	function _upgrade_to(no, equipment, star){
-		var line = $('<p/>')
-			,id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
+        return line
+    }
+    function _upgrade_to(no, equipment, star) {
+        var line = $('<p/>')
+            , id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
 
-		$('<label for="'+id+'"/>').html( '可升级为' ).appendTo(line)
-		_comp.selector_equipment('upgrade_to', '', equipment).appendTo(line)
-		/*
-		_frame.app_main.page['ships'].gen_input(
-				'number',
-				'upgrade_to',
-				id,
-				equipment
-			).appendTo(line)*/
+        $('<label for="' + id + '"/>').html('可升级为').appendTo(line)
+        _comp.selector_equipment('upgrade_to', '', equipment).appendTo(line)
+        /*
+        _frame.app_main.page['ships'].gen_input(
+                'number',
+                'upgrade_to',
+                id,
+                equipment
+            ).appendTo(line)*/
 
-		id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
-		$('<label for="'+id+'"/>').html( '初始星级' ).appendTo(line)
-		_frame.app_main.page['ships'].gen_input(
-				'number',
-				'upgrade_to_star',
-				id,
-				star
-			).appendTo(line)
+        id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        $('<label for="' + id + '"/>').html('初始星级').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            'upgrade_to_star',
+            id,
+            star
+        ).appendTo(line)
 
-		// 删除本行信息
-		$('<button type="button" class="delete"/>').html('&times;').on('click', function(){
-			line.remove()
-		}).appendTo(line)
+        // 删除本行信息
+        $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+            line.remove()
+        }).appendTo(line)
 
-		return line
-	}
-	function _improvement( improvement ){
-		improvement = improvement || {
-				// 可升级为
-				// 不可升级为 false
-				// 可升级为 [NUMBER euipment_id, NUMBER base_star]
-					upgrade: false,
-				// 资源消费
-					resource: [
-						// 必要资源		油/弹/钢/铝
-							[0, 0, 0, 0],
-						// +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-							[0, 0, 0, 0, null, 0],
-						// +6 ~ MAX		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-							[0, 0, 0, 0, null, 0],
-						// 升级			开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-							[0, 0, 0, 0, null, 0]
-					],
-				// 星期 & 秘书舰
-					req: [
-						[
-							// 星期，0为周日，1为周一
-							[false, false, false, false, false, false, false],
-							// 秘书舰，ARRAY，舰娘ID，没有则为false
-							false
-						]
-					]
-			}
+        return line
+    }
+    function _improvement(improvement) {
+        improvement = improvement || {
+            // 可升级为
+            // 不可升级为 false
+            // 可升级为 [NUMBER euipment_id, NUMBER base_star]
+            upgrade: false,
+            // 资源消费
+            resource: [
+                // 必要资源		油/弹/钢/铝
+                [0, 0, 0, 0],
+                // +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
+                [0, 0, 0, 0, null, 0],
+                // +6 ~ MAX		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
+                [0, 0, 0, 0, null, 0],
+                // 升级			开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
+                [0, 0, 0, 0, null, 0]
+            ],
+            // 星期 & 秘书舰
+            req: [
+                [
+                    // 星期，0为周日，1为周一
+                    [false, false, false, false, false, false, false],
+                    // 秘书舰，ARRAY，舰娘ID，没有则为false
+                    false
+                ]
+            ]
+        }
 
-		var block = $('<div class="improvement"/>')
-			,id
-			,line
+        var block = $('<div class="improvement"/>')
+            , id
+            , line
 
-		// 可升级至
-			line = $('<p class="upgrade"/>').appendTo(block)
+        // 可升级至
+        line = $('<p class="upgrade"/>').appendTo(block)
 
-			$('<label/>').html( '可升级为' ).appendTo(line)
-			_comp.selector_equipment(
-				'',
-				'',
-				improvement.upgrade ? improvement.upgrade[0] : null
-			).appendTo(line)
+        $('<label/>').html('可升级为').appendTo(line)
+        _comp.selector_equipment(
+            '',
+            '',
+            improvement.upgrade ? improvement.upgrade[0] : null
+        ).appendTo(line)
 
-			id = _g.newInputIndex()
-			$('<label for="'+id+'"/>').html( '初始星级' ).appendTo(line)
-			_frame.app_main.page['ships'].gen_input(
-					'number',
-					'',
-					id,
-					improvement.upgrade ? improvement.upgrade[1] : 0
-				).appendTo(line)
+        id = _g.newInputIndex()
+        $('<label for="' + id + '"/>').html('初始星级').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            '',
+            id,
+            improvement.upgrade ? improvement.upgrade[1] : 0
+        ).appendTo(line)
 
-		// 星期 & 秘书舰
-			var subblock = $('<div class="require"/>').html('<h5>星期 & 秘书舰</h5>').appendTo(block)
-			function _reqs(req){
-				var reqblock = $('<div/>').appendTo(block)
+        // 星期 & 秘书舰
+        var subblock = $('<div class="require"/>').html('<h5>星期 & 秘书舰</h5>').appendTo(block)
+        function _reqs(req) {
+            var reqblock = $('<div/>').appendTo(block)
 
-				$('<h6/>').html('星期').appendTo(reqblock)
-				for(var j=0; j<7; j++){
-					var text
-					switch(j){
-						case 0: text='日'; break;
-						case 1: text='一'; break;
-						case 2: text='二'; break;
-						case 3: text='三'; break;
-						case 4: text='四'; break;
-						case 5: text='五'; break;
-						case 6: text='六'; break;
-					}
-					id = _g.newInputIndex()
-					$('<input type="checkbox" id="'+id+'"/>').prop('checked', req[0][j]).appendTo(reqblock)
-					$('<label for="'+id+'"/>').html(text).appendTo(reqblock)
-				}
+            $('<h6/>').html('星期').appendTo(reqblock)
+            for (var j = 0; j < 7; j++) {
+                var text
+                switch (j) {
+                    case 0: text = '日'; break;
+                    case 1: text = '一'; break;
+                    case 2: text = '二'; break;
+                    case 3: text = '三'; break;
+                    case 4: text = '四'; break;
+                    case 5: text = '五'; break;
+                    case 6: text = '六'; break;
+                }
+                id = _g.newInputIndex()
+                $('<input type="checkbox" id="' + id + '"/>').prop('checked', req[0][j]).appendTo(reqblock)
+                $('<label for="' + id + '"/>').html(text).appendTo(reqblock)
+            }
 
-				$('<h6/>').html('秘书舰').appendTo(reqblock)
-				function _reqship(reqship){
-					var reqshipline = $('<p/>').appendTo(reqblock)
-					_comp.selector_ship(null, null, reqship).appendTo(reqshipline)
-					// 删除本条信息
-						$('<button type="button" class="delete"/>').html('&times;').on('click', function(){
-							reqshipline.remove()
-						}).appendTo(reqshipline)
-					return reqshipline
-				}
-				for(var ii=0; ii<(req[1] ? req[1].length : 0); ii++ ){
-					_reqship(req[1] ? req[1][ii] : false).appendTo(reqblock)
-				}
-				var btn_add_reqship = $('<button class="add" type="button"/>').on('click', function(){
-					_reqship().insertBefore(btn_add_reqship)
-				}).html('+ 秘书舰').appendTo(reqblock)
+            $('<h6/>').html('秘书舰').appendTo(reqblock)
+            function _reqship(reqship) {
+                var reqshipline = $('<p/>').appendTo(reqblock)
+                _comp.selector_ship(null, null, reqship).appendTo(reqshipline)
+                // 删除本条信息
+                $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                    reqshipline.remove()
+                }).appendTo(reqshipline)
+                return reqshipline
+            }
+            for (var ii = 0; ii < (req[1] ? req[1].length : 0); ii++) {
+                _reqship(req[1] ? req[1][ii] : false).appendTo(reqblock)
+            }
+            var btn_add_reqship = $('<button class="add" type="button"/>').on('click', function () {
+                _reqship().insertBefore(btn_add_reqship)
+            }).html('+ 秘书舰').appendTo(reqblock)
 
-				// 删除本条信息
-					$('<button type="button" class="delete"/>').html('&times;').on('click', function(){
-						reqblock.remove()
-					}).appendTo(reqblock)
+            // 删除本条信息
+            $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                reqblock.remove()
+            }).appendTo(reqblock)
 
-				return reqblock
-			}
-			for(var i=0; i<improvement.req.length; i++ ){
-				_reqs(improvement.req[i]).appendTo(subblock)
-			}
-			var btn_add_reqs = $('<button class="add" type="button"/>').on('click', function(){
-				_reqs([
-					// 星期，0为周日，1为周一
-					[false, false, false, false, false, false, false],
-					// 秘书舰，ARRAY，舰娘ID
-					false
-				]).insertBefore(btn_add_reqs)
-			}).html('+ 要求').appendTo(subblock)
+            return reqblock
+        }
+        for (var i = 0; i < improvement.req.length; i++) {
+            _reqs(improvement.req[i]).appendTo(subblock)
+        }
+        var btn_add_reqs = $('<button class="add" type="button"/>').on('click', function () {
+            _reqs([
+                // 星期，0为周日，1为周一
+                [false, false, false, false, false, false, false],
+                // 秘书舰，ARRAY，舰娘ID
+                false
+            ]).insertBefore(btn_add_reqs)
+        }).html('+ 要求').appendTo(subblock)
 
-		// 资源消费
-			// 固定资源
-				line = $('<p class="resource resource-all"/>')
-					.append(
-						$('<h5/>').html('资源消费')
-					).appendTo(block)
+        // 资源消费
+        // 固定资源
+        line = $('<p class="resource resource-all"/>')
+            .append(
+            $('<h5/>').html('资源消费')
+            ).appendTo(block)
 
-				id = _g.newInputIndex()
-				$('<label for="'+id+'"/>').html( '燃料' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'',
-						id,
-						improvement.resource[0][0]
-					).appendTo(line)
+        id = _g.newInputIndex()
+        $('<label for="' + id + '"/>').html('燃料').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            '',
+            id,
+            improvement.resource[0][0]
+        ).appendTo(line)
 
-				id = _g.newInputIndex()
-				$('<label for="'+id+'"/>').html( '弹药' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'',
-						id,
-						improvement.resource[0][1]
-					).appendTo(line)
+        id = _g.newInputIndex()
+        $('<label for="' + id + '"/>').html('弹药').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            '',
+            id,
+            improvement.resource[0][1]
+        ).appendTo(line)
 
-				id = _g.newInputIndex()
-				$('<label for="'+id+'"/>').html( '钢材' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'',
-						id,
-						improvement.resource[0][2]
-					).appendTo(line)
+        id = _g.newInputIndex()
+        $('<label for="' + id + '"/>').html('钢材').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            '',
+            id,
+            improvement.resource[0][2]
+        ).appendTo(line)
 
-				id = _g.newInputIndex()
-				$('<label for="'+id+'"/>').html( '铝土' ).appendTo(line)
-				_frame.app_main.page['ships'].gen_input(
-						'number',
-						'',
-						id,
-						improvement.resource[0][3]
-					).appendTo(line)
-			// 其他资源
-				for(var i=1; i<4; i++){
-					var title
-					switch(i){
-						case 1:	title = '+0 ~ +5'; break;
-						case 2:	title = '+6 ~ MAX'; break;
-						case 3:	title = '升级'; break;
-					}
-					line = $('<p class="resource resource-mat"/>')
-						.append(
-							$('<h5/>').html(title)
-						).appendTo(block)
+        id = _g.newInputIndex()
+        $('<label for="' + id + '"/>').html('铝土').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            '',
+            id,
+            improvement.resource[0][3]
+        ).appendTo(line)
+        // 其他资源
+        for (var i = 1; i < 4; i++) {
+            var title
+            switch (i) {
+                case 1: title = '+0 ~ +5'; break;
+                case 2: title = '+6 ~ MAX'; break;
+                case 3: title = '升级'; break;
+            }
+            line = $('<p class="resource resource-mat"/>')
+                .append(
+                $('<h5/>').html(title)
+                ).appendTo(block)
 
-					id = _g.newInputIndex()
-					$('<label for="'+id+'"/>').html( '开发' ).appendTo(line)
-					_frame.app_main.page['ships'].gen_input(
-							'number',
-							'',
-							id,
-							improvement.resource[i][0]
-						).appendTo(line)
+            id = _g.newInputIndex()
+            $('<label for="' + id + '"/>').html('开发').appendTo(line)
+            _frame.app_main.page['ships'].gen_input(
+                'number',
+                '',
+                id,
+                improvement.resource[i][0]
+            ).appendTo(line)
 
-					id = _g.newInputIndex()
-					$('<label for="'+id+'"/>').html( '确' ).appendTo(line)
-					_frame.app_main.page['ships'].gen_input(
-							'number',
-							'',
-							id,
-							improvement.resource[i][1]
-						).appendTo(line)
+            id = _g.newInputIndex()
+            $('<label for="' + id + '"/>').html('确').appendTo(line)
+            _frame.app_main.page['ships'].gen_input(
+                'number',
+                '',
+                id,
+                improvement.resource[i][1]
+            ).appendTo(line)
 
-					id = _g.newInputIndex()
-					$('<label for="'+id+'"/>').html( '改修' ).appendTo(line)
-					_frame.app_main.page['ships'].gen_input(
-							'number',
-							'',
-							id,
-							improvement.resource[i][2]
-						).appendTo(line)
+            id = _g.newInputIndex()
+            $('<label for="' + id + '"/>').html('改修').appendTo(line)
+            _frame.app_main.page['ships'].gen_input(
+                'number',
+                '',
+                id,
+                improvement.resource[i][2]
+            ).appendTo(line)
 
-					id = _g.newInputIndex()
-					$('<label for="'+id+'"/>').html( '确' ).appendTo(line)
-					_frame.app_main.page['ships'].gen_input(
-							'number',
-							'',
-							id,
-							improvement.resource[i][3]
-						).appendTo(line)
+            id = _g.newInputIndex()
+            $('<label for="' + id + '"/>').html('确').appendTo(line)
+            _frame.app_main.page['ships'].gen_input(
+                'number',
+                '',
+                id,
+                improvement.resource[i][3]
+            ).appendTo(line)
 
-					$('<label/>').html( '装备' ).appendTo(line)
-					_comp.selector_equipment(
-						'',
-						'',
-						improvement.resource[i][4]
-					).appendTo(line)
+            $('<label/>').html('装备').appendTo(line)
+            _comp.selector_equipment(
+                '',
+                '',
+                improvement.resource[i][4]
+            ).appendTo(line)
 
-					id = _g.newInputIndex()
-					$('<label for="'+id+'"/>').html( '量' ).appendTo(line)
-					_frame.app_main.page['ships'].gen_input(
-							'number',
-							'',
-							id,
-							improvement.resource[i][5]
-						).appendTo(line)
-				}
+            id = _g.newInputIndex()
+            $('<label for="' + id + '"/>').html('量').appendTo(line)
+            _frame.app_main.page['ships'].gen_input(
+                'number',
+                '',
+                id,
+                improvement.resource[i][5]
+            ).appendTo(line)
+        }
 
-		// 删除本条信息
-			$('<button type="button" class="delete"/>').html('&times;').on('click', function(){
-				block.remove()
-			}).appendTo(block)
+        // 删除本条信息
+        $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+            block.remove()
+        }).appendTo(block)
 
-		return block
-	}
+        return block
+    }
 
-	var form = $('<form class="iteminfo new"/>')
+    var form = $('<form class="iteminfo new"/>')
 
-		,base = $('<div class="base"/>').appendTo(form)
-		,details = $('<div class="tabview"/>').appendTo(form)
+        , base = $('<div class="base"/>').appendTo(form)
+        , details = $('<div class="tabview"/>').appendTo(form)
 
-		// 如果有 _id 则表明已存在数据，当前为编辑操作，否则为新建操作
-		,_id = d._id ? $('<input type="hidden"/>').val( d._id ) : null
+        // 如果有 _id 则表明已存在数据，当前为编辑操作，否则为新建操作
+        , _id = d._id ? $('<input type="hidden"/>').val(d._id) : null
 
-		,details_stat = $('<section data-tabname="属性"/>').appendTo(details)
-		,details_craft = $('<section data-tabname="开发&改修"/>').appendTo(details)
-		,details_equipped = $('<section data-tabname="初装舰娘"/>').appendTo(details)
+        , details_stat = $('<section data-tabname="属性"/>').appendTo(details)
+        , details_craft = $('<section data-tabname="开发&改修"/>').appendTo(details)
+        , details_equipped = $('<section data-tabname="初装舰娘"/>').appendTo(details)
 
-	// 标准图鉴
-		,base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/'+d['id']+'/card.png)').appendTo(base)
+        // 标准图鉴
+        , base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
 
-	// 基础信息
-		_input('id', 'ID', null, {'required': true}).appendTo(base)
-		_input('rarity', '稀有度', null, {'required': true}).appendTo(base)
-		// 类型
-			var base_type = _frame.app_main.page['ships'].gen_form_line(
-					'select',
-					'type',
-					'类型',
-					[]
-				).appendTo(base)
-			_db.item_types.find({}).sort({ 'id': 1 }).exec(function(err, docs){
-				if( !err ){
-					var types = []
-						,sel = base_type.find('select')
-					for(var i in docs ){
-						types.push({
-							//'value': 	docs[i]['_id'],
-							'value': 	docs[i]['id'],
-							'title': 	docs[i]['name']['zh_cn']
-						})
-					}
-					// 实时载入类型数据
-					_frame.app_main.page['ships'].gen_input(
-						'select',
-						sel.attr('name'),
-						sel.attr('id'),
-						types,
-						{
-							'default': d['type'],
-							'new': function( select ){
-								console.log( 'NEW SHIP TYPE', select )
-							}
-						}).insertBefore(sel)
-					sel.remove()
-				}
-			})
-		var h4 = $('<h4/>').html('装备名').appendTo(base)
-		var checkbox_id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
-		_input('name.ja_jp', '<small>日</small>').appendTo(base)
-		_input('name.ja_kana', '<small>日假名</small>').appendTo(base)
-		_input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
-		_input('name.zh_cn', '<small>简中</small>').appendTo(base)
-
-
-	// 属性
-		_stat('fire', '火力').appendTo(details_stat)
-		_stat('torpedo', '雷装').appendTo(details_stat)
-		_stat('bomb', '爆装').appendTo(details_stat)
-		_stat('asw', '对潜').appendTo(details_stat)
-		_stat('aa', '对空').appendTo(details_stat)
-		_stat('armor', '装甲').appendTo(details_stat)
-		_stat('evasion', '回避').appendTo(details_stat)
-		_stat('hit', '命中').appendTo(details_stat)
-		_stat('los', '索敌').appendTo(details_stat)
-		_stat('range', '射程').appendTo(details_stat)
-		_stat('distance', '距离').appendTo(details_stat)
-
-		$('<h4/>').html('废弃资源').appendTo(details_stat)
-		_stat('dismantle').appendTo(details_stat)
+    // 基础信息
+    _input('id', 'ID', null, { 'required': true }).appendTo(base)
+    _input('rarity', '稀有度', null, { 'required': true }).appendTo(base)
+    // 类型
+    var base_type = _frame.app_main.page['ships'].gen_form_line(
+        'select',
+        'type',
+        '类型',
+        []
+    ).appendTo(base)
+    _db.item_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+        if (!err) {
+            var types = []
+                , sel = base_type.find('select')
+            for (var i in docs) {
+                types.push({
+                    //'value': 	docs[i]['_id'],
+                    'value': docs[i]['id'],
+                    'title': docs[i]['name']['zh_cn']
+                })
+            }
+            // 实时载入类型数据
+            _frame.app_main.page['ships'].gen_input(
+                'select',
+                sel.attr('name'),
+                sel.attr('id'),
+                types,
+                {
+                    'default': d['type'],
+                    'new': function (select) {
+                        console.log('NEW SHIP TYPE', select)
+                    }
+                }).insertBefore(sel)
+            sel.remove()
+        }
+    })
+    var h4 = $('<h4/>').html('装备名').appendTo(base)
+    var checkbox_id = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    _input('name.ja_jp', '<small>日</small>').appendTo(base)
+    _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
+    _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
+    _input('name.zh_cn', '<small>简中</small>').appendTo(base)
 
 
-	// 开发&改修
-		var line = $('<p/>').appendTo( details_craft )
-			,id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
-		_frame.app_main.page['ships'].gen_input(
-				'checkbox',
-				'craftable',
-				id,
-				d.craftable || false
-			).appendTo(line)
-		$('<label for="'+id+'"/>').html( '可开发' ).appendTo(line)
+    // 属性
+    _stat('fire', '火力').appendTo(details_stat)
+    _stat('torpedo', '雷装').appendTo(details_stat)
+    _stat('bomb', '爆装').appendTo(details_stat)
+    _stat('asw', '对潜').appendTo(details_stat)
+    _stat('aa', '对空').appendTo(details_stat)
+    _stat('armor', '装甲').appendTo(details_stat)
+    _stat('evasion', '回避').appendTo(details_stat)
+    _stat('hit', '命中').appendTo(details_stat)
+    _stat('los', '索敌').appendTo(details_stat)
+    _stat('range', '射程').appendTo(details_stat)
+    _stat('distance', '距离').appendTo(details_stat)
 
-		line = $('<p/>').appendTo( details_craft )
-		id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
-		_frame.app_main.page['ships'].gen_input(
-				'checkbox',
-				'rankupgradable',
-				id,
-				d.rankupgradable || false
-			).appendTo(line)
-		$('<label for="'+id+'"/>').html( '可提升熟练度' ).appendTo(line)
-
-		// 改修
-			$('<h4/>').html('改修').appendTo(details_craft)
-			for(var i=0; i<(d['improvement'] ? d['improvement'].length : 0); i++ ){
-				_improvement(d['improvement'] ? d['improvement'][i] : null).appendTo(details_craft)
-			}
-			var btn_add_improvement = $('<button class="add" type="button"/>').on('click', function(){
-				_improvement().insertBefore(btn_add_improvement)
-			}).html('+ 改修项目').appendTo(details_craft)
-		/*
-		var line = $('<p/>').appendTo( details_craft )
-			,id = '_input_g' + _g.inputIndex
-		_g.inputIndex++
-		_frame.app_main.page['ships'].gen_input(
-				'checkbox',
-				'improvable',
-				id,
-				d.improvable || false
-			).appendTo(line)
-		$('<label for="'+id+'"/>').html( '可改修' ).appendTo(line)
-		for(var i=0; i<(d['upgrade_to'] ? d['upgrade_to'].length : 0); i++ ){
-			_upgrade_to(
-				(i+1),
-				d['upgrade_to'][i][0] || null,
-				d['upgrade_to'][i][1] || '0'
-			).appendTo(details_craft)
-		}
-		var btn_add_upgrade_to = $('<button class="add" type="button"/>').on('click', function(){
-			details_craft.find('input[name="improvable"]').prop('checked', true)
-			_upgrade_to(
-				details_craft.find('input[name="upgrade_to"]').length + 1,
-				null,
-				'0'
-			).insertBefore(btn_add_upgrade_to)
-		}).html('+ 可升级为...').appendTo(details_craft)
-		*/
+    $('<h4/>').html('废弃资源').appendTo(details_stat)
+    _stat('dismantle').appendTo(details_stat)
 
 
-	// 初装舰娘
-		var ships_equipped = {}
-		_db.ships.find({"equip": d['id']}, function(err,docs){
-			for(var i in docs){
-				if( typeof ships_equipped[docs[i]['series']] == 'undefined' )
-					ships_equipped[docs[i]['series']] = []
-				ships_equipped[docs[i]['series']].push( docs[i] )
-			}
-			for(var i in ships_equipped){
-				ships_equipped[i].sort(function(a,b){
-					return a['name']['suffix'] - b['name']['suffix']
-				})
-				for( var j in ships_equipped[i] ){
-					d['default_equipped_on'].push( ships_equipped[i][j]['id'] )
-					$('<div/>')
-						.html(
-							'<img src="../pics/ships/'+ships_equipped[i][j]['id']+'/0.png"/>'
-							+ '[' + ships_equipped[i][j]['id'] + '] '
-							+ (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
-							+ (ships_equipped[i][j]['name']['suffix']
-								? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
-								: '')
-						)
-						.appendTo(details_equipped)
-				}
-			}
-		})
+    // 开发&改修
+    var line = $('<p/>').appendTo(details_craft)
+        , id = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    _frame.app_main.page['ships'].gen_input(
+        'checkbox',
+        'craftable',
+        id,
+        d.craftable || false
+    ).appendTo(line)
+    $('<label for="' + id + '"/>').html('可开发').appendTo(line)
+
+    line = $('<p/>').appendTo(details_craft)
+    id = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    _frame.app_main.page['ships'].gen_input(
+        'checkbox',
+        'rankupgradable',
+        id,
+        d.rankupgradable || false
+    ).appendTo(line)
+    $('<label for="' + id + '"/>').html('可提升熟练度').appendTo(line)
+
+    // 改修
+    $('<h4/>').html('改修').appendTo(details_craft)
+    for (var i = 0; i < (d['improvement'] ? d['improvement'].length : 0); i++) {
+        _improvement(d['improvement'] ? d['improvement'][i] : null).appendTo(details_craft)
+    }
+    var btn_add_improvement = $('<button class="add" type="button"/>').on('click', function () {
+        _improvement().insertBefore(btn_add_improvement)
+    }).html('+ 改修项目').appendTo(details_craft)
+    /*
+    var line = $('<p/>').appendTo( details_craft )
+        ,id = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    _frame.app_main.page['ships'].gen_input(
+            'checkbox',
+            'improvable',
+            id,
+            d.improvable || false
+        ).appendTo(line)
+    $('<label for="'+id+'"/>').html( '可改修' ).appendTo(line)
+    for(var i=0; i<(d['upgrade_to'] ? d['upgrade_to'].length : 0); i++ ){
+        _upgrade_to(
+            (i+1),
+            d['upgrade_to'][i][0] || null,
+            d['upgrade_to'][i][1] || '0'
+        ).appendTo(details_craft)
+    }
+    var btn_add_upgrade_to = $('<button class="add" type="button"/>').on('click', function(){
+        details_craft.find('input[name="improvable"]').prop('checked', true)
+        _upgrade_to(
+            details_craft.find('input[name="upgrade_to"]').length + 1,
+            null,
+            '0'
+        ).insertBefore(btn_add_upgrade_to)
+    }).html('+ 可升级为...').appendTo(details_craft)
+    */
 
 
-	// 提交等按钮
-		var line = $('<p class="actions"/>').appendTo( form )
-		$('<button type="submit"/>').html( d._id ? '编辑' : '入库').appendTo(line)
+    // 初装舰娘
+    var ships_equipped = {}
+    _db.ships.find({ "equip": d['id'] }, function (err, docs) {
+        for (var i in docs) {
+            if (typeof ships_equipped[docs[i]['series']] == 'undefined')
+                ships_equipped[docs[i]['series']] = []
+            ships_equipped[docs[i]['series']].push(docs[i])
+        }
+        for (var i in ships_equipped) {
+            ships_equipped[i].sort(function (a, b) {
+                return a['name']['suffix'] - b['name']['suffix']
+            })
+            for (var j in ships_equipped[i]) {
+                d['default_equipped_on'].push(ships_equipped[i][j]['id'])
+                $('<div/>')
+                    .html(
+                    '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
+                    + '[' + ships_equipped[i][j]['id'] + '] '
+                    + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
+                    + (ships_equipped[i][j]['name']['suffix']
+                        ? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
+                        : '')
+                    )
+                    .appendTo(details_equipped)
+            }
+        }
+    })
 
 
-	// 提交函数
-		form.on('submit', function(e){
-			e.preventDefault()
-			var data = {}
-				,$form = $(this)
-			function start_db_operate(){
-				if( _id ){
-					// 存在 _id，当前为更新操作
-					data.time_modified = _g.timeNow()
-					console.log( 'EDIT', data )
-					_db.items.update({
-						'_id': 		d._id
-					},{
-						$set: data
-					},{}, function(err, numReplaced){
-						console.log('UPDATE COMPLETE', numReplaced, data)
-						data._id = d._id
-						// 在已入库表格中更改原有数据行
-							var oldTr = _frame.app_main.page['items'].section['已入库'].dom.section
-											.find('[data-itemid="'+data['id']+'"]')
-							_frame.app_main.page['items'].section['已入库'].dom.section.data('itemlist').append_item( data )
-								.insertBefore( oldTr )
-							oldTr.remove()
-							_frame.modal.hide()
-					})
-				}else{
-					// 不存在 _id，当前为新建操作
-					data.time_created = _g.timeNow()
-					// 删除JSON数据
-						node.fs.unlink(_g.path.fetched.items + '/' + data['id'] + '.json', function(err){
-							_db.items.insert(data, function(err, newDoc){
-								console.log('INSERT COMPLETE', newDoc)
-								// 删除“未入库”表格中对应的行
-									try{
-										_frame.app_main.page['items'].section['未入库'].dom.main
-											.find('[data-itemid="'+data['id']+'"]').remove()
-									}catch(e){}
-								// 在“已入库”表格开头加入行
-									_frame.app_main.page['items'].section['已入库'].dom.section.data('itemlist').append_item( newDoc )
-								_frame.modal.hide()
-							})
-						})
-				}
-			}
-
-			// 处理所有数据
-				data = $form.serializeObject()
-				//data['default_equipped_on'] = d['default_equipped_on']
-				delete( data['default_equipped_on'] )
-				data['craftable'] = data['craftable'] ? true : false
-
-				// 改修数据
-					data.improvable = false
-					data.upgrade_to = null
-					data['improvement'] = false
-					$form.find('.improvement').each(function(index){
-						data.improvable = true
-						if( !data['improvement'] )
-							data['improvement'] = []
-						var data_improvement = {
-								'upgrade': 	false,
-								'req':		[],
-								'resource':	[[],[],[],[]]
-							}
-							,$this = $(this)
-						// upgrade
-							var upgrade = $this.find('.upgrade')
-								,upgrade_to = parseInt(upgrade.find('select').val())
-							if( !isNaN(upgrade_to) ){
-								if( !data.upgrade_to )
-									data.upgrade_to = []
-								var base_star = parseInt($this.find('input[type="number"]').val()) || 0
-								data_improvement.upgrade = [
-									upgrade_to,
-									base_star
-								]
-								data.upgrade_to.push([upgrade_to, base_star])
-							}
-						// req
-							$this.find('.require>div').each(function(i){
-								var data_req = [[], false]
-								$(this).find('input[type="checkbox"]').each(function(weekday){
-									data_req[0][weekday] = $(this).prop('checked')
-								})
-								$(this).find('select').each(function(shipindex){
-									if( !data_req[1] )
-										data_req[1] = []
-									var val = $(this).val()
-									if( val )
-										data_req[1].push( parseInt(val) )
-								})
-								data_improvement.req.push(data_req)
-							})
-						// resource
-							$this.find('.resource').each(function(i){
-								$(this).find('input, select').each(function(inputindex){
-									data_improvement.resource[i].push( parseInt($(this).val()) || 0 )
-								})
-							})
-						data['improvement'].push(data_improvement)
-					})
-				// 改修升级数据
-				/*
-					data['improvable'] = data['improvable'] ? true : false
-					if( data['upgrade_to'] ){
-						var _d_upgrade_to = []
-						if( !data['upgrade_to'].push )
-							data['upgrade_to'] = [ data['upgrade_to'] ]
-						if( !data['upgrade_to_star'].push )
-							data['upgrade_to_star'] = [ data['upgrade_to_star'] ]
-						for( var i in data['upgrade_to'] ){
-							_d_upgrade_to[i] = [
-								data['upgrade_to'][i],
-								data['upgrade_to_star'][i] || 0
-							]
-						}
-						data['upgrade_to'] = _d_upgrade_to
-						delete( data['upgrade_to_star'] )
-					}else{
-						data['upgrade_to'] = null
-					}
-				*/
-				console.log(data)
-				//return data
-
-			// 写入数据库
-				start_db_operate()
-		})
+    // 提交等按钮
+    var line = $('<p class="actions"/>').appendTo(form)
+    $('<button type="submit"/>').html(d._id ? '编辑' : '入库').appendTo(line)
 
 
-	_frame.modal.show(
-		form,
-		d.name.ja_jp || '未入库装备',
-		{
-			'classname': 	'infos_form'
-		}
-	)
+    // 提交函数
+    form.on('submit', function (e) {
+        e.preventDefault()
+        var data = {}
+            , $form = $(this)
+        function start_db_operate() {
+            if (_id) {
+                // 存在 _id，当前为更新操作
+                data.time_modified = _g.timeNow()
+                console.log('EDIT', data)
+                _db.items.update({
+                    '_id': d._id
+                }, {
+                        $set: data
+                    }, {}, function (err, numReplaced) {
+                        console.log('UPDATE COMPLETE', numReplaced, data)
+                        data._id = d._id
+                        // 在已入库表格中更改原有数据行
+                        var oldTr = _frame.app_main.page['items'].section['已入库'].dom.section
+                            .find('[data-itemid="' + data['id'] + '"]')
+                        _frame.app_main.page['items'].section['已入库'].dom.section.data('itemlist').append_item(data)
+                            .insertBefore(oldTr)
+                        oldTr.remove()
+                        _frame.modal.hide()
+                    })
+            } else {
+                // 不存在 _id，当前为新建操作
+                data.time_created = _g.timeNow()
+                // 删除JSON数据
+                node.fs.unlink(_g.path.fetched.items + '/' + data['id'] + '.json', function (err) {
+                    _db.items.insert(data, function (err, newDoc) {
+                        console.log('INSERT COMPLETE', newDoc)
+                        // 删除“未入库”表格中对应的行
+                        try {
+                            _frame.app_main.page['items'].section['未入库'].dom.main
+                                .find('[data-itemid="' + data['id'] + '"]').remove()
+                        } catch (e) { }
+                        // 在“已入库”表格开头加入行
+                        _frame.app_main.page['items'].section['已入库'].dom.section.data('itemlist').append_item(newDoc)
+                        _frame.modal.hide()
+                    })
+                })
+            }
+        }
+
+        // 处理所有数据
+        data = $form.serializeObject()
+        //data['default_equipped_on'] = d['default_equipped_on']
+        delete (data['default_equipped_on'])
+        data['craftable'] = data['craftable'] ? true : false
+
+        // 改修数据
+        data.improvable = false
+        data.upgrade_to = null
+        data['improvement'] = false
+        $form.find('.improvement').each(function (index) {
+            data.improvable = true
+            if (!data['improvement'])
+                data['improvement'] = []
+            var data_improvement = {
+                'upgrade': false,
+                'req': [],
+                'resource': [[], [], [], []]
+            }
+                , $this = $(this)
+            // upgrade
+            var upgrade = $this.find('.upgrade')
+                , upgrade_to = parseInt(upgrade.find('select').val())
+            if (!isNaN(upgrade_to)) {
+                if (!data.upgrade_to)
+                    data.upgrade_to = []
+                var base_star = parseInt($this.find('input[type="number"]').val()) || 0
+                data_improvement.upgrade = [
+                    upgrade_to,
+                    base_star
+                ]
+                data.upgrade_to.push([upgrade_to, base_star])
+            }
+            // req
+            $this.find('.require>div').each(function (i) {
+                var data_req = [[], false]
+                $(this).find('input[type="checkbox"]').each(function (weekday) {
+                    data_req[0][weekday] = $(this).prop('checked')
+                })
+                $(this).find('select').each(function (shipindex) {
+                    if (!data_req[1])
+                        data_req[1] = []
+                    var val = $(this).val()
+                    if (val)
+                        data_req[1].push(parseInt(val))
+                })
+                data_improvement.req.push(data_req)
+            })
+            // resource
+            $this.find('.resource').each(function (i) {
+                $(this).find('input, select').each(function (inputindex) {
+                    let val = $(this).val()
+                    if( !isNaN(val) ){
+                        val = parseInt($(this).val())
+                    }
+                    data_improvement.resource[i].push(val || 0)
+                })
+            })
+            data['improvement'].push(data_improvement)
+        })
+        // 改修升级数据
+        /*
+            data['improvable'] = data['improvable'] ? true : false
+            if( data['upgrade_to'] ){
+                var _d_upgrade_to = []
+                if( !data['upgrade_to'].push )
+                    data['upgrade_to'] = [ data['upgrade_to'] ]
+                if( !data['upgrade_to_star'].push )
+                    data['upgrade_to_star'] = [ data['upgrade_to_star'] ]
+                for( var i in data['upgrade_to'] ){
+                    _d_upgrade_to[i] = [
+                        data['upgrade_to'][i],
+                        data['upgrade_to_star'][i] || 0
+                    ]
+                }
+                data['upgrade_to'] = _d_upgrade_to
+                delete( data['upgrade_to_star'] )
+            }else{
+                data['upgrade_to'] = null
+            }
+        */
+        console.log(data)
+        //return data
+
+        // 写入数据库
+        start_db_operate()
+    })
+
+
+    _frame.modal.show(
+        form,
+        d.name.ja_jp || '未入库装备',
+        {
+            'classname': 'infos_form'
+        }
+    )
 }
 
 
@@ -8782,82 +8835,82 @@ _frame.app_main.page['items'].show_item_form = function(d){
 
 
 
-_frame.app_main.page['items'].field_input_text = function(name, title, value, suffix){
-	var line = $('<p/>')
-		,label = $('<label/>').appendTo(line)
-	$('<span/>').html(title).appendTo(label)
-	$('<input type="text" required name="'+name+'" />').val(value).appendTo(label)
-	if( suffix )
-		$('<span/>').html(suffix).appendTo(label)
-	return line
+_frame.app_main.page['items'].field_input_text = function (name, title, value, suffix) {
+    var line = $('<p/>')
+        , label = $('<label/>').appendTo(line)
+    $('<span/>').html(title).appendTo(label)
+    $('<input type="text" required name="' + name + '" />').val(value).appendTo(label)
+    if (suffix)
+        $('<span/>').html(suffix).appendTo(label)
+    return line
 }
 _frame.app_main.page['items'].field_select_items = _comp.selector_equipment
 /*
 _frame.app_main.page['items'].field_select_items = function( name, label, default_item ){
-	var dom = _frame.app_main.page['ships'].gen_input(
-			'select',
-			name,
-			label,
-			[]
-		)
-		,equipments = []
-		,options = []
+    var dom = _frame.app_main.page['ships'].gen_input(
+            'select',
+            name,
+            label,
+            []
+        )
+        ,equipments = []
+        ,options = []
 
-	_db.item_types.find({}).sort({'id': 1}).exec(function(err, docs){
-		if( !err && docs && docs.length ){
-			for( var i in docs ){
-				equipments[docs[i]['id']] = [
-					docs[i]['name']['zh_cn'],
-					[]
-				]
-			}
-			_db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function(err, docs){
-				for(var i in docs ){
-					//equipments[docs[i]['type']][1].push(docs[i])
-					equipments[docs[i]['type']][1].push({
-							'name': 	docs[i]['name']['zh_cn'],
-							'value': 	docs[i]['id']
-						})
-				}
+    _db.item_types.find({}).sort({'id': 1}).exec(function(err, docs){
+        if( !err && docs && docs.length ){
+            for( var i in docs ){
+                equipments[docs[i]['id']] = [
+                    docs[i]['name']['zh_cn'],
+                    []
+                ]
+            }
+            _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function(err, docs){
+                for(var i in docs ){
+                    //equipments[docs[i]['type']][1].push(docs[i])
+                    equipments[docs[i]['type']][1].push({
+                            'name': 	docs[i]['name']['zh_cn'],
+                            'value': 	docs[i]['id']
+                        })
+                }
 
-				for( var i in equipments ){
-					options.push({
-						'name': 	'=====' + equipments[i][0] +  '=====',
-						'value': 	''
-					})
-					for( var j in equipments[i][1] ){
-						options.push({
-							'name': 	equipments[i][1][j]['name']['zh_cn'],
-							'value': 	equipments[i][1][j]['id']
-						})
-					}
-				}
-				//console.log( equipments )
-				//console.log( options )
+                for( var i in equipments ){
+                    options.push({
+                        'name': 	'=====' + equipments[i][0] +  '=====',
+                        'value': 	''
+                    })
+                    for( var j in equipments[i][1] ){
+                        options.push({
+                            'name': 	equipments[i][1][j]['name']['zh_cn'],
+                            'value': 	equipments[i][1][j]['id']
+                        })
+                    }
+                }
+                //console.log( equipments )
+                //console.log( options )
 
-				_frame.app_main.page['ships'].gen_input(
-					'select_group',
-					dom.attr('name'),
-					dom.attr('id'),
-					equipments,
-					{
-						'default': default_item
-					}).insertBefore(dom)
-				dom.remove()
-			})
-		}
-	})
-	return dom
+                _frame.app_main.page['ships'].gen_input(
+                    'select_group',
+                    dom.attr('name'),
+                    dom.attr('id'),
+                    equipments,
+                    {
+                        'default': default_item
+                    }).insertBefore(dom)
+                dom.remove()
+            })
+        }
+    })
+    return dom
 }*/
-_frame.app_main.page['items'].field_actions = function(text, func_delete){
-	var line = $('<p class="actions"/>')
-	$('<button type="submit"/>').html(text || '提交').appendTo(line)
-	if( func_delete ){
-		$('<button type="button"/>').html('删除').on('click', function(){
-			func_delete()
-		}).appendTo(line)
-	}
-	return line
+_frame.app_main.page['items'].field_actions = function (text, func_delete) {
+    var line = $('<p class="actions"/>')
+    $('<button type="submit"/>').html(text || '提交').appendTo(line)
+    if (func_delete) {
+        $('<button type="button"/>').html('删除').on('click', function () {
+            func_delete()
+        }).appendTo(line)
+    }
+    return line
 }
 
 
@@ -8869,247 +8922,247 @@ _frame.app_main.page['items'].field_actions = function(text, func_delete){
 
 
 
-_frame.app_main.page['items'].gen_form_new_item_type = function( callback, data_edit, callback_remove ){
-	callback = callback || function(){}
-	let is_edit = (data_edit)
-	var self = _frame.app_main.page['items']
-		,form = $('<form class="itemform item_type"/>').on('submit',function(e){
-					e.preventDefault()
-					var data = $(this).serializeObject()
+_frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_edit, callback_remove) {
+    callback = callback || function () { }
+    let is_edit = (data_edit)
+    var self = _frame.app_main.page['items']
+        , form = $('<form class="itemform item_type"/>').on('submit', function (e) {
+            e.preventDefault()
+            var data = $(this).serializeObject()
 
-					if( typeof data['equipable_on_type'] != 'object' && typeof data['equipable_on_type'] != 'undefined' )
-						data['equipable_on_type'] = [data['equipable_on_type']]
-					data['equipable_on_type'] = data['equipable_on_type'] || []
+            if (typeof data['equipable_on_type'] != 'object' && typeof data['equipable_on_type'] != 'undefined')
+                data['equipable_on_type'] = [data['equipable_on_type']]
+            data['equipable_on_type'] = data['equipable_on_type'] || []
 
-					/* scrapped 2015/05/26
-					if( typeof data['equipable_on_stat'] != 'object' && typeof data['equipable_on_stat'] != 'undefined' )
-						data['equipable_on_stat'] = [data['equipable_on_stat']]
-					data['equipable_on_stat'] = data['equipable_on_stat'] || []
-					*/
+            /* scrapped 2015/05/26
+            if( typeof data['equipable_on_stat'] != 'object' && typeof data['equipable_on_stat'] != 'undefined' )
+                data['equipable_on_stat'] = [data['equipable_on_stat']]
+            data['equipable_on_stat'] = data['equipable_on_stat'] || []
+            */
 
-					if( is_edit ){
-						// 编辑操作
-						_db.item_types.update({
-							'_id': 	data_edit['_id']
-						}, {
-							$set: data
-						}, {}, function (err, numReplaced) {
-							callback( data )
-							_frame.modal.hide()
-						});
-					}else{
-						// 新建操作
-						// 获取当前总数，确定数字ID
-						// 之后插入数据
-							_db.item_types.count({}, function(err, count){
-								data['id'] = parseInt(count) + 1
-								_db.item_types.insert(
-									data,
-									callback
-								);
-							})
-					}
-				})
-		,input_container = $('<div/>').appendTo(form)
+            if (is_edit) {
+                // 编辑操作
+                _db.item_types.update({
+                    '_id': data_edit['_id']
+                }, {
+                        $set: data
+                    }, {}, function (err, numReplaced) {
+                        callback(data)
+                        _frame.modal.hide()
+                    });
+            } else {
+                // 新建操作
+                // 获取当前总数，确定数字ID
+                // 之后插入数据
+                _db.item_types.count({}, function (err, count) {
+                    data['id'] = parseInt(count) + 1
+                    _db.item_types.insert(
+                        data,
+                        callback
+                    );
+                })
+            }
+        })
+        , input_container = $('<div/>').appendTo(form)
 
-	self.field_input_text('name.ja_jp', '日', is_edit ? data_edit['name']['ja_jp'] : null).appendTo(input_container)
-	self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
+    self.field_input_text('name.ja_jp', '日', is_edit ? data_edit['name']['ja_jp'] : null).appendTo(input_container)
+    self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
 
-	$('<h4/>').html('图标').appendTo(input_container)
-	// icon
-		// 扫描图标目录，生成选择项
-		//var path_icons = process.cwd() + '/app/assets/images/itemicon/transparent'
-		var path_icons = './app/assets/images/itemicon/transparent'
-			,icon_radios = $('<div class="icons"/>').appendTo(input_container)
-			,icons = []
-		node.fs.readdir(path_icons, function(err, files){
-			for( var i in files ){
-				icons.push(files[i])
-			}
-			icons.sort(function(a, b){
-				return parseInt(a.split('.')[0]) - parseInt(b.split('.')[0])
-			});
-			for( var i in icons ){
-				var id = '_input_g' + _g.inputIndex
-					,filename = icons[i].split('.')[0]
-					,unitDOM = $('<span class="unit"/>').appendTo(icon_radios)
-				_g.inputIndex++
-				$('<input type="radio" name="icon" value="'+filename+'" id="'+id+'"/>')
-					.prop('checked', (data_edit && data_edit.icon == filename) )
-					.appendTo(unitDOM)
-				$('<label for="'+id+'"/>')
-					.css('background-image','url(../'+ path_icons + '/' + icons[i] +')')
-					.appendTo(unitDOM)
-			}
-		})
+    $('<h4/>').html('图标').appendTo(input_container)
+    // icon
+    // 扫描图标目录，生成选择项
+    //var path_icons = process.cwd() + '/app/assets/images/itemicon/transparent'
+    var path_icons = './app/assets/images/itemicon/transparent'
+        , icon_radios = $('<div class="icons"/>').appendTo(input_container)
+        , icons = []
+    node.fs.readdir(path_icons, function (err, files) {
+        for (var i in files) {
+            icons.push(files[i])
+        }
+        icons.sort(function (a, b) {
+            return parseInt(a.split('.')[0]) - parseInt(b.split('.')[0])
+        });
+        for (var i in icons) {
+            var id = '_input_g' + _g.inputIndex
+                , filename = icons[i].split('.')[0]
+                , unitDOM = $('<span class="unit"/>').appendTo(icon_radios)
+            _g.inputIndex++
+            $('<input type="radio" name="icon" value="' + filename + '" id="' + id + '"/>')
+                .prop('checked', (data_edit && data_edit.icon == filename))
+                .appendTo(unitDOM)
+            $('<label for="' + id + '"/>')
+                .css('background-image', 'url(../' + path_icons + '/' + icons[i] + ')')
+                .appendTo(unitDOM)
+        }
+    })
 
-	$('<h4/>').html('可装备舰种').appendTo(input_container)
-	// equipable_on_type
-		// 读取舰种DB，生成选择项
-		var shiptype_checkboxes = _p.el.flexgrid.create().addClass('ship_types').appendTo( input_container )
-			,equipable_on_type = is_edit ? data_edit['equipable_on_type'] : []
-		_db.ship_types.find({}).sort({'id': 1}).exec(function(err, docs){
-			for(var i in docs ){
-				var type_id = parseInt(docs[i]['id'])
-					,input_id = '_input_g' + _g.inputIndex
-					,unitDOM = $('<div class="unit"/>')
-				shiptype_checkboxes.appendDOM(unitDOM)
-				_g.inputIndex++
-				$('<input type="checkbox" name="equipable_on_type" value="'+type_id+'" id="'+input_id+'">')
-					.prop('checked', ($.inArray(type_id, equipable_on_type) > -1) )
-					.appendTo( unitDOM )
-				$('<label for="'+input_id+'"/>').html(docs[i]['full_zh']).appendTo(unitDOM)
-			}
-		})
+    $('<h4/>').html('可装备舰种').appendTo(input_container)
+    // equipable_on_type
+    // 读取舰种DB，生成选择项
+    var shiptype_checkboxes = _p.el.flexgrid.create().addClass('ship_types').appendTo(input_container)
+        , equipable_on_type = is_edit ? data_edit['equipable_on_type'] : []
+    _db.ship_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+        for (var i in docs) {
+            var type_id = parseInt(docs[i]['id'])
+                , input_id = '_input_g' + _g.inputIndex
+                , unitDOM = $('<div class="unit"/>')
+            shiptype_checkboxes.appendDOM(unitDOM)
+            _g.inputIndex++
+            $('<input type="checkbox" name="equipable_on_type" value="' + type_id + '" id="' + input_id + '">')
+                .prop('checked', ($.inArray(type_id, equipable_on_type) > -1))
+                .appendTo(unitDOM)
+            $('<label for="' + input_id + '"/>').html(docs[i]['full_zh']).appendTo(unitDOM)
+        }
+    })
 
-	$('<h4/>').html('主属性').appendTo(input_container)
-		var stats_radios = _p.el.flexgrid.create().addClass('stats').appendTo( input_container )
-			,main_attribute = is_edit ? (data_edit['main_attribute'] || null) : null
-			,stats = [
-				['火力',	'fire'],
-				['雷装',	'torpedo'],
-				['对空',	'aa'],
-				['对潜',	'asw'],
-				['爆装',	'bomb'],
-				['命中',	'hit'],
-				['装甲',	'armor'],
-				['回避',	'evasion'],
-				['索敌',	'los'],
-				['运',		'luck']
-			]
-		for(var i in stats ){
-			var input_id = '_input_g' + _g.inputIndex
-				,unitDOM = $('<div class="unit"/>')
-			stats_radios.appendDOM(unitDOM)
-			_g.inputIndex++
-			$('<input type="radio" name="main_attribute" value="'+stats[i][1]+'" id="'+input_id+'">')
-				.prop('checked', (stats[i][1] == main_attribute) )
-				.appendTo( unitDOM )
-			$('<label for="'+input_id+'"/>').html(stats[i][0]).appendTo(unitDOM)
-		}
+    $('<h4/>').html('主属性').appendTo(input_container)
+    var stats_radios = _p.el.flexgrid.create().addClass('stats').appendTo(input_container)
+        , main_attribute = is_edit ? (data_edit['main_attribute'] || null) : null
+        , stats = [
+            ['火力', 'fire'],
+            ['雷装', 'torpedo'],
+            ['对空', 'aa'],
+            ['对潜', 'asw'],
+            ['爆装', 'bomb'],
+            ['命中', 'hit'],
+            ['装甲', 'armor'],
+            ['回避', 'evasion'],
+            ['索敌', 'los'],
+            ['运', 'luck']
+        ]
+    for (var i in stats) {
+        var input_id = '_input_g' + _g.inputIndex
+            , unitDOM = $('<div class="unit"/>')
+        stats_radios.appendDOM(unitDOM)
+        _g.inputIndex++
+        $('<input type="radio" name="main_attribute" value="' + stats[i][1] + '" id="' + input_id + '">')
+            .prop('checked', (stats[i][1] == main_attribute))
+            .appendTo(unitDOM)
+        $('<label for="' + input_id + '"/>').html(stats[i][0]).appendTo(unitDOM)
+    }
 
-	/* scrapped 2015/05/26
-	$('<h4/>').html('当存在以下属性时可装备').appendTo(input_container)
-	// equipable_on_stat
-		var stats_checkboxes = _p.el.flexgrid.create().addClass('stats').appendTo( input_container )
-			,equipable_on_stat = is_edit ? (data_edit['equipable_on_stat'] || []) : []
-			,stats = [
-				['火力',	'fire'],
-				['雷装',	'torpedo'],
-				['对空',	'aa'],
-				['对潜',	'asw'],
-				['耐久',	'hp'],
-				['装甲',	'armor'],
-				['回避',	'evasion'],
-				['搭载',	'carry'],
-				['航速',	'speed'],
-				['射程',	'range'],
-				['索敌',	'los'],
-				['运',		'luck']
-			]
-		for(var i in stats ){
-			var input_id = '_input_g' + _g.inputIndex
-				,unitDOM = $('<div class="unit"/>')
-			stats_checkboxes.appendDOM(unitDOM)
-			_g.inputIndex++
-			$('<input type="checkbox" name="equipable_on_stat" value="'+stats[i][1]+'" id="'+input_id+'">')
-				.prop('checked', ($.inArray(stats[i][1], equipable_on_stat) > -1) )
-				.appendTo( unitDOM )
-			$('<label for="'+input_id+'"/>').html(stats[i][0]).appendTo(unitDOM)
-		}
-	*/
+    /* scrapped 2015/05/26
+    $('<h4/>').html('当存在以下属性时可装备').appendTo(input_container)
+    // equipable_on_stat
+        var stats_checkboxes = _p.el.flexgrid.create().addClass('stats').appendTo( input_container )
+            ,equipable_on_stat = is_edit ? (data_edit['equipable_on_stat'] || []) : []
+            ,stats = [
+                ['火力',	'fire'],
+                ['雷装',	'torpedo'],
+                ['对空',	'aa'],
+                ['对潜',	'asw'],
+                ['耐久',	'hp'],
+                ['装甲',	'armor'],
+                ['回避',	'evasion'],
+                ['搭载',	'carry'],
+                ['航速',	'speed'],
+                ['射程',	'range'],
+                ['索敌',	'los'],
+                ['运',		'luck']
+            ]
+        for(var i in stats ){
+            var input_id = '_input_g' + _g.inputIndex
+                ,unitDOM = $('<div class="unit"/>')
+            stats_checkboxes.appendDOM(unitDOM)
+            _g.inputIndex++
+            $('<input type="checkbox" name="equipable_on_stat" value="'+stats[i][1]+'" id="'+input_id+'">')
+                .prop('checked', ($.inArray(stats[i][1], equipable_on_stat) > -1) )
+                .appendTo( unitDOM )
+            $('<label for="'+input_id+'"/>').html(stats[i][0]).appendTo(unitDOM)
+        }
+    */
 
-	self.field_actions(
-		is_edit ? '更新' : null,
-		callback_remove ? function(){
-				_db.item_types.remove({ _id: data_edit['_id'] }, {}, function (err, numRemoved) {
-					callback_remove()
-					_frame.modal.hide()
-				});
-			} : null
-	).appendTo(form)
-	return form
+    self.field_actions(
+        is_edit ? '更新' : null,
+        callback_remove ? function () {
+            _db.item_types.remove({ _id: data_edit['_id'] }, {}, function (err, numRemoved) {
+                callback_remove()
+                _frame.modal.hide()
+            });
+        } : null
+    ).appendTo(form)
+    return form
 }
 
-_frame.app_main.page['items'].gen_form_new_item_type_collection = function( callback, data_edit, callback_remove ){
-	callback = callback || function(){}
-	let is_edit = (data_edit)
-	var self = _frame.app_main.page['items']
-		,form = $('<form class="itemform item_type_collection"/>').on('submit',function(e){
-					e.preventDefault()
-					var data = $(this).serializeObject()
+_frame.app_main.page['items'].gen_form_new_item_type_collection = function (callback, data_edit, callback_remove) {
+    callback = callback || function () { }
+    let is_edit = (data_edit)
+    var self = _frame.app_main.page['items']
+        , form = $('<form class="itemform item_type_collection"/>').on('submit', function (e) {
+            e.preventDefault()
+            var data = $(this).serializeObject()
 
-					if( typeof data['types'] != 'object' && typeof data['types'] != 'undefined' )
-						data['types'] = [data['types']]
-					data['types'] = data['types'] || []
+            if (typeof data['types'] != 'object' && typeof data['types'] != 'undefined')
+                data['types'] = [data['types']]
+            data['types'] = data['types'] || []
 
-					if( is_edit ){
-						// 编辑操作
-						_db.item_type_collections.update({
-							'_id': 	data_edit['_id']
-						}, {
-							$set: data
-						}, {}, function (err, numReplaced) {
-							callback( data )
-							_frame.modal.hide()
-						});
-					}else{
-						// 新建操作
-						// 获取当前总数，确定数字ID
-						// 之后插入数据
-							_db.item_type_collections.count({}, function(err, count){
-								data['id'] = parseInt(count) + 1
-								_db.item_type_collections.insert(
-									data,
-									callback
-								);
-							})
-					}
-				})
-		,input_container = $('<div/>').appendTo(form)
+            if (is_edit) {
+                // 编辑操作
+                _db.item_type_collections.update({
+                    '_id': data_edit['_id']
+                }, {
+                        $set: data
+                    }, {}, function (err, numReplaced) {
+                        callback(data)
+                        _frame.modal.hide()
+                    });
+            } else {
+                // 新建操作
+                // 获取当前总数，确定数字ID
+                // 之后插入数据
+                _db.item_type_collections.count({}, function (err, count) {
+                    data['id'] = parseInt(count) + 1
+                    _db.item_type_collections.insert(
+                        data,
+                        callback
+                    );
+                })
+            }
+        })
+        , input_container = $('<div/>').appendTo(form)
 
-	self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
+    self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
 
-	$('<h4/>').html('图标').appendTo(input_container)
-	// icon
-		// 扫描图标目录，生成选择项
-		var path_icons = './app/assets/images/itemcollection'
-			,icon_radios = $('<div class="icons"/>').appendTo(input_container)
-			,icons = []
-		node.fs.readdir(path_icons, function(err, files){
-			for( var i in files ){
-				icons.push(files[i])
-			}
-			icons.sort(function(a, b){
-				return parseInt(a.split('.')[0]) - parseInt(b.split('.')[0])
-			});
-			for( var i in icons ){
-				var id = '_input_g' + _g.inputIndex
-					,filename = icons[i].split('.')[0]
-					,unitDOM = $('<span class="unit"/>').appendTo(icon_radios)
-				_g.inputIndex++
-				$('<input type="radio" name="icon" value="'+filename+'" id="'+id+'"/>')
-					.prop('checked', (data_edit && data_edit.icon == filename) )
-					.appendTo(unitDOM)
-				$('<label for="'+id+'"/>')
-					.css('background-image','url(../'+ path_icons + '/' + icons[i] +')')
-					.appendTo(unitDOM)
-			}
-		})
+    $('<h4/>').html('图标').appendTo(input_container)
+    // icon
+    // 扫描图标目录，生成选择项
+    var path_icons = './app/assets/images/itemcollection'
+        , icon_radios = $('<div class="icons"/>').appendTo(input_container)
+        , icons = []
+    node.fs.readdir(path_icons, function (err, files) {
+        for (var i in files) {
+            icons.push(files[i])
+        }
+        icons.sort(function (a, b) {
+            return parseInt(a.split('.')[0]) - parseInt(b.split('.')[0])
+        });
+        for (var i in icons) {
+            var id = '_input_g' + _g.inputIndex
+                , filename = icons[i].split('.')[0]
+                , unitDOM = $('<span class="unit"/>').appendTo(icon_radios)
+            _g.inputIndex++
+            $('<input type="radio" name="icon" value="' + filename + '" id="' + id + '"/>')
+                .prop('checked', (data_edit && data_edit.icon == filename))
+                .appendTo(unitDOM)
+            $('<label for="' + id + '"/>')
+                .css('background-image', 'url(../' + path_icons + '/' + icons[i] + ')')
+                .appendTo(unitDOM)
+        }
+    })
 
-	$('<h4/>').html('装备类型').appendTo(input_container)
-	_form.create_item_types('types', is_edit ? data_edit['types'] : []).appendTo( input_container )
+    $('<h4/>').html('装备类型').appendTo(input_container)
+    _form.create_item_types('types', is_edit ? data_edit['types'] : []).appendTo(input_container)
 
-	self.field_actions(
-		is_edit ? '更新' : null,
-		callback_remove ? function(){
-				_db.item_type_collections.remove({ _id: data_edit['_id'] }, {}, function (err, numRemoved) {
-					callback_remove()
-					_frame.modal.hide()
-				});
-			} : null
-	).appendTo(form)
-	return form
+    self.field_actions(
+        is_edit ? '更新' : null,
+        callback_remove ? function () {
+            _db.item_type_collections.remove({ _id: data_edit['_id'] }, {}, function (err, numRemoved) {
+                callback_remove()
+                _frame.modal.hide()
+            });
+        } : null
+    ).appendTo(form)
+    return form
 }
 
 
@@ -9128,27 +9181,27 @@ _frame.app_main.page['items'].gen_form_new_item_type_collection = function( call
 
 
 
-_frame.app_main.page['items'].init = function(page){
-	page.find('section').on({
-		'tabview-show': function(){
-			var section = $(this)
-				,name = section.data('tabname')
+_frame.app_main.page['items'].init = function (page) {
+    page.find('section').on({
+        'tabview-show': function () {
+            var section = $(this)
+                , name = section.data('tabname')
 
-			if( !_frame.app_main.page['items'].section[name] )
-				_frame.app_main.page['items'].section[name] = {}
+            if (!_frame.app_main.page['items'].section[name])
+                _frame.app_main.page['items'].section[name] = {}
 
-			var _o = _frame.app_main.page['items'].section[name]
+            var _o = _frame.app_main.page['items'].section[name]
 
-			if( !_o.is_init && _o.init ){
-				_o.init(section)
-				_o.is_init = true
-			}
-			switch( name ){
-				case '未入库':
-					break;
-			}
-		}
-	})
+            if (!_o.is_init && _o.init) {
+                _o.init(section)
+                _o.is_init = true
+            }
+            switch (name) {
+                case '未入库':
+                    break;
+            }
+        }
+    })
 }
 
 
@@ -9160,12 +9213,12 @@ _frame.app_main.page['items'].init = function(page){
 
 
 _frame.app_main.page['items'].section['已入库'] = {
-	'dom': {
-	},
+    'dom': {
+    },
 
-	'init': function(section){
-		_frame.app_main.page['items'].section['已入库'].dom.section = section
-	}
+    'init': function (section) {
+        _frame.app_main.page['items'].section['已入库'].dom.section = section
+    }
 }
 
 
@@ -9177,107 +9230,107 @@ _frame.app_main.page['items'].section['已入库'] = {
 
 
 _frame.app_main.page['items'].section['未入库'] = {
-	'dom': {},
-	'data': {},
-	'data_id': [],
+    'dom': {},
+    'data': {},
+    'data_id': [],
 
-	'init_list': function(index){
-		var self = _frame.app_main.page['items'].section['未入库']
-			,id = _frame.app_main.page['items'].section['未入库']['data_id'][index]
-			,data = _frame.app_main.page['items'].section['未入库']['data'][id]
+    'init_list': function (index) {
+        var self = _frame.app_main.page['items'].section['未入库']
+            , id = _frame.app_main.page['items'].section['未入库']['data_id'][index]
+            , data = _frame.app_main.page['items'].section['未入库']['data'][id]
 
-		function raw_ship_data_convert(d){
-			var data_converted = {
-				'id': 	d['id'],
-				'name': {
-					'ja_jp': 	d['name']
-				},
-				'type': 	null,
-				'rarity': 	d['rarity'] == 0 || d['rarity'] == 1 ? parseInt(d['rarity']) + 1 : parseInt(d['rarity']),
-				'stat': {
-					'fire': 		d['fire'],
-					'torpedo': 		d['torpedo'],
-					'bomb': 		d['bomb'],
-					'asw': 			d['ass'],
-					'aa': 			d['aac'],
-					'armor': 		d['armor'],
-					'evasion': 		d['evasion'],
-					'hit': 			d['hit'],
-					'los': 			d['seek'],
-					'range':		d['range'],
-				},
-				'dismantle': 	JSON.parse(d['dismantle']),
-				'default_equipped_on': 	[]
-			}
+        function raw_ship_data_convert(d) {
+            var data_converted = {
+                'id': d['id'],
+                'name': {
+                    'ja_jp': d['name']
+                },
+                'type': null,
+                'rarity': d['rarity'] == 0 || d['rarity'] == 1 ? parseInt(d['rarity']) + 1 : parseInt(d['rarity']),
+                'stat': {
+                    'fire': d['fire'],
+                    'torpedo': d['torpedo'],
+                    'bomb': d['bomb'],
+                    'asw': d['ass'],
+                    'aa': d['aac'],
+                    'armor': d['armor'],
+                    'evasion': d['evasion'],
+                    'hit': d['hit'],
+                    'los': d['seek'],
+                    'range': d['range'],
+                },
+                'dismantle': JSON.parse(d['dismantle']),
+                'default_equipped_on': []
+            }
 
-			return data_converted
-		}
+            return data_converted
+        }
 
-		self.dom.list.appendDOM(
-			$('<button class="unit newitem" data-itemid="'+ id +'" data-itemmodal="false"/>')
-				.append(
-					$('<span><img src="../pics/items/'+id+'/card.png" alt="'+data['name']+'"/></span>')
-				)
-				.on('click', function( e, data_modified ){
-					//console.log( data )
-					_frame.app_main.page['items'].show_item_form(
-						$.extend(
-							true,
-							raw_ship_data_convert(data),
-							data_modified || {}
-						)
-					)
-				})
-		)
+        self.dom.list.appendDOM(
+            $('<button class="unit newitem" data-itemid="' + id + '" data-itemmodal="false"/>')
+                .append(
+                $('<span><img src="../pics/items/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
+                )
+                .on('click', function (e, data_modified) {
+                    //console.log( data )
+                    _frame.app_main.page['items'].show_item_form(
+                        $.extend(
+                            true,
+                            raw_ship_data_convert(data),
+                            data_modified || {}
+                        )
+                    )
+                })
+        )
 
-		if( index >= _frame.app_main.page['items'].section['未入库']['data_id'].length - 1 ){
-			self.dom.new_container.html( 'All ' + _frame.app_main.page['items'].section['未入库']['data_id'].length + ' items loaded.')
-		}else{
-			index++
-			self.dom.new_container.html( index + ' / ' + _frame.app_main.page['items'].section['未入库']['data_id'].length + ' items loaded.')
-			setTimeout(function(){
-				_frame.app_main.page['items'].section['未入库'].init_list(index)
-			}, 10)
-		}
-	},
+        if (index >= _frame.app_main.page['items'].section['未入库']['data_id'].length - 1) {
+            self.dom.new_container.html('All ' + _frame.app_main.page['items'].section['未入库']['data_id'].length + ' items loaded.')
+        } else {
+            index++
+            self.dom.new_container.html(index + ' / ' + _frame.app_main.page['items'].section['未入库']['data_id'].length + ' items loaded.')
+            setTimeout(function () {
+                _frame.app_main.page['items'].section['未入库'].init_list(index)
+            }, 10)
+        }
+    },
 
-	'init': function(section){
-		var self = _frame.app_main.page['items'].section['未入库']
+    'init': function (section) {
+        var self = _frame.app_main.page['items'].section['未入库']
 
-		// 载入中信息
-			self.dom.new_container = $('<div class="new_container"/>').html('Loading...').appendTo( section )
+        // 载入中信息
+        self.dom.new_container = $('<div class="new_container"/>').html('Loading...').appendTo(section)
 
-		// 列表container
-			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('newitems').appendTo( self.dom.main )
+        // 列表container
+        self.dom.main = $('<div class="main"/>').appendTo(section)
+        self.dom.list = _p.el.flexgrid.create().addClass('newitems').appendTo(self.dom.main)
 
-		// 扫描目标文件夹，初始化内容
-			_db.items.find({}).sort({'id': 1}).exec(function(err, docs){
-				if( !err && docs && docs.length ){
-					for( var i in docs ){
-						self.add(docs[i])
-					}
-				}
-			})
-			node.fs.readdir(_g.path.fetched.items, function(err, files){
-				for( var i in files ){
-					node.fs.readFile(_g.path.fetched.items + '/' + files[i], 'utf8', function(err, data){
-						if(err)
-							throw err
-						eval('var _data = '+data)
-						_frame.app_main.page["items"].section["未入库"]["data"][_data['id']] = _data
-						_frame.app_main.page["items"].section["未入库"]["data_id"].push( _data['id'] )
-						if( _frame.app_main.page['items'].section['未入库']["data_id"].length >= files.length ){
-							_frame.app_main.page['items'].section['未入库']['data_id'].sort(function(a,b){return a-b})
-							_frame.app_main.page['items'].section['未入库'].init_list(0)
-						}
-					})
-				}
-				if( err || !files || !files.length ){
-					$('<p/>').html('暂无内容...<br />请初始化数据').appendTo(self.dom.list)
-				}
-			})
-	}
+        // 扫描目标文件夹，初始化内容
+        _db.items.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err && docs && docs.length) {
+                for (var i in docs) {
+                    self.add(docs[i])
+                }
+            }
+        })
+        node.fs.readdir(_g.path.fetched.items, function (err, files) {
+            for (var i in files) {
+                node.fs.readFile(_g.path.fetched.items + '/' + files[i], 'utf8', function (err, data) {
+                    if (err)
+                        throw err
+                    eval('var _data = ' + data)
+                    _frame.app_main.page["items"].section["未入库"]["data"][_data['id']] = _data
+                    _frame.app_main.page["items"].section["未入库"]["data_id"].push(_data['id'])
+                    if (_frame.app_main.page['items'].section['未入库']["data_id"].length >= files.length) {
+                        _frame.app_main.page['items'].section['未入库']['data_id'].sort(function (a, b) { return a - b })
+                        _frame.app_main.page['items'].section['未入库'].init_list(0)
+                    }
+                })
+            }
+            if (err || !files || !files.length) {
+                $('<p/>').html('暂无内容...<br />请初始化数据').appendTo(self.dom.list)
+            }
+        })
+    }
 }
 
 
@@ -9289,68 +9342,68 @@ _frame.app_main.page['items'].section['未入库'] = {
 
 
 _frame.app_main.page['items'].section['类型'] = {
-	'dom': {
-	},
+    'dom': {
+    },
 
-	// 相关表单/按钮
-		'titlebtn': function( d ){
-			var self = _frame.app_main.page['items'].section['类型']
-				,btn = $('<button class="unit item_type"/>').html(
-							'<span style="background-image: url(../app/assets/images/itemicon/transparent/'+d['icon']+'.png)"></span>'
-							+ d['name']['zh_cn']
-						)
-						.on('click', function(){
-							_frame.modal.show(
-								_frame.app_main.page['items'].gen_form_new_item_type(
-									function( newdata ){
-										self.titlebtn( newdata )
-											.insertAfter( btn )
-										btn.remove()
-									},
-									d,
-									function(){
-										btn.remove()
-									}
-								) , '编辑类型')
-						})
-			return btn
-		},
+    // 相关表单/按钮
+    'titlebtn': function (d) {
+        var self = _frame.app_main.page['items'].section['类型']
+            , btn = $('<button class="unit item_type"/>').html(
+                '<span style="background-image: url(../app/assets/images/itemicon/transparent/' + d['icon'] + '.png)"></span>'
+                + d['name']['zh_cn']
+            )
+                .on('click', function () {
+                    _frame.modal.show(
+                        _frame.app_main.page['items'].gen_form_new_item_type(
+                            function (newdata) {
+                                self.titlebtn(newdata)
+                                    .insertAfter(btn)
+                                btn.remove()
+                            },
+                            d,
+                            function () {
+                                btn.remove()
+                            }
+                        ), '编辑类型')
+                })
+        return btn
+    },
 
-	// 新建完毕，添加内容
-		'add': function( d ){
-			var self = _frame.app_main.page['items'].section['类型']
-			// 标题，同时也是编辑按钮
-				self.dom.list.appendDOM( self.titlebtn(d) )
-		},
+    // 新建完毕，添加内容
+    'add': function (d) {
+        var self = _frame.app_main.page['items'].section['类型']
+        // 标题，同时也是编辑按钮
+        self.dom.list.appendDOM(self.titlebtn(d))
+    },
 
-	'init': function(section){
-		var self = _frame.app_main.page['items'].section['类型']
+    'init': function (section) {
+        var self = _frame.app_main.page['items'].section['类型']
 
-		// 新建按钮
-			self.dom.new_container = $('<div class="new_container"/>').appendTo( section )
-				self.dom.btnnew = $('<button/>').html('新建').on('click',function(){
-						_frame.modal.show(
-							_frame.app_main.page['items'].gen_form_new_item_type(
-								function(err, newDoc) {
-									self.add(newDoc)
-									_frame.modal.hide()
-								}
-							), '新建类型')
-					}).appendTo( self.dom.new_container )
+        // 新建按钮
+        self.dom.new_container = $('<div class="new_container"/>').appendTo(section)
+        self.dom.btnnew = $('<button/>').html('新建').on('click', function () {
+            _frame.modal.show(
+                _frame.app_main.page['items'].gen_form_new_item_type(
+                    function (err, newDoc) {
+                        self.add(newDoc)
+                        _frame.modal.hide()
+                    }
+                ), '新建类型')
+        }).appendTo(self.dom.new_container)
 
-		// 列表container
-			self.dom.main = $('<div class="main"/>').appendTo( section )
-			self.dom.list = _p.el.flexgrid.create().addClass('item_types').appendTo( self.dom.main )
+        // 列表container
+        self.dom.main = $('<div class="main"/>').appendTo(section)
+        self.dom.list = _p.el.flexgrid.create().addClass('item_types').appendTo(self.dom.main)
 
-		// 读取db，初始化内容
-			_db.item_types.find({}).sort({'id': 1}).exec(function(err, docs){
-				if( !err && docs && docs.length ){
-					for( var i in docs ){
-						self.add(docs[i])
-					}
-				}
-			})
-	}
+        // 读取db，初始化内容
+        _db.item_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err && docs && docs.length) {
+                for (var i in docs) {
+                    self.add(docs[i])
+                }
+            }
+        })
+    }
 }
 
 
@@ -9362,66 +9415,66 @@ _frame.app_main.page['items'].section['类型'] = {
 
 
 _frame.app_main.page['items'].section['类型集合'] = {
-	'dom': {
-	},
+    'dom': {
+    },
 
-	// 相关表单/按钮
-		'titlebtn': function( d ){
-			var self = _frame.app_main.page['items'].section['类型集合']
-				,btn = $('<button class="item_type_collection"/>').html(
-							d['name']['zh_cn']
-						)
-						.on('click', function(){
-							_frame.modal.show(
-								_frame.app_main.page['items'].gen_form_new_item_type_collection(
-									function( newdata ){
-										self.titlebtn( newdata )
-											.insertAfter( btn )
-										btn.remove()
-									},
-									d,
-									function(){
-										btn.remove()
-									}
-								) , '编辑类型集合')
-						})
-			return btn
-		},
+    // 相关表单/按钮
+    'titlebtn': function (d) {
+        var self = _frame.app_main.page['items'].section['类型集合']
+            , btn = $('<button class="item_type_collection"/>').html(
+                d['name']['zh_cn']
+            )
+                .on('click', function () {
+                    _frame.modal.show(
+                        _frame.app_main.page['items'].gen_form_new_item_type_collection(
+                            function (newdata) {
+                                self.titlebtn(newdata)
+                                    .insertAfter(btn)
+                                btn.remove()
+                            },
+                            d,
+                            function () {
+                                btn.remove()
+                            }
+                        ), '编辑类型集合')
+                })
+        return btn
+    },
 
-	// 新建完毕，添加内容
-		'add': function( d ){
-			var self = _frame.app_main.page['items'].section['类型集合']
-			// 标题，同时也是编辑按钮
-				self.titlebtn(d).appendTo( self.dom.main )
-		},
+    // 新建完毕，添加内容
+    'add': function (d) {
+        var self = _frame.app_main.page['items'].section['类型集合']
+        // 标题，同时也是编辑按钮
+        self.titlebtn(d).appendTo(self.dom.main)
+    },
 
-	'init': function(section){
-		var self = _frame.app_main.page['items'].section['类型集合']
+    'init': function (section) {
+        var self = _frame.app_main.page['items'].section['类型集合']
 
-		// 新建按钮
-			self.dom.new_container = $('<div class="new_container"/>').appendTo( section )
-				self.dom.btnnew = $('<button/>').html('新建').on('click',function(){
-						_frame.modal.show(
-							_frame.app_main.page['items'].gen_form_new_item_type_collection(
-								function(err, newDoc) {
-									self.add(newDoc)
-									_frame.modal.hide()
-								}
-							), '新建类型集合')
-					}).appendTo( self.dom.new_container )
+        // 新建按钮
+        self.dom.new_container = $('<div class="new_container"/>').appendTo(section)
+        self.dom.btnnew = $('<button/>').html('新建').on('click', function () {
+            _frame.modal.show(
+                _frame.app_main.page['items'].gen_form_new_item_type_collection(
+                    function (err, newDoc) {
+                        self.add(newDoc)
+                        _frame.modal.hide()
+                    }
+                ), '新建类型集合')
+        }).appendTo(self.dom.new_container)
 
-		// 列表container
-			self.dom.main = $('<div class="main"/>').appendTo( section )
+        // 列表container
+        self.dom.main = $('<div class="main"/>').appendTo(section)
 
-		// 读取db，初始化内容
-			_db.item_type_collections.find({}).sort({'id': 1}).exec(function(err, docs){
-				if( !err && docs && docs.length ){
-					for( var i in docs ){
-						self.add(docs[i])
-					}
-				}
-			})
-	}
+        // 读取db，初始化内容
+        _db.item_type_collections.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err && docs && docs.length) {
+                for (var i in docs) {
+                    self.add(docs[i])
+                }
+            }
+        })
+    }
 }
 
 
@@ -9433,53 +9486,53 @@ _frame.app_main.page['items'].section['类型集合'] = {
 
 
 _frame.app_main.page['items'].section['新建'] = {
-	'dom': {},
+    'dom': {},
 
-	'init': function(section){
-		var self = _frame.app_main.page['items'].section['新建']
-		self.dom.section = section
+    'init': function (section) {
+        var self = _frame.app_main.page['items'].section['新建']
+        self.dom.section = section
 
-		// 创建form
-			self.dom.form = $('<form/>')
-								.on('submit', function(e){
-									e.preventDefault();
-									var formdata = self.dom.form.serializeObject()
-										,item_data = {
-											'name': 	{},
-											'stat': 	{},
-											'dismantle':[0, 0, 0, 0]
-										}
+        // 创建form
+        self.dom.form = $('<form/>')
+            .on('submit', function (e) {
+                e.preventDefault();
+                var formdata = self.dom.form.serializeObject()
+                    , item_data = {
+                        'name': {},
+                        'stat': {},
+                        'dismantle': [0, 0, 0, 0]
+                    }
 
-									if( formdata['id'] )
-										item_data['id'] = formdata['id']
+                if (formdata['id'])
+                    item_data['id'] = formdata['id']
 
-									_frame.app_main.page['items'].show_item_form(
-										item_data
-									)
-								})
-								.data({
-									'item_data': {}
-								})
-								.appendTo( section )
+                _frame.app_main.page['items'].show_item_form(
+                    item_data
+                )
+            })
+            .data({
+                'item_data': {}
+            })
+            .appendTo(section)
 
-			var id = '_input_g' + _g.inputIndex
-			_g.inputIndex++
-			$('<p/>')
-				.append(
-					$('<label for="' +id+ '"/>').html('ID')
-				)
-				.append(
-					$('<input id="' +id+ '" type="number" name="id"/>')
-				)
-				.appendTo(self.dom.form)
+        var id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        $('<p/>')
+            .append(
+            $('<label for="' + id + '"/>').html('ID')
+            )
+            .append(
+            $('<input id="' + id + '" type="number" name="id"/>')
+            )
+            .appendTo(self.dom.form)
 
-			$('<p class="actions"/>')
-								.append(
-									$('<button type="submit"/>').html('新建')
-								)
-								.appendTo(self.dom.form)
+        $('<p class="actions"/>')
+            .append(
+            $('<button type="submit"/>').html('新建')
+            )
+            .appendTo(self.dom.form)
 
-	}
+    }
 }
 
 _frame.app_main.page['entities'] = {}
@@ -9969,694 +10022,787 @@ _frame.app_main.page['update'].section['更新日志'] = {
 // http://203.104.209.23/kcs/...
 
 _frame.app_main.page['gamedata'] = {}
-_frame.app_main.page['gamedata'].init = function( page ){
-	jf.readFile(node.path.join(_g.root, '/fetched_data/api_start2.json'), function(err, obj) {
-		if( err )
-			return false
+_frame.app_main.page['gamedata'].init = function (page) {
+    jf.readFile(node.path.join(_g.root, '/fetched_data/api_start2.json'), function (err, obj) {
+        if (err)
+            return false
 
-		page.empty()
-		_frame.app_main.page['gamedata'].tabview = $('<div class="tabview"/>').appendTo(page)
+        page.empty()
+        _frame.app_main.page['gamedata'].tabview = $('<div class="tabview"/>').appendTo(page)
 
-		_frame.app_main.page['gamedata'].data = obj['api_data']
+        _frame.app_main.page['gamedata'].data = obj['api_data']
 
-		console.log(obj)
-		for( var i in obj['api_data'] ){
-			var item = i.replace('api_mst_', '')
-			if( _frame.app_main.page['gamedata']['init_' + item] )
-				_frame.app_main.page['gamedata']['init_' + item](obj['api_data'][i])
-		}
+        console.log(obj)
+        for (var i in obj['api_data']) {
+            var item = i.replace('api_mst_', '')
+            if (_frame.app_main.page['gamedata']['init_' + item])
+                _frame.app_main.page['gamedata']['init_' + item](obj['api_data'][i])
+        }
 
-		_p.initDOM(page)
-	})
+        _p.initDOM(page)
+    })
 }
 
-_frame.app_main.page['gamedata'].init_ship = function( data ){
-	var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview);
-	var enable_proxy = false;
-	//console.log(data)
+_frame.app_main.page['gamedata'].init_ship = function (data) {
+    var section = $('<section class="list" data-tabname="Ships"/>').appendTo(this.tabview);
+    var enable_proxy = false;
+    //console.log(data)
 
-	/*
-		基本信息
-			id 			ID
-			name 		名
-			yomi 		假名
-			stype		舰种
-						2	驱逐舰
-						3	轻巡洋舰
-						7	轻航母
-			sortno 		图鉴ID
-			buildtime	建造时长
-			getmes		入手台词
-			backs		卡背级别
-						3	睦月
-						4	深雪改
-						5	筑摩改
-						6	能代改
-		属性
-			houg		火力	初始, 最大
-			raig		雷装	初始, 最大
-			tyku		对空	初始, 最大
-			taik		耐久	初始, 最大
-			souk		装甲	初始, 最大
-			soku 		航速
-						5	慢
-						10	快
-			leng		射程
-						1 	短
-						2 	中
-						3	长
-						4 	超长
-			luck		运		初始, 最大
-		消耗
-			fuel_max	燃料
-			bull_max	弹药
-		装备 & 搭载
-			slot_num 	搭载格数
-			maxeq		每格搭载量
-		改造
-			afterlv		改造等级
-			aftershipid	改造后ID
-			afterfuel	消耗燃料
-			afterbull	消耗弹药
-		解体
-			broken 		ARRAY 解体资源
-		合成
-			powup 		ARRAY 合成提高属性
-		未知
-			voicef		睦月		0
-						深雪改		1
-						能代改		3
-	*/
+    /*
+        基本信息
+            id 			ID
+            name 		名
+            yomi 		假名
+            stype		舰种
+                        2	驱逐舰
+                        3	轻巡洋舰
+                        7	轻航母
+            sortno 		图鉴ID
+            buildtime	建造时长
+            getmes		入手台词
+            backs		卡背级别
+                        3	睦月
+                        4	深雪改
+                        5	筑摩改
+                        6	能代改
+        属性
+            houg		火力	初始, 最大
+            raig		雷装	初始, 最大
+            tyku		对空	初始, 最大
+            taik		耐久	初始, 最大
+            souk		装甲	初始, 最大
+            soku 		航速
+                        5	慢
+                        10	快
+            leng		射程
+                        1 	短
+                        2 	中
+                        3	长
+                        4 	超长
+            luck		运		初始, 最大
+        消耗
+            fuel_max	燃料
+            bull_max	弹药
+        装备 & 搭载
+            slot_num 	搭载格数
+            maxeq		每格搭载量
+        改造
+            afterlv		改造等级
+            aftershipid	改造后ID
+            afterfuel	消耗燃料
+            afterbull	消耗弹药
+        解体
+            broken 		ARRAY 解体资源
+        合成
+            powup 		ARRAY 合成提高属性
+        未知
+            voicef		睦月		0
+                        深雪改		1
+                        能代改		3
+    */
 
-	// 遍历 api_mst_shipgraph，做出文件名和ID对应表
-		var filename_map = {}
-		for( var i in this.data['api_mst_shipgraph'] ){
-			filename_map[this.data['api_mst_shipgraph'][i]['api_id']] = {
-				'filename': this.data['api_mst_shipgraph'][i]['api_filename'],
-				'version': 	parseInt( this.data['api_mst_shipgraph'][i]['api_version'] )
-			}
-		}
-		console.log(filename_map)
+    // 遍历 api_mst_shipgraph，做出文件名和ID对应表
+    var filename_map = {}
+    for (var i in this.data['api_mst_shipgraph']) {
+        filename_map[this.data['api_mst_shipgraph'][i]['api_id']] = {
+            'filename': this.data['api_mst_shipgraph'][i]['api_filename'],
+            'version': parseInt(this.data['api_mst_shipgraph'][i]['api_version'])
+        }
+    }
+    console.log(filename_map)
 
-	// 按钮 & 功能: 下载全部舰娘数据文件
-		$('<button type="button"/>')
-			.html('下载全部数据文件')
-			.on('click', function(){
-				var promise_chain 	= Q.fcall(function(){})
-					,folder = node.path.join(_g.root, '/fetched_data/ships_raw/')
-					,folder_pics = node.path.join(_g.root, '/fetched_data/ships_pic/')
-					,version_file = node.path.join(folder, '_.json')
-					,version_last = {}
+    // 按钮 & 功能: 下载全部舰娘数据文件
+    $('<button type="button"/>')
+        .html('下载全部数据文件')
+        .on('click', function () {
+            var promise_chain = Q.fcall(function () { })
+                , folder = node.path.join(_g.root, '/fetched_data/ships_raw/')
+                , folder_pics = node.path.join(_g.root, '/fetched_data/ships_pic/')
+                , version_file = node.path.join(folder, '_.json')
+                , version_last = {}
 
-				function _log( msg ){
-					console.log(msg)
-				}
+            function _log(msg) {
+                console.log(msg)
+            }
 
-				// 开始异步函数链
-					promise_chain
+            // 开始异步函数链
+            promise_chain
 
-				// 检查并创建工作目录
-					.then(function(){
-						var deferred = Q.defer()
-						node.mkdirp( folder, function(err){
-							if( err ){
-								_log('创建目录失败 ' + folder)
-								deferred.reject(new Error(err))
-							}else{
-								_log('已确保目录 ' + folder)
-								deferred.resolve()
-							}
-						} )
-						return deferred.promise
-					})
-					.then(function(){
-						var deferred = Q.defer()
-						node.mkdirp( folder_pics, function(err){
-							if( err ){
-								_log('创建目录失败 ' + folder_pics)
-								deferred.reject(new Error(err))
-							}else{
-								_log('已确保目录 ' + folder_pics)
-								deferred.resolve()
-							}
-						} )
-						return deferred.promise
-					})
+                // 检查并创建工作目录
+                .then(function () {
+                    var deferred = Q.defer()
+                    node.mkdirp(folder, function (err) {
+                        if (err) {
+                            _log('创建目录失败 ' + folder)
+                            deferred.reject(new Error(err))
+                        } else {
+                            _log('已确保目录 ' + folder)
+                            deferred.resolve()
+                        }
+                    })
+                    return deferred.promise
+                })
+                .then(function () {
+                    var deferred = Q.defer()
+                    node.mkdirp(folder_pics, function (err) {
+                        if (err) {
+                            _log('创建目录失败 ' + folder_pics)
+                            deferred.reject(new Error(err))
+                        } else {
+                            _log('已确保目录 ' + folder_pics)
+                            deferred.resolve()
+                        }
+                    })
+                    return deferred.promise
+                })
 
-				// 读取之前的版本号
-					.then(function(){
-						var deferred = Q.defer()
-						jf.readFile(version_file, function(err, obj) {
-							version_last = obj || {}
-							deferred.resolve()
-						})
-						return deferred.promise
-					})
+                // 读取之前的版本号
+                .then(function () {
+                    var deferred = Q.defer()
+                    jf.readFile(version_file, function (err, obj) {
+                        version_last = obj || {}
+                        deferred.resolve()
+                    })
+                    return deferred.promise
+                })
 
-				// 遍历舰娘数据
-					.then(function(){
-						_log('开始遍历舰娘数据')
-						var count = 0
-							,max = _frame.app_main.page['gamedata'].data['api_mst_ship'].length
-						_frame.app_main.page['gamedata'].data['api_mst_ship'].forEach(function(data){
-							(function(data){
-								promise_chain = promise_chain.then(function(){
-									var deferred = Q.defer()
-										,file = node.url.parse( 'http://'+ server_ip +'/kcs/resources/swf/ships/' + filename_map[data['api_id']]['filename'] + '.swf' )
-										,filename = data['api_id'] + ' - ' + data['api_name'] + '.swf'
-										,file_local = node.path.join(folder, data['api_id'] + '.swf' )
-										,file_local_rename = node.path.join(folder, filename )
-										,folder_export = node.path.join(folder_pics, '\\'+data['api_id'] )
-										,stat = null
-										,version = filename_map[data['api_id']]['version'] || 0
-										,skipped = false
-										,statusCode = null
+                // 遍历舰娘数据
+                .then(function () {
+                    _log('开始遍历舰娘数据')
+                    var count = 0
+                        , max = _frame.app_main.page['gamedata'].data['api_mst_ship'].length
+                    _frame.app_main.page['gamedata'].data['api_mst_ship'].forEach(function (data) {
+                        (function (data) {
+                            promise_chain = promise_chain.then(function () {
+                                var deferred = Q.defer()
+                                    , file = node.url.parse('http://' + server_ip + '/kcs/resources/swf/ships/' + filename_map[data['api_id']]['filename'] + '.swf')
+                                    , filename = data['api_id'] + ' - ' + data['api_name'] + '.swf'
+                                    , file_local = node.path.join(folder, data['api_id'] + '.swf')
+                                    , file_local_rename = node.path.join(folder, filename)
+                                    , folder_export = node.path.join(folder_pics, '\\' + data['api_id'])
+                                    , stat = null
+                                    , version = filename_map[data['api_id']]['version'] || 0
+                                    , skipped = false
+                                    , statusCode = null
 
-									try{
-										var stat = node.fs.lstatSync(file_local_rename)
-										if( !stat || !stat.isFile() ){
-											stat = null
-										}
-									}catch(e){}
+                                try {
+                                    var stat = node.fs.lstatSync(file_local_rename)
+                                    if (!stat || !stat.isFile()) {
+                                        stat = null
+                                    }
+                                } catch (e) { }
 
-									_log('========== ' + count + '/' + max + ' ==========')
-									_log('    [' + data['api_id'] + '] ' + data['api_name']
-										+ ' | 服务器版本: ' + version
-										+ ' | 本地版本: ' + ( version_last[data['api_id']] || '无' )
-									)
+                                _log('========== ' + count + '/' + max + ' ==========')
+                                _log('    [' + data['api_id'] + '] ' + data['api_name']
+                                    + ' | 服务器版本: ' + version
+                                    + ' | 本地版本: ' + (version_last[data['api_id']] || '无')
+                                )
 
-									if( stat && version <= (version_last[data['api_id']] || -1) ){
-										skipped = true
-										_log('    本地版本已最新，跳过')
-										count++
-										deferred.resolve()
-									}else{
-										_log('    开始获取: ' + file.href)
-										version_last[data['api_id']] = version
+                                if (stat && version <= (version_last[data['api_id']] || -1)) {
+                                    skipped = true
+                                    _log('    本地版本已最新，跳过')
+                                    count++
+                                    deferred.resolve()
+                                } else {
+                                    _log('    开始获取: ' + file.href)
+                                    version_last[data['api_id']] = version
 
-										Q.fcall(function(){})
+                                    Q.fcall(function () { })
 
-										// 向服务器请求 swf 文件
-											.then(function(){
-												var deferred2 = Q.defer()
-												request({
-													'uri': 		file,
-													'method': 	'GET',
-													'proxy': 	enable_proxy ? proxy : null
-												}).on('error',function(err){
-													deferred2.reject(new Error(err))
-												}).on('response', function(response){
-													statusCode = response.statusCode
-												}).pipe(
-													node.fs.createWriteStream(file_local)
-														.on('finish', function(){
-															_log('    文件已保存: ' + data['api_id'] + ' - ' + data['api_name'] + '.swf')
-															count++
-															jf.writeFile(version_file, version_last, function(err) {
-																if(err){
-																	deferred2.reject(new Error(err))
-																}else{
-																	_log('    版本文件已更新')
-																	deferred2.resolve()
-																}
-															})
-															if( statusCode != 200 || data['api_name'] == 'なし' ){
-																skipped = true
-															}
-														})
-												)
-												return deferred2.promise
-											})
+                                        // 向服务器请求 swf 文件
+                                        .then(function () {
+                                            var deferred2 = Q.defer()
+                                            request({
+                                                'uri': file,
+                                                'method': 'GET',
+                                                'proxy': enable_proxy ? proxy : null
+                                            }).on('error', function (err) {
+                                                deferred2.reject(new Error(err))
+                                            }).on('response', function (response) {
+                                                statusCode = response.statusCode
+                                            }).pipe(
+                                                node.fs.createWriteStream(file_local)
+                                                    .on('finish', function () {
+                                                        _log('    文件已保存: ' + data['api_id'] + ' - ' + data['api_name'] + '.swf')
+                                                        count++
+                                                        jf.writeFile(version_file, version_last, function (err) {
+                                                            if (err) {
+                                                                deferred2.reject(new Error(err))
+                                                            } else {
+                                                                _log('    版本文件已更新')
+                                                                deferred2.resolve()
+                                                            }
+                                                        })
+                                                        if (statusCode != 200 || data['api_name'] == 'なし') {
+                                                            skipped = true
+                                                        }
+                                                    })
+                                                )
+                                            return deferred2.promise
+                                        })
 
-										// 反编译 swf
-											.then(function(){
-												var deferred2 = Q.defer()
-												if( skipped ){
-													deferred2.resolve()
-												}else{
-													_log('    开始反编译 SWF')
-													var exec = node.require('child_process').exec
-														,child
+                                        // 反编译 swf
+                                        .then(function () {
+                                            var deferred2 = Q.defer()
+                                            if (skipped) {
+                                                deferred2.resolve()
+                                            } else {
+                                                _log('    开始反编译 SWF')
+                                                var exec = node.require('child_process').exec
+                                                    , child
 
-													node.mkdirp.sync(folder_export)
-													_log('    目录已确保 ' + folder_export)
+                                                node.mkdirp.sync(folder_export)
+                                                _log('    目录已确保 ' + folder_export)
 
-													child = exec(
-														'java -jar .\\app\\assets\\FFDec\\ffdec.jar'
-														+ ' -format image:png'
-														+ ' -export image ' + folder_export
-														+ ' ' + file_local,
-														function (err, stdout, stderr) {
-															_log('    stdout: ' + stdout);
-															_log('    stderr: ' + stderr);
-															if (err !== null) {
-																_log('    exec error: ' + err);
-																deferred2.reject(new Error(err))
-															}else{
-																_log('    SWF 反编译完成')
-																deferred2.resolve()
-															}
-														});
-												}
-												return deferred2.promise
-											})
+                                                child = exec(
+                                                    'java -jar .\\app\\assets\\FFDec\\ffdec.jar'
+                                                    + ' -format image:png'
+                                                    + ' -export image ' + folder_export
+                                                    + ' ' + file_local,
+                                                    function (err, stdout, stderr) {
+                                                        _log('    stdout: ' + stdout);
+                                                        _log('    stderr: ' + stderr);
+                                                        if (err !== null) {
+                                                            _log('    exec error: ' + err);
+                                                            deferred2.reject(new Error(err))
+                                                        } else {
+                                                            _log('    SWF 反编译完成')
+                                                            deferred2.resolve()
+                                                        }
+                                                    });
+                                            }
+                                            return deferred2.promise
+                                        })
 
-										// 如果执行了 swf 反编译，整理反编译结果
-											.then(function(){
-												var deferred2 = Q.defer()
-												if( skipped ){
-													deferred2.resolve()
-												}else{
-													node.fs.readdir(folder_export, function(err, files){
-														if( err ){
-															deferred2.reject(new Error(err))
-														}else{
-															deferred2.resolve(files)
-														}
-													})
-												}
-												return deferred2.promise
-											})
-											.then(function(files){
-												var chain2 = Q.fcall(function(){})
-													,deferred2 = Q.defer()
-													,count2 = 0
+                                        // 如果执行了 swf 反编译，整理反编译结果
+                                        .then(function () {
+                                            var deferred2 = Q.defer()
+                                            if (skipped) {
+                                                deferred2.resolve()
+                                            } else {
+                                                node.fs.readdir(folder_export, function (err, files) {
+                                                    if (err) {
+                                                        deferred2.reject(new Error(err))
+                                                    } else {
+                                                        deferred2.resolve(files)
+                                                    }
+                                                })
+                                            }
+                                            return deferred2.promise
+                                        })
+                                        .then(function (files) {
+                                            var chain2 = Q.fcall(function () { })
+                                                , deferred2 = Q.defer()
+                                                , count2 = 0
 
-												files = files || []
-												files = files.sort(function(a, b){
-													var name_a = parseInt( a ) || -999
-														,name_b = parseInt( b ) || -999
-													return name_a - name_b
-												})
+                                            files = files || []
+                                            files = files.sort(function (a, b) {
+                                                var name_a = parseInt(a) || -999
+                                                    , name_b = parseInt(b) || -999
+                                                return name_a - name_b
+                                            })
 
-												if( files.length ){
-													files.forEach(function(_filename){
-														(function(_filename, count2){
-															chain2 = chain2.then(function(){
-																var deferred3 = Q.defer()
-																	,parsed = node.path.parse(_filename)
-																	,new_name = Math.floor(parseInt(parsed['name']) / 2) + parsed['ext'].toLowerCase()
-																	,_path = node.path.join( folder_export, _filename )
-																if( node.fs.lstatSync( _path ).isFile() ){
-																	node.fs.rename(
-																		_path,
-																		node.path.join( folder_export, new_name ),
-																		function(err){
-																			if (err !== null) {
-																				deferred3.reject(new Error(err))
-																			}else{
-																				_log('    反编译: ' + new_name )
-																				deferred3.resolve()
-																			}
-																			if( count2 >= files.length - 1 ){
-																				deferred2.resolve()
-																			}
-																		}
-																	)
-																}else{
-																	deferred3.resolve()
-																	if( count2 >= files.length - 1 ){
-																		deferred2.resolve()
-																	}
-																}
-															})
-														})( _filename, count2 )
-														count2++
-													})
-												}else{
-													deferred2.resolve()
-												}
+                                            if (files.length) {
+                                                files.forEach(function (_filename) {
+                                                    (function (_filename, count2) {
+                                                        chain2 = chain2.then(function () {
+                                                            var deferred3 = Q.defer()
+                                                                , parsed = node.path.parse(_filename)
+                                                                , new_name = Math.floor(parseInt(parsed['name']) / 2) + parsed['ext'].toLowerCase()
+                                                                , _path = node.path.join(folder_export, _filename)
+                                                            if (node.fs.lstatSync(_path).isFile()) {
+                                                                node.fs.rename(
+                                                                    _path,
+                                                                    node.path.join(folder_export, new_name),
+                                                                    function (err) {
+                                                                        if (err !== null) {
+                                                                            deferred3.reject(new Error(err))
+                                                                        } else {
+                                                                            _log('    反编译: ' + new_name)
+                                                                            deferred3.resolve()
+                                                                        }
+                                                                        if (count2 >= files.length - 1) {
+                                                                            deferred2.resolve()
+                                                                        }
+                                                                    }
+                                                                )
+                                                            } else {
+                                                                deferred3.resolve()
+                                                                if (count2 >= files.length - 1) {
+                                                                    deferred2.resolve()
+                                                                }
+                                                            }
+                                                        })
+                                                    })(_filename, count2)
+                                                    count2++
+                                                })
+                                            } else {
+                                                deferred2.resolve()
+                                            }
 
-												return deferred2.promise
-											})
+                                            return deferred2.promise
+                                        })
 
-										// 重命名本地 swf
-											.then(function(){
-												var deferred2 = Q.defer()
-												node.fs.rename(
-													file_local,
-													file_local_rename,
-													function(err){
-														if (err !== null) {
-															deferred2.reject(new Error(err))
-														}else{
-															_log('    SWF 文件重命名为 ' + filename )
-															deferred2.resolve()
-														}
-													}
-												)
-												return deferred2.promise
-											})
-											.catch(function (err) {
-												_log(err)
-												deferred.reject(new Error(err))
-											})
-											.done(function(){
-												deferred.resolve()
-											})
-									}
+                                        // 重命名本地 swf
+                                        .then(function () {
+                                            var deferred2 = Q.defer()
+                                            node.fs.rename(
+                                                file_local,
+                                                file_local_rename,
+                                                function (err) {
+                                                    if (err !== null) {
+                                                        deferred2.reject(new Error(err))
+                                                    } else {
+                                                        _log('    SWF 文件重命名为 ' + filename)
+                                                        deferred2.resolve()
+                                                    }
+                                                }
+                                            )
+                                            return deferred2.promise
+                                        })
+                                        .catch(function (err) {
+                                            _log(err)
+                                            deferred.reject(new Error(err))
+                                        })
+                                        .done(function () {
+                                            deferred.resolve()
+                                        })
+                                }
 
-									return deferred.promise
-								})
-							})(data)
-						})
-						return true
-					})
-				
-				// 错误处理
-					.catch(function (err) {
-						_log(err)
-					})
-					.done(function(){
-						_log('ALL DONE')
-					})
-			}).appendTo( section )
+                                return deferred.promise
+                            })
+                        })(data)
+                    })
+                    return true
+                })
 
-	// 按钮 & 功能: 根据游戏数据更新舰娘数据库
-		$('<button type="button"/>')
-			.html('更新舰娘数据库')
-			.on('click', function(){
-				var promise_chain 	= Q.fcall(function(){})
+                // 错误处理
+                .catch(function (err) {
+                    _log(err)
+                })
+                .done(function () {
+                    _log('ALL DONE')
+                })
+        }).appendTo(section)
 
-				function _log( msg ){
-					console.log(msg)
-				}
+    // 按钮 & 功能: 根据游戏数据更新舰娘数据库
+    $('<button type="button"/>')
+        .html('更新舰娘数据库')
+        .on('click', function () {
+            var promise_chain = Q.fcall(function () { })
 
-				// 开始异步函数链
-					promise_chain
+            function _log(msg) {
+                console.log(msg)
+            }
 
-				// 获取全部 _id & id
-					.then(function(){
-						var deferred = Q.defer()
-						_db.ships.find({}, function(err, docs){
-							if( err ){
-								deferred.reject(err)
-							}else{
-								var d = {}
-								for(var i in docs){
-									d[docs[i].id] = docs[i]._id
-								}
-								deferred.resolve(d)
-							}
-						})
-						return deferred.promise
-					})
+            // 开始异步函数链
+            promise_chain
 
-				// 更新数据
-					.then(function(map){
-						_log(map)
-						_log('开始遍历舰娘数据')
+                // 获取全部 _id & id
+                .then(function () {
+                    var deferred = Q.defer()
+                    _db.ships.find({}, function (err, docs) {
+                        if (err) {
+                            deferred.reject(err)
+                        } else {
+                            var d = {}
+                            for (var i in docs) {
+                                d[docs[i].id] = docs[i]._id
+                            }
+                            deferred.resolve(d)
+                        }
+                    })
+                    return deferred.promise
+                })
 
-						var count = 0
-							,max = _frame.app_main.page['gamedata'].data['api_mst_ship'].length
+                // 更新数据
+                .then(function (map) {
+                    _log(map)
+                    _log('开始遍历舰娘数据')
 
-						_frame.app_main.page['gamedata'].data['api_mst_ship'].forEach(function(data){
-							(function(data){
-								function _done( cur ){
-									if(cur >= max){
-										promise_chain.fin(function(){
-											_log('遍历舰娘数据完成')
-										})
-									}
-								}
-								promise_chain = promise_chain.then(function(){
-									var deferred = Q.defer()
-									if( map[data.api_id] ){
-										_log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
-										count++
+                    var count = 0
+                        , max = _frame.app_main.page['gamedata'].data['api_mst_ship'].length
 
-										let modified = {}
-											,unset = {}
-										// base
-											modified['no'] 			= data['api_sortno']
-											modified['buildtime'] 	= data['api_buildtime']
-											modified['lines.start'] = data['api_getmes']
-											modified['rare'] 		= data['api_backs']
-										// stat
-											modified['stat.fire'] 			= data['api_houg'][0]
-											modified['stat.fire_max'] 		= data['api_houg'][1]
-											modified['stat.torpedo'] 		= data['api_raig'][0]
-											modified['stat.torpedo_max']	= data['api_raig'][1]
-											modified['stat.aa'] 			= data['api_tyku'][0]
-											modified['stat.aa_max'] 		= data['api_tyku'][1]
-											modified['stat.hp'] 			= data['api_taik'][0]
-											modified['stat.hp_max'] 		= data['api_taik'][1]
-											modified['stat.armor'] 			= data['api_souk'][0]
-											modified['stat.armor_max'] 		= data['api_souk'][1]
-											modified['stat.speed'] 			= data['api_soku']
-											modified['stat.range'] 			= data['api_leng']
-											modified['stat.luck'] 			= data['api_luck'][0]
-											modified['stat.luck_max'] 		= data['api_luck'][1]
-										// consum
-											modified['consum.fuel'] 		= data['api_fuel_max']
-											modified['consum.ammo'] 		= data['api_bull_max']
-										// slot
-											var i = 0
-											modified['slot'] = []
-											while( i < (parseInt( data['api_slot_num'] ) || 0) ){
-												modified['slot'].push( data['api_maxeq'][i] || 0 )
-												i++
-											}
-										// remodel
-											//modified['remodel_cost.fuel']	= data['api_afterfuel']
-											modified['remodel_cost.ammo']	= data['api_afterbull']
-											modified['remodel_cost.steel']	= data['api_afterfuel']
-											unset['remodel_cost.fuel'] = true
-										// misc
-											modified['scrap']				= data['api_broken']
-											modified['modernization']		= data['api_powup']
-											modified['time_modified'] 		= _g.timeNow()
+                    _frame.app_main.page['gamedata'].data['api_mst_ship'].forEach(function (data) {
+                        (function (data) {
+                            function _done(cur) {
+                                if (cur >= max) {
+                                    promise_chain.fin(function () {
+                                        _log('遍历舰娘数据完成')
+                                    })
+                                }
+                            }
+                            promise_chain = promise_chain.then(function () {
+                                var deferred = Q.defer()
+                                if (map[data.api_id]) {
+                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
+                                    count++
 
-										_log( modified )
-										_db.ships.update({
-											'_id': map[data['api_id']]
-										}, {
-											$set: modified,
-											$unset: unset
-										}, function(){
-											deferred.resolve()
-											_done(count)
-										})
-									}else{
-										_log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
-										count++
-										deferred.resolve()
-										_done(count)
-									}
-									return deferred.promise
-								})
-							})(data)
-						})
-						return true
-					})
-				
-				// 错误处理
-					.catch(function (err) {
-						_log(err)
-					})
-					.done(function(){
-						_log('ALL DONE')
-					})
-			}).appendTo( section )
-	
-	// 选项：代理
-		var _enable_proxy = $('<input name="enable_proxy" type="checkbox" />')			
-		$('<label/>')
-			.append( _enable_proxy.on('change', function(){
-				enable_proxy = _enable_proxy.prop('checked')
-			}) )
-			.append( $('<span>使用代理</span>') )
-			.appendTo( section )
+                                    let modified = {}
+                                        , unset = {}
+                                    // base
+                                    modified['no'] = data['api_sortno']
+                                    modified['buildtime'] = data['api_buildtime']
+                                    modified['lines.start'] = data['api_getmes']
+                                    modified['rare'] = data['api_backs']
+                                    // stat
+                                    modified['stat.fire'] = data['api_houg'][0]
+                                    modified['stat.fire_max'] = data['api_houg'][1]
+                                    modified['stat.torpedo'] = data['api_raig'][0]
+                                    modified['stat.torpedo_max'] = data['api_raig'][1]
+                                    modified['stat.aa'] = data['api_tyku'][0]
+                                    modified['stat.aa_max'] = data['api_tyku'][1]
+                                    modified['stat.hp'] = data['api_taik'][0]
+                                    modified['stat.hp_max'] = data['api_taik'][1]
+                                    modified['stat.armor'] = data['api_souk'][0]
+                                    modified['stat.armor_max'] = data['api_souk'][1]
+                                    modified['stat.speed'] = data['api_soku']
+                                    modified['stat.range'] = data['api_leng']
+                                    modified['stat.luck'] = data['api_luck'][0]
+                                    modified['stat.luck_max'] = data['api_luck'][1]
+                                    // consum
+                                    modified['consum.fuel'] = data['api_fuel_max']
+                                    modified['consum.ammo'] = data['api_bull_max']
+                                    // slot
+                                    var i = 0
+                                    modified['slot'] = []
+                                    while (i < (parseInt(data['api_slot_num']) || 0)) {
+                                        modified['slot'].push(data['api_maxeq'][i] || 0)
+                                        i++
+                                    }
+                                    // remodel
+                                    //modified['remodel_cost.fuel']	= data['api_afterfuel']
+                                    modified['remodel_cost.ammo'] = data['api_afterbull']
+                                    modified['remodel_cost.steel'] = data['api_afterfuel']
+                                    unset['remodel_cost.fuel'] = true
+                                    // misc
+                                    modified['scrap'] = data['api_broken']
+                                    modified['modernization'] = data['api_powup']
+                                    modified['time_modified'] = _g.timeNow()
+
+                                    _log(modified)
+                                    _db.ships.update({
+                                        '_id': map[data['api_id']]
+                                    }, {
+                                            $set: modified,
+                                            $unset: unset
+                                        }, function () {
+                                            deferred.resolve()
+                                            _done(count)
+                                        })
+                                } else {
+                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
+                                    count++
+                                    deferred.resolve()
+                                    _done(count)
+                                }
+                                return deferred.promise
+                            })
+                        })(data)
+                    })
+                    return true
+                })
+
+                // 错误处理
+                .catch(function (err) {
+                    _log(err)
+                })
+                .done(function () {
+                    _log('ALL DONE')
+                })
+        }).appendTo(section)
+
+    // 选项：代理
+    var _enable_proxy = $('<input name="enable_proxy" type="checkbox" />')
+    $('<label/>')
+        .append(_enable_proxy.on('change', function () {
+            enable_proxy = _enable_proxy.prop('checked')
+        }))
+        .append($('<span>使用代理</span>'))
+        .appendTo(section)
 }
 
-_frame.app_main.page['gamedata'].init_slotitem = function( data ){
-	var section = $('<section class="list" data-tabname="Equipments"/>').appendTo(this.tabview)
+_frame.app_main.page['gamedata'].init_slotitem = function (data) {
+    var section = $('<section class="list" data-tabname="Equipments"/>').appendTo(this.tabview)
 
 
-	// 按钮 & 功能: 根据游戏数据更新舰娘数据库
-		$('<button type="button"/>')
-			.html('更新装备数据库')
-			.on('click', function(){
-				let promise_chain 	= Q.fcall(function(){})
-					,thisDb = _db.items
+    // 按钮 & 功能: 根据游戏数据更新舰娘数据库
+    $('<button type="button"/>')
+        .html('更新装备数据库')
+        .on('click', function () {
+            let promise_chain = Q.fcall(function () { })
+                , thisDb = _db.items
 
-				function _log( msg ){
-					console.log(msg)
-				}
+            function _log(msg) {
+                console.log(msg)
+            }
 
-				// 开始异步函数链
-					promise_chain
+            // 开始异步函数链
+            promise_chain
 
-				// 获取全部 _id & id
-					.then(function(){
-						var deferred = Q.defer()
-						thisDb.find({}, function(err, docs){
-							if( err ){
-								deferred.reject(err)
-							}else{
-								var d = {}
-								for(var i in docs){
-									d[docs[i].id] = docs[i]._id
-								}
-								deferred.resolve(d)
-							}
-						})
-						return deferred.promise
-					})
+                // 获取全部 _id & id
+                .then(function () {
+                    var deferred = Q.defer()
+                    thisDb.find({}, function (err, docs) {
+                        if (err) {
+                            deferred.reject(err)
+                        } else {
+                            var d = {}
+                            for (var i in docs) {
+                                d[docs[i].id] = docs[i]._id
+                            }
+                            deferred.resolve(d)
+                        }
+                    })
+                    return deferred.promise
+                })
 
-				// 更新数据
-					.then(function(map){
-						_log(map)
-						_log('开始遍历装备数据')
+                // 更新数据
+                .then(function (map) {
+                    _log(map)
+                    _log('开始遍历装备数据')
 
-						var count = 0
-							,list = _frame.app_main.page['gamedata'].data['api_mst_slotitem']
-							,max = list.length
+                    var count = 0
+                        , list = _frame.app_main.page['gamedata'].data['api_mst_slotitem']
+                        , max = list.length
 
-						list.forEach(function(data){
-							(function(data){
-								function _done( cur ){
-									if(cur >= max){
-										promise_chain.fin(function(){
-											_log('遍历装备数据完成')
-										})
-									}
-								}
-								promise_chain = promise_chain.then(function(){
-									var deferred = Q.defer()
-									if( map[data.api_id] ){
-										_log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
-										count++
+                    list.forEach(function (data) {
+                        (function (data) {
+                            function _done(cur) {
+                                if (cur >= max) {
+                                    promise_chain.fin(function () {
+                                        _log('遍历装备数据完成')
+                                    })
+                                }
+                            }
+                            promise_chain = promise_chain.then(function () {
+                                var deferred = Q.defer()
+                                if (map[data.api_id]) {
+                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
+                                    count++
 
-										let modified = {}
-											,unset = {}
-										// base
-											modified['rarity'] 		= data['api_rare']
-										// stat
-											modified['stat.fire'] 			= data['api_houg']
-											modified['stat.torpedo'] 		= data['api_raig']
-											modified['stat.bomb'] 			= data['api_baku']
-											modified['stat.asw']			= data['api_tais']
-											modified['stat.aa'] 			= data['api_tyku']
-											modified['stat.armor'] 			= data['api_souk']
-											modified['stat.evasion'] 		= data['api_houk']
-											modified['stat.hit'] 			= data['api_houm']
-											modified['stat.los'] 			= data['api_saku']
-											modified['stat.range'] 			= data['api_leng']
-											modified['stat.distance'] 		= data['api_distance']
-										// misc
-											modified['dismantle']			= data['api_broken']
-											modified['time_modified'] 		= _g.timeNow()
+                                    let modified = {}
+                                        , unset = {}
+                                    // base
+                                    modified['rarity'] = data['api_rare']
+                                    // stat
+                                    modified['stat.fire'] = data['api_houg']
+                                    modified['stat.torpedo'] = data['api_raig']
+                                    modified['stat.bomb'] = data['api_baku']
+                                    modified['stat.asw'] = data['api_tais']
+                                    modified['stat.aa'] = data['api_tyku']
+                                    modified['stat.armor'] = data['api_souk']
+                                    modified['stat.evasion'] = data['api_houk']
+                                    modified['stat.hit'] = data['api_houm']
+                                    modified['stat.los'] = data['api_saku']
+                                    modified['stat.range'] = data['api_leng']
+                                    modified['stat.distance'] = data['api_distance']
+                                    // misc
+                                    modified['dismantle'] = data['api_broken']
+                                    modified['time_modified'] = _g.timeNow()
 
-										_log( modified )
-										thisDb.update({
-											'_id': map[data['api_id']]
-										}, {
-											$set: modified,
-											$unset: unset
-										}, function(){
-											deferred.resolve()
-											_done(count)
-										})
-									}else{
-										_log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
-										count++
-										deferred.resolve()
-										_done(count)
-									}
-									return deferred.promise
-								})
-							})(data)
-						})
-						return true
-					})
-				
-				// 错误处理
-					.catch(function (err) {
-						_log(err)
-					})
-					.done(function(){
-						_log('ALL DONE')
-					})
-			}).appendTo( section )
-			
-	for( var i in data ){
-		/*
-			基本信息
-				id 			装备ID
-				sortno 		图鉴ID
-				name 		装备名
-				info 		装备描述
-				rare 		稀有度
-			属性
-				houg		火力
-				raig		雷装
-				tyku		对空
-				tais		对潜
-				taik		耐久
-				saku 		索敌
-				souk		装甲
-				soku 		航速
-				luck		运
-				leng		射程
-							1 	短
-							2 	中
-							3	长
-							4 	超长
-				houk		回避
-				houm		命中
-				baku		爆装
-			解体
-				broken 		ARRAY 解体资源
-			未知
-				atap
-				bakk
-				raik
-				raim
-				sakb
-				type
-				usebull
-		*/
-		(function( d ){
-			var dom = $('<section/>').appendTo(section)
-				,checkbox = $('<input type="checkbox" id="rawdata_slotitem_'+d['api_id']+'"/>').appendTo(dom)
-				,title = $('<label for="rawdata_slotitem_'+d['api_id']+'"/>').html('[#' + d['api_id'] + '] ' + d['api_name']).appendTo(dom)
+                                    _log(modified)
+                                    thisDb.update({
+                                        '_id': map[data['api_id']]
+                                    }, {
+                                            $set: modified,
+                                            $unset: unset
+                                        }, function () {
+                                            deferred.resolve()
+                                            _done(count)
+                                        })
+                                } else {
+                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
+                                    count++
+                                    deferred.resolve()
+                                    _done(count)
+                                }
+                                return deferred.promise
+                            })
+                        })(data)
+                    })
+                    return true
+                })
 
-			_db.items.find({'id': d['api_id']}, function(err, docs){
-				if( err || !docs.length ){
-					// 数据库中不存在
-						dom.addClass('new')
-						$('<button/>').on('click', function(){
-									_frame.app_main.page['items'].show_item_form({
-										'id': 		d['api_id'],
-										'rarity': 	d['api_rare'],
-										'name': 	{
-											'ja_jp': 	d['api_name']
-										},
-										'stat': 	{
-											'fire': 	d['api_houg'],
-											'torpedo': 	d['api_raig'],
-											'bomb': 	d['api_baku'],
-											'asw': 		d['api_tais'],
-											'aa': 		d['api_tyku'],
-											'armor': 	d['api_souk'],
-											'evasion': 	d['api_houk'],
-											'hit': 		d['api_houm'],
-											'los': 		d['api_saku'],
-											'range': 	d['api_leng'],
-											'distance': d['api_distance']
-										},
-										'dismantle':d['api_broken']
-									})
-						}).html('录入').appendTo(dom)
-					// http://203.104.209.23/kcs/resources/image/slotitem/card/139.png
-				}else if( !err ){
-					// 对比数据
-						//console.log(docs[0], d)
-				}
-			})
-		})(data[i])
-	}
+                // 错误处理
+                .catch(function (err) {
+                    _log(err)
+                })
+                .done(function () {
+                    _log('ALL DONE')
+                })
+        }).appendTo(section)
+
+    for (var i in data) {
+        /*
+            基本信息
+                id 			装备ID
+                sortno 		图鉴ID
+                name 		装备名
+                info 		装备描述
+                rare 		稀有度
+            属性
+                houg		火力
+                raig		雷装
+                tyku		对空
+                tais		对潜
+                taik		耐久
+                saku 		索敌
+                souk		装甲
+                soku 		航速
+                luck		运
+                leng		射程
+                            1 	短
+                            2 	中
+                            3	长
+                            4 	超长
+                houk		回避
+                houm		命中
+                baku		爆装
+            解体
+                broken 		ARRAY 解体资源
+            未知
+                atap
+                bakk
+                raik
+                raim
+                sakb
+                type
+                usebull
+        */
+        (function (d) {
+            var dom = $('<section/>').appendTo(section)
+                , checkbox = $('<input type="checkbox" id="rawdata_slotitem_' + d['api_id'] + '"/>').appendTo(dom)
+                , title = $('<label for="rawdata_slotitem_' + d['api_id'] + '"/>').html('[#' + d['api_id'] + '] ' + d['api_name']).appendTo(dom)
+
+            _db.items.find({ 'id': d['api_id'] }, function (err, docs) {
+                if (err || !docs.length) {
+                    // 数据库中不存在
+                    dom.addClass('new')
+                    $('<button/>').on('click', function () {
+                        _frame.app_main.page['items'].show_item_form({
+                            'id': d['api_id'],
+                            'rarity': d['api_rare'],
+                            'name': {
+                                'ja_jp': d['api_name']
+                            },
+                            'stat': {
+                                'fire': d['api_houg'],
+                                'torpedo': d['api_raig'],
+                                'bomb': d['api_baku'],
+                                'asw': d['api_tais'],
+                                'aa': d['api_tyku'],
+                                'armor': d['api_souk'],
+                                'evasion': d['api_houk'],
+                                'hit': d['api_houm'],
+                                'los': d['api_saku'],
+                                'range': d['api_leng'],
+                                'distance': d['api_distance']
+                            },
+                            'dismantle': d['api_broken']
+                        })
+                    }).html('录入').appendTo(dom)
+                    // http://203.104.209.23/kcs/resources/image/slotitem/card/139.png
+                } else if (!err) {
+                    // 对比数据
+                    //console.log(docs[0], d)
+                }
+            })
+        })(data[i])
+    }
+}
+
+_frame.app_main.page['gamedata'].init_useitem = function (data) {
+    var section = $('<section class="list" data-tabname="Consumables"/>').appendTo(this.tabview)
+
+    let names = {}
+
+
+    // 按钮 & 功能: 更新本地道具数据库
+    $('<button type="button"/>')
+        .html('更新道具数据库')
+        .on('click', function () {
+            if (!_db.consumables) {
+                _db.consumables
+                    = new node.nedb({
+                        filename: node.path.join(_g.path.db, '/consumables.json'),
+                        autoload: true
+                    })
+            }
+            let db = _db.consumables
+                , promise = Q.fcall(() => {
+                    let deferred = Q.defer()
+                    db.remove({}, { multi: true }, function (err, numRemoved) {
+                        deferred.resolve()
+                    });
+                    return deferred.promise
+                })
+
+            promise.then(() => {
+                let deferred = Q.defer()
+                for (let i in data) {
+                    let item = data[i]
+                        , id = item.api_id
+                        , doc = {}
+                    for (let key in item) {
+                        let _key = key.replace(/^api_/g, '')
+                        let value = item[key]
+                        switch (_key) {
+                            case 'name':
+                                value = names[id] ? names[id] : {
+                                    ja_jp: item[key],
+                                    zh_cn: ''
+                                }
+                                break;
+                        }
+                        doc[_key] = value
+                    }
+                    promise = promise.then(() => {
+                        let deferred = Q.defer()
+                        db.insert(doc, function (err, newDoc) {
+                            deferred.resolve()
+                        });
+                        return deferred.promise
+                    })
+                }
+                promise = promise.done(() => {
+                    deferred.resolve()
+                })
+                return deferred.promise
+            })
+
+                // 错误处理
+                .catch(function (err) {
+                    _log(err)
+                })
+                .done(function () {
+                    _log('ALL DONE')
+                })
+        }).appendTo(section)
+
+    for (let i in data) {
+        let item = data[i]
+            , id = item.api_id
+            , input
+
+        if (item.api_name) {
+            names[id] = _g.data.consumables[id] ? _g.data.consumables[id].name : {
+                ja_jp: item.api_name,
+                zh_cn: ''
+            }
+            input = $(`<input type="text"/>`).val(names[id].zh_cn).on({
+                input: e => {
+                    names[id].zh_cn = e.target.value
+                }
+            })
+        }
+
+        $('<hr/>').appendTo(section)
+        $('<dl/>').appendTo(section)
+            .append($(`<dt>${item.api_name}</dt>`))
+            .append(input)
+            .append($(`<dd>${item.api_description.join('<br/>')}</dd>`))
+    }
 }
 _frame.app_main.page['guide'] = {}
 _frame.app_main.page['guide'].section = {}
@@ -11728,61 +11874,93 @@ _form.create_equip_types = function(name, defaults){
 	return itemtype_checkboxes
 }
 _form.create_item_types = _form.create_equip_types
-_comp.selector_equipment = function( name, id, default_item ){
-	var dom = _frame.app_main.page['ships'].gen_input(
-			'select',
-			name || null,
-			id || null,
-			[]
-		)
-		,equipments = []
-		,options = []
+_comp.selector_equipment = function (name, id, default_item) {
+    var dom = _frame.app_main.page['ships'].gen_input(
+        'select',
+        name || null,
+        id || null,
+        []
+    )
+        , equipments = []
+        , options = []
 
-	_db.item_types.find({}).sort({'id': 1}).exec(function(err, docs){
-		if( !err && docs && docs.length ){
-			for( var i in docs ){
-				equipments[docs[i]['id']] = [
-					docs[i]['name']['zh_cn'],
-					[]
-				]
-			}
-			_db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function(err, docs){
-				for(var i in docs ){
-					//equipments[docs[i]['type']][1].push(docs[i])
-					equipments[docs[i]['type']][1].push({
-							'name': 	docs[i]['name']['zh_cn'],
-							'value': 	docs[i]['id']
-						})
-				}
+    let promise = Q.fcall(() => {
+        let deferred = Q.defer()
+        _db.item_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err && docs && docs.length) {
+                for (var i in docs) {
+                    equipments[docs[i]['id']] = [
+                        docs[i]['name']['zh_cn'],
+                        []
+                    ]
+                }
+                _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function (err, docs) {
+                    for (let i in docs) {
+                        //equipments[docs[i]['type']][1].push(docs[i])
+                        equipments[docs[i]['type']][1].push({
+                            'name': docs[i]['name']['zh_cn'],
+                            'value': docs[i]['id']
+                        })
+                    }
 
-				for( var i in equipments ){
-					options.push({
-						'name': 	'=====' + equipments[i][0] +  '=====',
-						'value': 	''
-					})
-					for( var j in equipments[i][1] ){
-						options.push({
-							'name': 	equipments[i][1][j]['name']['zh_cn'],
-							'value': 	equipments[i][1][j]['id']
-						})
-					}
-				}
-				//console.log( equipments )
-				//console.log( options )
+                    for (let i in equipments) {
+                        options.push({
+                            'name': '=====' + equipments[i][0] + '=====',
+                            'value': ''
+                        })
+                        for (let j in equipments[i][1]) {
+                            options.push({
+                                'name': equipments[i][1][j]['name']['zh_cn'],
+                                'value': equipments[i][1][j]['id']
+                            })
+                        }
+                    }
+                    //console.log( equipments )
+                    //console.log( options )
 
-				_frame.app_main.page['ships'].gen_input(
-					'select_group',
-					dom.attr('name'),
-					dom.attr('id'),
-					equipments,
-					{
-						'default': default_item
-					}).insertBefore(dom)
-				dom.remove()
-			})
-		}
-	})
-	return dom
+                    let domNew = _frame.app_main.page['ships'].gen_input(
+                        'select_group',
+                        dom.attr('name'),
+                        dom.attr('id'),
+                        equipments,
+                        {
+                            'default': default_item
+                        }).insertBefore(dom)
+                    dom.remove()
+
+                    dom = domNew
+
+                    deferred.resolve()
+                })
+            }
+        })
+        return deferred.promise
+    })
+
+        .then(() => {
+            let deferred = Q.defer()
+            _db.consumables.find({
+                name: {
+                    $exists: true
+                }
+            }).sort({ 'id': 1 }).exec((err, docs) => {
+                let group = $(`<optgroup label="道具 / 消耗品">`).appendTo(dom)
+                for (let i in docs) {
+                    if (!docs[i].name.ja_jp)
+                        continue;
+                    let item = new ItemBase(docs[i]);
+                    let value = `consumable_${item.id}`;
+                    $(`<option/>`,{
+                        value: value,
+                        html: `[${item.id}] ${item._name}`
+                    }).prop('selected', value == default_item).appendTo(group)
+                }
+                deferred.resolve()
+            })
+            return deferred.promise
+        })
+
+    return dom
 }
 
 _comp.selector_ship = function( name, id, default_item ){

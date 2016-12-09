@@ -1,5 +1,6 @@
 class ITEM {
-	constructor() {
+	constructor(data) {
+        $.extend(true, this, data)
 	}
 
 	getName(language){

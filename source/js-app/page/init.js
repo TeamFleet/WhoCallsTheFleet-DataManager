@@ -1261,43 +1261,7 @@ _frame.app_main.page['init'].init = function( page ){
     })
 
     // 导出图片
-    page.find('form#init_exportpic').each( function(){
-        var form = $(this)
-            ,folder_input = form.find('[name="destfolder"]')
-            ,btn_browse = form.find('[value="Browse..."]')
-            ,file_selector = form.find('[type="file"]')
-
-        form.on('submit', function(e){
-            e.preventDefault()
-            form.addClass('submitting')
-            form.find('[type="submit"]').on('click',function(e){
-                e.preventDefault()
-            })
-            _frame.app_main.page['init'].exportpic( form )
-        })
-
-        folder_input
-            .val( _config.get( 'pics_export_to' ) )
-            .on({
-                'change': function(){
-                    _config.set( 'pics_export_to', $(this).val() )
-                },
-                'click': function(){
-                    btn_browse.trigger('click')
-                }
-            })
-
-        btn_browse
-            .on('click', function(){
-                //console.log(123)
-                //form.find('[type="file"]').trigger('click')
-            })
-
-        file_selector
-            .on('change', function(){
-                folder_input.val( $(this).val() ).trigger('change')
-            })
-    })
+    _frame.app_main.page['init'].exportpicInit(page.find('form#init_exportpic'))
 
     // 获取官方数据
         page.find('form#fetch_official').on('submit', function(e){

@@ -62,7 +62,9 @@ var server_ip 	= '203.104.209.23'
         'ship_id_by_type': [], 			// refer to _g.ship_type_order
         'ship_types': {},
         'ship_type_order': {},
-        'ship_classes': {}
+        'ship_classes': {},
+
+        'consumables': {}
     }
 
     var _db = {
@@ -546,6 +548,9 @@ _frame.app_main = {
                                                 switch( db_name ){
                                                     case 'items':
                                                         _g.data[db_name][docs[i]['id']] = new Equipment(docs[i])
+                                                        break;
+                                                    case 'consumables':
+                                                        _g.data[db_name][docs[i]['id']] = new ItemBase(docs[i])
                                                         break;
                                                     default:
                                                         _g.data[db_name][docs[i]['id']] = docs[i]
