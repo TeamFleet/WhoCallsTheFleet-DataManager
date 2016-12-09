@@ -1010,6 +1010,14 @@ class Ship extends ItemBase{
 		let series = this.getSeriesData()
 		picId = parseInt(picId || 0)
 		
+		let getURI = function(i, p){
+			if( typeof node != 'undefined' && node && node.path && _g.path.pics.ships )
+				return node.path.join(_g.path.pics.ships, i + '/' +p+ '.webp')
+			if( _g.path.pics.ships )
+				return _g.path.pics.ships + i + '/' + p + '.png'
+			return '/' + i + '/' + p + '.png'
+		}
+		
 		for(let i=0; i<series.length; i++){
 			if( series[i].id == this.id ){
 				switch(picId){
@@ -1020,13 +1028,13 @@ class Ship extends ItemBase{
 					case 12:
 					case 13:
 					case 14:
-						return node.path.join(_g.path.pics.ships, this.id + '/' +picId+ '.webp')
+						return getURI(this.id, picId)
 						break;
 					default:
 						if( series[i].illust_delete ){
-							return node.path.join(_g.path.pics.ships, series[i-1].id + '/' +picId+ '.webp')
+							return getURI(series[i-1].id, picId)
 						}else{
-							return node.path.join(_g.path.pics.ships, this.id + '/' +picId+ '.webp')
+							return getURI(this.id, picId)
 						}
 						break;
 				}
@@ -1066,8 +1074,8 @@ class Ship extends ItemBase{
 	
 	getAttribute(attr, lvl){
 		lvl = lvl || 1
-		if( lvl > 150 )
-			lvl = 150
+		if( lvl > Ship.lvlMax )
+			lvl = Ship.lvlMax
 		
 		let getStatOfLvl = function( lvl, base, max ){
 			lvl = lvl || 1
@@ -1075,6 +1083,8 @@ class Ship extends ItemBase{
 			max = parseFloat(max) || base
 			if( base < 0 || max < 0 )
 				return -1
+			if( base == max )
+				return max
 			return Math.floor( base + (max - base) * lvl / 99 )
 		}
 		
@@ -1162,6 +1172,9 @@ class Ship extends ItemBase{
 		return this.getIllustrator()
 	}
 }
+
+Ship.lvlMax = 155;
+
 _frame.app_main.page['home'] = {}
 
 node.require('http')
