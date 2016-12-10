@@ -369,6 +369,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     let type = 'ships'
                         , id = ship_ids[i]
                         , pathId = `/${id}`
+
                     if (isNaN(id)) {
                         var match = /^extra_([0-9]+)$/.exec(id)
                         if (match && match.length > 1) {
@@ -391,6 +392,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     for (let i in paths) {
                         node.mkdirp.sync(node.path.join(paths[i][type], pathId))
                     }
+
                     var arr = picid_by_shipid[id] || null
                     if (!arr) {
                         arr = []
@@ -403,6 +405,11 @@ _frame.app_main.page['init'].exportpicInit = form => {
                         check_do(
                             './pics/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.client[type], pathId, arr[j][1]),
+                            arr[j][2]
+                        )
+                        check_do(
+                            './pics/ships/' + id + '/' + arr[j][0],
+                            node.path.join(paths.web[type], pathId, arr[j][1]),
                             arr[j][2]
                         )
                         check_do(
