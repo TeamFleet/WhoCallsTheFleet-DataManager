@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^6.0.3",
-    
+
     "babel-core": "^6.7.2",
     "babel-plugin-transform-es3-member-expression-literals": "^6.5.0",
     "babel-plugin-transform-minify-booleans": "^6.5.0",
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "angular": "1.6.1",
+    "gulp-ng-annotate": "^2.0.0",
 
     "cwebp": "^2.0.1",
     "gm": "^1.23.0",

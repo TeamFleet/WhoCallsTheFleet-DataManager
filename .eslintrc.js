@@ -19,6 +19,7 @@ module.exports = {
         //"semi": [2, "always", { "omitLastInOneLineBlock": true}],
         "semi": 0,
         "no-case-declarations": 2,
+        "no-console": 0,
         "no-fallthrough": 0,
         "no-empty": 0,
         "no-empty-pattern": 2,
@@ -38,7 +39,10 @@ module.exports = {
         "valid-typeof": 1,
         "indent": [
             "error",
-            4
+            4,
+            {
+                "SwitchCase": 1
+            }
         ]
     }
 };

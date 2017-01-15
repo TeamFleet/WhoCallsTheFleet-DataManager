@@ -1,0 +1,41 @@
+<form class="ship_class loading" ng-controller="form-ship-class" ng-submit="actions.submit($event)">
+    <form-line title="'内部ID'">
+        <input type="text" ng-value="data._id" disabled="disabled" />
+    </form-line>
+    <form-line title="'ID'">
+        <input type="text" ng-value="data.id" disabled="disabled" />
+    </form-line>
+    <form-line title="'舰种ID'">
+        <input type="text" ng-value="data.ship_tye_id" disabled="disabled" />
+    </form-line>
+
+    <h3>名称</h3>
+    <form-line title="'日'">
+        <input type="text" ng-model="data.name_game" required="required">
+    </form-line>
+    <form-line title="'简中'">
+        <input type="text" ng-model="data.name_zh">
+    </form-line>
+
+    <h3>航速规则</h3>
+    <form-line title="'规则类型'">
+        <select ng-model="data.speed_rule" required="required">
+            <optgroup label="低速舰">
+                <option value="low-1">低速A</option>
+                <option value="low-2">低速B</option>
+                <option value="low-3">低速C</option>
+            </optgroup>
+            <optgroup label="高速舰">
+                <option value="high-1">高速A</option>
+                <option value="high-2">高速B</option>
+                <option value="high-3">高速C</option>
+                <option value="high-4">高速D</option>
+            </optgroup>
+        </select>
+    </form-line>
+
+    <p class="actions">
+        <button type="submit" ng-disabled="!ready">提交</button>
+        <button type="button">删除</button>
+    </p>
+</form>
