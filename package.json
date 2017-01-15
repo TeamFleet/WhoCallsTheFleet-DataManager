@@ -23,10 +23,13 @@
   },
   "devDependencies": {
     "autoprefixer": "^6.0.3",
+    
     "babel-core": "^6.7.2",
     "babel-plugin-transform-es3-member-expression-literals": "^6.5.0",
     "babel-plugin-transform-minify-booleans": "^6.5.0",
     "babel-preset-stage-0": "^6.5.0",
+    "babel-preset-angular": "^6.0.15",
+
     "gulp": "^3.9.0",
     "gulp-babel": "^6.0.0",
     "gulp-concat": "^2.6.0",
@@ -41,6 +44,8 @@
     "less-plugin-clean-css": "^1.5.1"
   },
   "dependencies": {
+    "angular": "1.6.1",
+
     "cwebp": "^2.0.1",
     "gm": "^1.23.0",
     "jsonfile": "^2.3.1",
