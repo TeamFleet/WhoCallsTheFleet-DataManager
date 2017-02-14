@@ -967,6 +967,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         d.additional_night_shelling || false
     ).appendTo(line_additional_night_shelling)
     $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
+    _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
     $('<h4/>').html('额外装备类型').appendTo(details_extra)
     _form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo(details_extra)
 
@@ -1334,6 +1335,8 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             delete data['additional_night_shelling']
             unset.additional_night_shelling = true
         }
+
+        if( !data['tp'] ) delete data['tp']
 
         console.log(data, data['slot'], data['equip'])
 
