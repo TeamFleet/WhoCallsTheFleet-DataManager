@@ -84,5 +84,9 @@ _comp.selector_equipment = function (name, id, default_item) {
             return deferred.promise
         })
 
+        .catch((err) => {
+            console.log(err)
+        })
+
     return dom
 }
