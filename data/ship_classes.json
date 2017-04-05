@@ -76,7 +76,7 @@
 {"name_game":"香取","name_zh":"香取","ship_type_id":21,"id":55,"_id":"u2OtssehEtbGtBOz","speed_rule":"low-2","extraSlotExtra":[66,220]}
 {"name_game":"改風早","name_zh":"改风早","ship_type_id":29,"id":76,"_id":"uBFfKbVS5UnIqTnt","speed_rule":"low-3"}
 {"name_game":"最上","name_zh":"最上","ship_type_id":4,"id":43,"_id":"uecETOoA1Bao9clc","speed_rule":"high-1"}
-{"name_game":"最上","name_zh":"最上","ship_type_id":30,"id":89,"_id":"ulnyuOvwz9UdVNIC"}
+{"name_game":"最上","name_zh":"最上","ship_type_id":30,"id":89,"_id":"ulnyuOvwz9UdVNIC","extraSlotExtra":[66,220]}
 {"name_game":"暁","name_zh":"晓","ship_type_id":1,"id":17,"_id":"vM1dk7HQDkw12RHP","speed_rule":"high-3"}
 {"name_game":"龍鳳","name_zh":"龙凤","ship_type_id":9,"id":35,"_id":"vaAJbqOdJc4zC0cX","speed_rule":"low-2"}
 {"id":13,"name_game":"大鯨","name_zh":"大鲸","ship_type_id":17,"_id":"wIQmLK3nowZHC6W9","speed_rule":"low-2","extraSlotExtra":[66,220]}
