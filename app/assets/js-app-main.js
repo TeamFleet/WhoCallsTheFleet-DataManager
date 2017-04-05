@@ -5117,6 +5117,13 @@ class TablelistShips extends Tablelist{
 		TablelistShips.contextmenu.show($el)
 	}
 }
+const startFrom = {
+    shipExtra: 811,
+    enemies: 1501,
+    aokiHagane: 9181
+}
+
+
 _frame.app_main.page['init'].exportpicInit = form => {
     var folder_input = form.find('[name="destfolder"]')
         , btn_browse = form.find('[value="Browse..."]')
@@ -5150,8 +5157,6 @@ _frame.app_main.page['init'].exportpicInit = form => {
             }
         }
         , _export_options = []
-        , enemy_id_start = 501
-        , aoki_hagane_start = 9181
 
     form.on('submit', function (e) {
         e.preventDefault()
@@ -5456,7 +5461,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
                         var ships = docs[i].ships || []
                         for (var j in ships) {
                             if (!parseInt(ships[j]['id'])
-                                || (parseInt(ships[j]['id']) < 500 || parseInt(ships[j]['id']) > 9000)
+                                || (parseInt(ships[j]['id']) < startFrom.shipExtra || parseInt(ships[j]['id']) > 9000)
                             ) {
                                 picid_by_shipid[ships[j]['id']] = []
                                 picid_by_shipid[ships[j]['id']].push(['0.png', '0.webp', 90])
@@ -5499,7 +5504,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
                         }
                     } else {
                         id = parseInt(id)
-                        if (id >= enemy_id_start && id < aoki_hagane_start) {
+                        if (id >= startFrom.enemies && id < startFrom.aokiHagane) {
                             if (!export_options.enemies.checked)
                                 continue;
                             type = 'enemies'

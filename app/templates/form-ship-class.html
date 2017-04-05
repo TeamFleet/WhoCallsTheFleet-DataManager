@@ -34,6 +34,21 @@
         </select>
     </form-line>
 
+    <h3>补强增设栏位可额外装备</h3>
+    <div class="form_section">
+        <div ng-repeat="o in data.extraSlotExtra track by $index" class="line-sortable">
+            <select ng-model="data.extraSlotExtra[$index]">
+                <optgroup ng-repeat="type in items" label="{{ type[0] }}">
+                    <option ng-repeat="equipment in type[1]" value="{{ equipment.id }}">{{equipment.name.zh_cn}}</option>
+                </optgroup>
+            </select>
+            <span class="btns">
+                <button class="delete" type="button" ng-click="actions.removeExtraSlotExtra($index)">×</button>
+            </span>
+        </div>
+        <button class="add" type="button" ng-click="actions.addExtraSlotExtra()">添加</button>
+    </div>
+
     <p class="actions">
         <button type="submit" ng-disabled="!ready">提交</button>
         <button type="button">删除</button>
