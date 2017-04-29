@@ -22,36 +22,41 @@
     "transparent": false
   },
   "devDependencies": {
-    "autoprefixer": "^6.0.3",
+    "autoprefixer": "^6.7.7",
 
-    "babel-core": "^6.7.2",
-    "babel-plugin-transform-es3-member-expression-literals": "^6.5.0",
-    "babel-plugin-transform-minify-booleans": "^6.5.0",
-    "babel-preset-stage-0": "^6.5.0",
+    "babel-core": "^6.24.1",
+    "babel-plugin-transform-es3-member-expression-literals": "^6.22.0",
+    "babel-plugin-transform-minify-booleans": "^6.8.0",
+    "babel-preset-stage-0": "^6.24.1",
     "babel-preset-angular": "^6.0.15",
 
-    "gulp": "^3.9.0",
-    "gulp-babel": "^6.0.0",
-    "gulp-concat": "^2.6.0",
-    "gulp-cssnano": "^2.1.1",
-    "gulp-less": "^3.0.3",
-    "gulp-minify-css": "^1.2.1",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-cssnano": "^2.1.2",
+    "gulp-less": "^3.3.0",
+    "gulp-minify-css": "^1.2.4",
     "gulp-notify": "^3.0.0",
-    "gulp-postcss": "^6.0.1",
+    "gulp-postcss": "^6.4.0",
     "gulp-rename": "^1.2.2",
-    "gulp-uglify": "^2.0.1",
+    "gulp-uglify": "^2.1.2",
     "gulp-watch-less2": "^2.0.4",
-    "less-plugin-clean-css": "^1.5.1"
+    "less-plugin-clean-css": "^1.5.1",
+
+    "eslint": "latest",
+
+    "less": "^2.7.2"
   },
   "dependencies": {
-    "angular": "1.6.1",
+    "angular": "1.6.4",
     "gulp-ng-annotate": "^2.0.0",
 
     "cwebp": "^2.0.1",
     "gm": "^1.23.0",
-    "jsonfile": "^2.3.1",
-    "marked": "^0.3.5",
+    "jsonfile": "^3.0.0",
+    "marked": "^0.3.6",
     "nedb": "^1.8.0",
-    "request": "^2.74.0"
+    "request": "^2.81.0",
+    "webp-bin": "^0.1.4"
   }
 }

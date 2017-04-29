@@ -704,7 +704,7 @@ _frame.app_main.page['gamedata'].init_useitem = function (data) {
             if (!_db.consumables) {
                 _db.consumables
                     = new node.nedb({
-                        filename: node.path.join(_g.path.db, '/consumables.json'),
+                        filename: node.path.join(_g.path.db, '/consumables.nedb'),
                         autoload: true
                     })
             }

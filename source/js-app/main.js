@@ -69,7 +69,7 @@ _g.data = {
 
 var _db = {
     'guides': new node.nedb({
-        filename: node.path.join(_g.path['db-other'], 'guides.json')
+        filename: node.path.join(_g.path['db-other'], 'guides.nedb')
     })
 }
 _g.ship_type_order = []
