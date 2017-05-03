@@ -6,6 +6,7 @@
 {"name_game":"高雄","name_zh":"高雄","ship_type_id":23,"id":69,"_id":"6haxyRDjPtNvLEHP","speed_rule":"high-3"}
 {"name_game":"イ400","name_zh":"伊400","ship_type_id":27,"id":74,"_id":"6mznKl2SV4zD0TOl"}
 {"name_game":"利根","name_zh":"利根","ship_type_id":5,"id":46,"_id":"6ofZS1neno5uJ91T","speed_rule":"high-1"}
+{"name_game":"択捉","name_zh":"择捉","ship_type_id":31,"id":94,"_id":"6pozOhWom5pRpbxE"}
 {"name_game":"コンゴウ","name_zh":"金刚","ship_type_id":26,"id":73,"_id":"6qBoMqBJlE0f5CQe"}
 {"name_game":"龍驤","name_zh":"龙骧","ship_type_id":9,"id":34,"_id":"6rOLfoN9DZmM2WON","speed_rule":"high-3"}
 {"id":3,"name_game":"大和","name_zh":"大和","ship_type_id":20,"_id":"7Dzqr0FFx8i6z5Tn","speed_rule":"low-1"}
@@ -26,6 +27,7 @@
 {"name_game":"夕張","name_zh":"夕张","ship_type_id":2,"id":51,"_id":"FWe8gJkEc3hdZrKz","speed_rule":"high-4"}
 {"name_game":"古鷹","name_zh":"古鹰","ship_type_id":4,"id":39,"_id":"GGpHWtPGbFEdb938","speed_rule":"high-3"}
 {"name_game":"天龍","name_zh":"天龙","ship_type_id":2,"id":47,"_id":"HVljyw6ggwPr7Ges","speed_rule":"high-3"}
+{"name_game":"ガングート","name_zh":"甘古特","ship_type_id":6,"id":93,"_id":"Iua8Fv2PvMLQX8Ii"}
 {"name_game":"飛龍","name_zh":"飞龙","ship_type_id":10,"id":29,"_id":"KKX4kYY2ldDf60Oh","speed_rule":"high-2"}
 {"name_game":"島風","name_zh":"岛风","ship_type_id":1,"id":24,"_id":"KM7CsokdghksQ1x1","speed_rule":"high-1"}
 {"name_game":"Z1","name_zh":"Z1","ship_type_id":1,"id":25,"_id":"LFktZnFndcgKf7Ar","speed_rule":"high-3"}
@@ -35,6 +37,7 @@
 {"name_game":"秋津洲","name_zh":"秋津洲","ship_type_id":24,"id":71,"_id":"QCTrW1I7vS81vUaV","speed_rule":"low-2"}
 {"name_game":"瑞穂","name_zh":"瑞穗","ship_type_id":12,"id":77,"_id":"QDw2yfrIJfDl63rN","speed_rule":"low-2"}
 {"name_game":"Aquila","name_zh":"鹫座","ship_type_id":10,"id":91,"_id":"T5TIzP4V1vYfSz1u"}
+{"name_game":"占守","name_zh":"占守","ship_type_id":31,"id":92,"_id":"TGSlMB6OBuVzahFV"}
 {"name_game":"巡潜乙","name_zh":"巡潜乙","ship_type_id":14,"id":66,"_id":"TkXaOcPURNWGeKqT","speed_rule":"low-3"}
 {"name_game":"Zara","name_zh":"扎拉","ship_type_id":4,"id":81,"_id":"TqvaW6jEdVptFohN","speed_rule":"high-3"}
 {"name_game":"V.Veneto","name_zh":"维托里奥·维内托","ship_type_id":7,"id":70,"_id":"X7YkWImv52ZLa7tS","speed_rule":"high-3"}
