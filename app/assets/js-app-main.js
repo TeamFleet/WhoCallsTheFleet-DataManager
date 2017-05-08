@@ -4059,7 +4059,7 @@ class TablelistShips_v2 extends Tablelist{
 					break;
 				case 'nightpower':
 					// 航母没有夜战火力
-					var is_nonight_shelling = /^(9|10|11|30)$/.test( ship_data['type'] ) && !ship_data.additional_night_shelling
+					var is_nonight_shelling = /^(9|10|11|30|32)$/.test( ship_data['type'] ) && !ship_data.additional_night_shelling
 					var datavalue = is_nonight_shelling
 										? 0
 										: (parseInt(ship_data['stat']['fire_max'] || 0)
@@ -4743,7 +4743,7 @@ class TablelistShips extends Tablelist{
 					break;
 				case 'nightpower':
 					// 航母没有夜战火力
-					var datavalue = /^(9|10|11)$/.test( ship_data['type'] )
+					var datavalue = /^(9|10|11|32)$/.test( ship_data['type'] )
 									? 0
 									: (parseInt(ship_data['stat']['fire_max'] || 0)
 										+ parseInt(ship_data['stat']['torpedo_max'] || 0)
