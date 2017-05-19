@@ -149,7 +149,7 @@ _shiplist.prototype.append_ship_all = function(){
             var data_shiptype = _g.data.ship_types[ _g.ship_type_order[i] ]
         }
         $('<tr class="typetitle"><th colspan="' + (self.columns.length + 1) + '">'
-            //+ data_shiptype['full_zh']
+            //+ data_shiptype.name.zh_cn
             + _g.ship_type_order_name[i]['zh_cn']
             + '<small>[' + data_shiptype['code'] + ']</small>'
             + '</th></tr>')

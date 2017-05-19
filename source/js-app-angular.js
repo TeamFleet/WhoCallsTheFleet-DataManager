@@ -6,3 +6,4 @@
 // @koala-prepend "js-angular/components/select-equipments.js.js"
 
 // @koala-prepend "js-angular/controllers/form-ship-class.js"
+// @koala-prepend "js-angular/controllers/form-ship-type.js"

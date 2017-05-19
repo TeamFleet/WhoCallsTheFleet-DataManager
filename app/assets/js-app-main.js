@@ -994,7 +994,7 @@ class Ship extends ItemBase{
 	getType(language){
 		language = language || _g.lang
 		return this['type']
-				? _g['data']['ship_types'][this['type']]['full_zh']
+				? _g['data']['ship_types'][this['type']].name.zh_cn
 				: null
 	}
 	get _type(){
@@ -3445,7 +3445,7 @@ TablelistEquipments_v2.gen_helper_equipable_on = function( type_id ){
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
 		var item_type_id = _g.data.item_types[type_id]['equipable_on_type'][i]
 		equipable_on+= '<span>'
-							+ _g['data']['ship_types'][item_type_id]['full_zh']
+							+ _g['data']['ship_types'][item_type_id].name.zh_cn
 							+ ( i < _g.data.item_types[type_id]['equipable_on_type'].length-1 ? ',&nbsp;' : '' )
 						+ '</span>'
 	})
@@ -3727,7 +3727,7 @@ TablelistEquipments.gen_helper_equipable_on = function( type_id ){
 	_g.data.item_types[type_id]['equipable_on_type'].forEach(function(currentValue, i){
 		var item_type_id = _g.data.item_types[type_id]['equipable_on_type'][i]
 		equipable_on+= '<span>'
-							+ _g['data']['ship_types'][item_type_id]['full_zh']
+							+ _g['data']['ship_types'][item_type_id].name.zh_cn
 							+ ( i < _g.data.item_types[type_id]['equipable_on_type'].length-1 ? ',&nbsp;' : '' )
 						+ '</span>'
 	})
@@ -4205,7 +4205,7 @@ class TablelistShips_v2 extends Tablelist{
 							$('<h4 data-header="'+i+'">'
 								+ '<label class="checkbox" for="' + checkbox_id + '">'
 									+ _g.data['ship_type_order'][i]['name']['zh_cn']
-									+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
+									+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype.name.zh_cn
 										? ('<small>[' + data_shiptype['code'] + ']</small>')
 										: ''
 									)
@@ -4864,11 +4864,11 @@ class TablelistShips extends Tablelist{
 							$('<tr class="typetitle" data-trindex="'+this.trIndex+'">'
 								+ '<th colspan="' + (this.columns.length + 1) + '">'
 								+ '<label class="checkbox" for="' + checkbox_id + '">'
-								//+ data_shiptype['full_zh']
+								//+ data_shiptype.name.zh_cn
 								//+ _g.data['ship_type_order'][i+1]['name']['zh_cn']
 								+ _g.data['ship_type_order'][i]['name']['zh_cn']
-								//+ ( _g.data['ship_type_order'][i+1]['name']['zh_cn'] == data_shiptype['full_zh']
-								+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
+								//+ ( _g.data['ship_type_order'][i+1]['name']['zh_cn'] == data_shiptype.name.zh_cn
+								+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype.name.zh_cn
 									? ('<small>[' + data_shiptype['code'] + ']</small>')
 									: ''
 								)
@@ -6422,7 +6422,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 types.push({
                     //'value': 	docs[i]['_id'],
                     'value': docs[i]['id'],
-                    'title': '[' + docs[i]['code'] + '] ' + docs[i]['full_zh']
+                    'title': '[' + docs[i]['code'] + '] ' + docs[i].name.zh_cn
                 })
             }
             // 实时载入舰种数据
@@ -6449,7 +6449,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                                     classes.push({
                                         //'value': 	docs_classes[j]['_id'],
                                         'value': docs_classes[j]['id'],
-                                        'title': docs_classes[j]['name_zh'] + '级'
+                                        'title': docs_classes[j].name.zh_cn + '级'
                                     })
                                 }
                                 if (!docs_classes || !docs_classes.length) {
@@ -7098,9 +7098,9 @@ _frame.app_main.page['ships'].gen_form_new_ship_type = function (callback) {
         })
     self.field_input_text('code', '舰种简称').appendTo(form)
     self.field_input_text('code_game', '舰种简称 (游戏中)').appendTo(form)
-    self.field_input_text('full', '舰种全称').appendTo(form)
-    self.field_input_text('full_game', '舰种全称 (游戏中)').appendTo(form)
-    self.field_input_text('full_zh', '舰种全称 (中文)').appendTo(form)
+    self.field_input_text('name.en_us', '舰种全称').appendTo(form)
+    self.field_input_text('name.ja_jp', '舰种全称 (游戏中)').appendTo(form)
+    self.field_input_text('name.zh_cn', '舰种全称 (中文)').appendTo(form)
 
     var input_id = '_input_g' + _g.inputIndex
     _g.inputIndex++
@@ -7133,8 +7133,8 @@ _frame.app_main.page['ships'].gen_form_new_ship_class = function (callback) {
             })
         })
 
-    self.field_input_text('name_game', '舰级名 (游戏中)', null, '型').appendTo(form)
-    self.field_input_text('name_zh', '舰级名 (中文)', null, '级').appendTo(form)
+    self.field_input_text('name.ja_jp', '舰级名 (游戏中)', null, '型').appendTo(form)
+    self.field_input_text('name.zh_cn', '舰级名 (中文)', null, '级').appendTo(form)
 
     var line = $('<p/>').appendTo(form)
         , select = $('<select name="ship_type_id" required/>').html('<option value=""></option>').appendTo(form)
@@ -7145,7 +7145,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_class = function (callback) {
                 var _data = docs[i]
                 $('<option/>', {
                     'value': _data['id'],
-                    'html': '[' + _data['code'] + '] ' + _data['full_zh']
+                    'html': '[' + _data['code'] + '] ' + _data.name.zh_cn
                 }).appendTo(select)
             }
             form.removeClass('loading')
@@ -7251,7 +7251,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_type_collection = function (call
             $('<input type="checkbox" name="types" value="' + type_id + '" id="' + input_id + '"/>')
                 .prop('checked', ($.inArray(type_id, types) > -1))
                 .appendTo(form)
-            $('<label for="' + input_id + '"/>').html(docs[i]['full_zh']).appendTo(form)
+            $('<label for="' + input_id + '"/>').html(docs[i].name.zh_cn).appendTo(form)
             $('<br/>').appendTo(form)
         }
 
@@ -7323,7 +7323,7 @@ _frame.app_main.page['ships'].gen_form_new_ship_type_order = function (callback,
             $('<input type="checkbox" name="types" value="' + type_id + '" id="' + input_id + '">')
                 .prop('checked', ($.inArray(type_id, types) > -1))
                 .appendTo(form)
-            $('<label for="' + input_id + '"/>').html(docs[i]['full_zh']).appendTo(form)
+            $('<label for="' + input_id + '"/>').html(docs[i].name.zh_cn).appendTo(form)
             $('<br/>').appendTo(form)
         }
 
@@ -7622,13 +7622,13 @@ _frame.app_main.page['ships'].section['舰种&舰级'] = {
 
     // 返回HTML内容
     'content_ship_type': function (d) {
-        return '<strong>' + d['full_zh'] + '</strong>'
-            + '<small>' + d['full_game'] + '</small>'
+        return '<strong>' + d.name.zh_cn + '</strong>'
+            + '<small>' + d.name.ja_jp + '</small>'
             + '<em>' + d['code'] + '</em>'
     },
     'content_ship_class': function (d) {
-        return '<strong>' + d['name_zh'] + '级</strong>'
-            + '<small>' + d['name_game'] + '型</small>'
+        return '<strong>' + d.name.zh_cn + '级</strong>'
+            + '<small>' + d.name.ja_jp + '型</small>'
     },
 
 
@@ -7667,9 +7667,9 @@ _frame.app_main.page['ships'].section['舰种&舰级'] = {
                         id.find('input').prop('readonly', true)
                         self.field_input_text('code', '舰种简称', _data['code']).appendTo(_dom)
                         self.field_input_text('code_game', '舰种简称 (游戏中)', _data['code_game']).appendTo(_dom)
-                        self.field_input_text('full', '舰种全称', _data['full']).appendTo(_dom)
-                        self.field_input_text('full_game', '舰种全称 (游戏中)', _data['full_game']).appendTo(_dom)
-                        self.field_input_text('full_zh', '舰种全称 (中文)', _data['full_zh']).appendTo(_dom)
+                        self.field_input_text('name.en_us', '舰种全称', _data.name.en_us).appendTo(_dom)
+                        self.field_input_text('name.ja_jp', '舰种全称 (游戏中)', _data.name.ja_jp).appendTo(_dom)
+                        self.field_input_text('name.zh_cn', '舰种全称 (中文)', _data.name.zh_cn).appendTo(_dom)
                         var input_id = '_input_g' + _g.inputIndex
                         _g.inputIndex++
                         $('<input type="checkbox" name="donotcompare" id="' + input_id + '">')
@@ -8040,7 +8040,7 @@ _frame.app_main.page['ships'].section['舰种集合 (舰娘列表)'] = {
         var types = $('<div/>').appendTo(dom)
         for (var i in d['types']) {
             $('<span/>').html(
-                _g.data.ship_types[d['types'][i]]['full_zh']
+                _g.data.ship_types[d['types'][i]].name.zh_cn
                 + (parseInt(i) < d['types'].length - 1 ? ', ' : '')
             ).appendTo(types)
         }
@@ -8136,7 +8136,7 @@ _frame.app_main.page['ships'].section['舰种集合 (舰娘选择器)'] = {
         var types = $('<div/>').appendTo(dom)
         for (var i in d['types']) {
             $('<span/>').html(
-                _g.data.ship_types[d['types'][i]]['full_zh']
+                _g.data.ship_types[d['types'][i]].name.zh_cn
                 + (parseInt(i) < d['types'].length - 1 ? ', ' : '')
             ).appendTo(types)
         }
@@ -9064,7 +9064,7 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
             $('<input type="checkbox" name="equipable_on_type" value="' + type_id + '" id="' + input_id + '">')
                 .prop('checked', ($.inArray(type_id, equipable_on_type) > -1))
                 .appendTo(unitDOM)
-            $('<label for="' + input_id + '"/>').html(docs[i]['full_zh']).appendTo(unitDOM)
+            $('<label for="' + input_id + '"/>').html(docs[i].name.zh_cn).appendTo(unitDOM)
         }
     })
 
@@ -12229,7 +12229,7 @@ _shiplist.prototype.append_ship_all = function(){
             var data_shiptype = _g.data.ship_types[ _g.ship_type_order[i] ]
         }
         $('<tr class="typetitle"><th colspan="' + (self.columns.length + 1) + '">'
-            //+ data_shiptype['full_zh']
+            //+ data_shiptype.name.zh_cn
             + _g.ship_type_order_name[i]['zh_cn']
             + '<small>[' + data_shiptype['code'] + ']</small>'
             + '</th></tr>')

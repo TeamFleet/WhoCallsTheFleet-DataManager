@@ -871,7 +871,7 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
             $('<input type="checkbox" name="equipable_on_type" value="' + type_id + '" id="' + input_id + '">')
                 .prop('checked', ($.inArray(type_id, equipable_on_type) > -1))
                 .appendTo(unitDOM)
-            $('<label for="' + input_id + '"/>').html(docs[i]['full_zh']).appendTo(unitDOM)
+            $('<label for="' + input_id + '"/>').html(docs[i].name.zh_cn).appendTo(unitDOM)
         }
     })
 

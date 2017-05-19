@@ -23,7 +23,7 @@ class Ship extends ITEM{
 	getType(language){
 		language = language || _g.lang
 		return this['type']
-				? _g['data']['ship_types'][this['type']]['full_zh']
+				? _g['data']['ship_types'][this['type']].name.zh_cn
 				: null
 	}
 	

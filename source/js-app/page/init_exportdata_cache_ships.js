@@ -465,7 +465,7 @@ class TablelistShips_v2 extends Tablelist{
 							$('<h4 data-header="'+i+'">'
 								+ '<label class="checkbox" for="' + checkbox_id + '">'
 									+ _g.data['ship_type_order'][i]['name']['zh_cn']
-									+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
+									+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype.name.zh_cn
 										? ('<small>[' + data_shiptype['code'] + ']</small>')
 										: ''
 									)
@@ -1124,11 +1124,11 @@ class TablelistShips extends Tablelist{
 							$('<tr class="typetitle" data-trindex="'+this.trIndex+'">'
 								+ '<th colspan="' + (this.columns.length + 1) + '">'
 								+ '<label class="checkbox" for="' + checkbox_id + '">'
-								//+ data_shiptype['full_zh']
+								//+ data_shiptype.name.zh_cn
 								//+ _g.data['ship_type_order'][i+1]['name']['zh_cn']
 								+ _g.data['ship_type_order'][i]['name']['zh_cn']
-								//+ ( _g.data['ship_type_order'][i+1]['name']['zh_cn'] == data_shiptype['full_zh']
-								+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype['full_zh']
+								//+ ( _g.data['ship_type_order'][i+1]['name']['zh_cn'] == data_shiptype.name.zh_cn
+								+ ( _g.data['ship_type_order'][i]['name']['zh_cn'] == data_shiptype.name.zh_cn
 									? ('<small>[' + data_shiptype['code'] + ']</small>')
 									: ''
 								)
