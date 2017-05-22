@@ -968,6 +968,29 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     ).appendTo(line_additional_night_shelling)
     $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
     _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
+    // 修改舰级航速规则
+    $('<h4/>').html('修改舰级航速规则').appendTo(details_extra)
+    var lineOverideSpeedRule = $('<p/>').appendTo(details_extra)
+        , idOverideSpeedRule = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    var valuesSpeedRule = [
+        'low-1',
+        'low-2',
+        'low-3',
+        'high-1',
+        'high-2',
+        'high-3',
+        'high-4'
+    ]
+    _frame.app_main.page['ships'].gen_input(
+        'select',
+        'speed_rule',
+        idOverideSpeedRule,
+        valuesSpeedRule,
+        {
+            'default': d.speed_rule
+        }
+    ).appendTo(lineOverideSpeedRule)
     $('<h4/>').html('额外装备类型').appendTo(details_extra)
     _form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo(details_extra)
 
@@ -1336,7 +1359,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             unset.additional_night_shelling = true
         }
 
-        if( !data['tp'] ) delete data['tp']
+        if (!data['tp']) delete data['tp']
 
         console.log(data, data['slot'], data['equip'])
 
@@ -1376,6 +1399,14 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             carry_num += parseInt(data['slot'][i])
         }
         data['stat']['carry'] = carry_num
+
+        // 航速规则
+        if (_g.data.ship_classes[data.class]) {
+            if (_g.data.ship_classes[data.class].speed_rule === data.speed_rule)
+                delete data.speed_rule
+        }
+        if (!data.speed_rule)
+            delete data.speed_rule
 
         // 系列
         //if( data.series.illust_delete ){
@@ -2067,8 +2098,8 @@ _frame.app_main.page['ships'].section['舰种&舰级'] = {
                         app.addTemplate({
                             templateUrl: './templates/form-ship-class.html'
                         }, {
-                            _id: d._id
-                        }
+                                _id: d._id
+                            }
                         ), '编辑舰级')
                 })
         )
