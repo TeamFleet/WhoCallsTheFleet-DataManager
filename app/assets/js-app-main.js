@@ -2260,6 +2260,28 @@ _frame.app_main.page['init'].exportdata = function( form ){
             }
             return deferred.promise
         })
+    
+    // persistence.compactDatafile()
+        .then(() => {
+            const deferred = Q.defer()
+
+            _db.ships.persistence.compactDatafile()
+            _db.ship_types.persistence.compactDatafile()
+
+            _db.items.persistence.compactDatafile()
+            _db.item_types.persistence.compactDatafile()
+
+            _db.entities.persistence.compactDatafile()
+
+            _db.arsenal_all.persistence.compactDatafile()
+            _db.arsenal_weekday.persistence.compactDatafile()
+
+            setTimeout(() => {
+                deferred.resolve()
+            }, 5000)
+
+            return deferred.promise
+        })
 
     // 复制所有数据文件
         .then(function(){
@@ -6999,6 +7021,18 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         delete_illust = data['series']['illust_delete']
         if (!data['series']['illust_extra'].push)
             data['series']['illust_extra'] = [data['series']['illust_extra']]
+        if (delete_illust) {
+            data.illust_same_as_prev = true
+            data.illust_extra = null
+        } else {
+            data.illust_same_as_prev = false
+            if (data['series']['illust_extra'])
+                data.illust_extra = data['series']['illust_extra']
+        }
+        if (!data.illust_same_as_prev)
+            delete data.illust_same_as_prev
+        if (!data.illust_extra || !data.illust_extra.length || data.illust_extra.every(item => (!item)))
+            delete data.illust_extra
 
         if (!data['slot'])
             data['slot'] = []
@@ -7027,7 +7061,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
         if (!data['tp']) delete data['tp']
 
-        console.log(data, data['slot'], data['equip'])
+        // console.log(data, data['slot'], data['equip'])
 
         // 名称
         if (!data['name']['suffix'])
@@ -7946,7 +7980,7 @@ _frame.app_main.page['ships'].section['新建'] = {
                     ship_data['type'] = remodel_from['type']
                     ship_data['class'] = remodel_from['class']
                     ship_data['class_no'] = remodel_from['class_no']
-                    ship_data['rels'] = remodel_from['rels']
+                    // ship_data['rels'] = remodel_from['rels']
                     ship_data['series'] = remodel_from['series']
                     ship_data['remodel'] = {
                         'prev': remodel_from['id']

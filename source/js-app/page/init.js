@@ -1078,6 +1078,28 @@ _frame.app_main.page['init'].exportdata = function( form ){
             }
             return deferred.promise
         })
+    
+    // persistence.compactDatafile()
+        .then(() => {
+            const deferred = Q.defer()
+
+            _db.ships.persistence.compactDatafile()
+            _db.ship_types.persistence.compactDatafile()
+
+            _db.items.persistence.compactDatafile()
+            _db.item_types.persistence.compactDatafile()
+
+            _db.entities.persistence.compactDatafile()
+
+            _db.arsenal_all.persistence.compactDatafile()
+            _db.arsenal_weekday.persistence.compactDatafile()
+
+            setTimeout(() => {
+                deferred.resolve()
+            }, 5000)
+
+            return deferred.promise
+        })
 
     // 复制所有数据文件
         .then(function(){
