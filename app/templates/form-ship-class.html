@@ -52,6 +52,18 @@
         <button class="add" type="button" ng-click="actions.addExtraSlotExtra()">添加</button>
     </div>
 
+    <h3>其他信息</h3>
+    <form-line title="'海军'">
+        <select ng-model="data.navy">
+            <option value="km">纳粹德国海军 / 战争海军 (Kriegsmarine)</option>
+            <option value="rm">意大利皇家海军 (Regia Marina)</option>
+            <option value="mn">法国海军 (Marine nationale)</option>
+            <option value="rn">英国皇家海军 (Royal Navy)</option>
+            <option value="usn">美国海军 (United States Navy)</option>
+            <option value="vmf">苏联海军 (Военно-морской флот СССР)</option>
+        </select>
+    </form-line>
+
     <p class="actions">
         <button type="submit" ng-disabled="!ready">提交</button>
         <button type="button">删除</button>
