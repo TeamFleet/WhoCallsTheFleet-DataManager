@@ -159,12 +159,12 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             resource: [
                 // 必要资源		油/弹/钢/铝
                 [0, 0, 0, 0],
-                // +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0],
+                // +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / [需要装备 / 需要装备数量]
+                [0, 0, 0, 0, [null, 0]],
                 // +6 ~ MAX		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0],
+                [0, 0, 0, 0, [null, 0]],
                 // 升级			开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0]
+                [0, 0, 0, 0, [null, 0]]
             ],
             // 星期 & 秘书舰
             req: [
@@ -350,20 +350,42 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             ).appendTo(line)
 
             $('<label/>').html('装备').appendTo(line)
-            _comp.selector_equipment(
-                '',
-                '',
-                improvement.resource[i][4]
-            ).appendTo(line)
+            const equipments = $('<span class="equipments" />').appendTo(line)
+            let dataEquipments = []
+            if (Array.isArray(improvement.resource[i][4]))
+                dataEquipments = improvement.resource[i][4]
+            else if (typeof improvement.resource[i][4] !== 'undefined')
+                dataEquipments.push([improvement.resource[i][4], improvement.resource[i][5]])
+            const addDomEquipment = (d = [null, 0]) => {
+                const thisEquipment = $('<span class="equipment" />').appendTo(equipments)
+                _comp.selector_equipment(
+                    '',
+                    '',
+                    d[0]
+                ).appendTo(thisEquipment)
 
-            id = _g.newInputIndex()
-            $('<label for="' + id + '"/>').html('量').appendTo(line)
-            _frame.app_main.page['ships'].gen_input(
-                'number',
-                '',
-                id,
-                improvement.resource[i][5]
-            ).appendTo(line)
+                id = _g.newInputIndex()
+                $('<label for="' + id + '"/>').html('量').appendTo(thisEquipment)
+                _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    '',
+                    id,
+                    d[1]
+                ).appendTo(thisEquipment)
+
+                $('<button class="remove" type="button">×</button>')
+                    .on('click', () => {
+                        thisEquipment.remove()
+                    })
+                    .appendTo(thisEquipment)
+
+                $('<button class="add" type="button">+</button>')
+                    .on('click', () => {
+                        addDomEquipment()
+                    })
+                    .appendTo(thisEquipment)
+            }
+            dataEquipments.forEach(addDomEquipment)
         }
 
         // 删除本条信息
@@ -645,7 +667,16 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     if( !isNaN(val) ){
                         val = parseInt($(this).val())
                     }
-                    data_improvement.resource[i].push(val || 0)
+                    if( inputindex > 3 ){
+                        if( typeof data_improvement.resource[i][4] === 'undefined' )
+                            data_improvement.resource[i][4] = []
+                        if( inputindex % 2 === 0 )
+                            data_improvement.resource[i][4].push([val || null])
+                        if( inputindex % 2 === 1 )
+                            data_improvement.resource[i][4][data_improvement.resource[i][4].length - 1][1] = val || 0
+                    }else{
+                        data_improvement.resource[i].push(val || 0)
+                    }
                 })
             })
             data['improvement'].push(data_improvement)

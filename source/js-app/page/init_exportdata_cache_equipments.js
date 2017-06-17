@@ -58,6 +58,7 @@ class TablelistEquipments_v2 extends Tablelist{
 			['索敌',	'los'],
 			['射程',	'range'],
 			['航程',	'distance'],
+			['可开发','craftable'],
 			['可改修','improvable']
 		]
 
@@ -183,6 +184,15 @@ class TablelistEquipments_v2 extends Tablelist{
 						.html(
 							equipment_data['stat']['range']
 								? _g.getStatRange( equipment_data['stat']['range'] )
+								: '<small class="zero">-</small>'
+						)
+						.appendTo(tr)
+					break;
+				case 'craftable':
+					$('<dd stat="craftable" value="' + (equipment_data['craftable'] ? '1' : '0') + '"/>')
+						.html(
+							equipment_data['craftable']
+								? '✓'
 								: '<small class="zero">-</small>'
 						)
 						.appendTo(tr)

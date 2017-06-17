@@ -180,6 +180,8 @@ form.iteminfo{
 							padding:	20px 0 0 18px;
 							position:	relative;
 							box-sizing: content-box;
+							height: 	auto;
+							min-height: 1rem;
 							h5{
 								position:	absolute;
 								top:		0;
@@ -191,6 +193,32 @@ form.iteminfo{
 							}
 							select{
 								flex-grow:	2;
+							}
+							.equipments{
+								flex: 	999999999;
+								display:block;
+								overflow:hidden;
+							}
+							.equipment{
+								width: 		100%;
+								display: 	flex;
+								flex-flow: 	row nowrap;
+								.add{
+									flex: 	0;
+									display:none;
+								}
+								.remove{
+									flex: 	0;
+									display:block;
+								}
+								&:last-of-type{
+									.add{
+										display:block;
+									}
+									.remove{
+										display:none;
+									}
+								}
 							}
 						}
 					}

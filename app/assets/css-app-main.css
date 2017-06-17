@@ -2675,6 +2675,8 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.
   padding: 20px 0 0 18px;
   position: relative;
   box-sizing: content-box;
+  height: auto;
+  min-height: 1rem;
 }
 form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource h5 {
   position: absolute;
@@ -2687,6 +2689,30 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.
 }
 form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource select {
   flex-grow: 2;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipments {
+  flex: 999999999;
+  display: block;
+  overflow: hidden;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment {
+  width: 100%;
+  display: flex;
+  flex-flow: row nowrap;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment .add {
+  flex: 0;
+  display: none;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment .remove {
+  flex: 0;
+  display: block;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment:last-of-type .add {
+  display: block;
+}
+form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment:last-of-type .remove {
+  display: none;
 }
 form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require {
   padding-left: 20px;

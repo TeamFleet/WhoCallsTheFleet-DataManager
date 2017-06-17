@@ -433,6 +433,13 @@ _frame.app_main.page['init'].exportdata = function( form ){
             var deferred = Q.defer()
                 ,_upgrade_for = {}
                 ,length = 0
+            
+            const add = (id, for_id) => {
+                if( !_upgrade_for[for_id] )
+                    _upgrade_for[for_id] = [null, []];
+                if( for_id != id && _upgrade_for[for_id][1].indexOf( id ) < 0 )
+                    _upgrade_for[for_id][1].push( id )
+            }
 
             __log('&nbsp;')
             __log('========== 装备 - 改修材料关系 ==========')
@@ -454,10 +461,13 @@ _frame.app_main.page['init'].exportdata = function( form ){
                             if( improvement.resource && improvement.resource.length && improvement.resource.push ){
                                 improvement.resource.forEach( function( resource, index ){
                                     if( index && resource[4] ){
-                                        if( !_upgrade_for[resource[4]] )
-                                            _upgrade_for[resource[4]] = [null, []];
-                                        if( resource[4] != d.id && _upgrade_for[resource[4]][1].indexOf( d.id ) < 0 )
-                                            _upgrade_for[resource[4]][1].push( d.id )
+                                        if (Array.isArray(resource[4])) {
+                                            resource[4].forEach(reqitem => {
+                                                add(d.id, reqitem[0])
+                                            })
+                                        }else{
+                                            add(d.id, resource[4])
+                                        }
                                     }
                                 })
                             }

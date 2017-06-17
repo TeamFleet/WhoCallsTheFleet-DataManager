@@ -1615,6 +1615,13 @@ _frame.app_main.page['init'].exportdata = function( form ){
             var deferred = Q.defer()
                 ,_upgrade_for = {}
                 ,length = 0
+            
+            const add = (id, for_id) => {
+                if( !_upgrade_for[for_id] )
+                    _upgrade_for[for_id] = [null, []];
+                if( for_id != id && _upgrade_for[for_id][1].indexOf( id ) < 0 )
+                    _upgrade_for[for_id][1].push( id )
+            }
 
             __log('&nbsp;')
             __log('========== 装备 - 改修材料关系 ==========')
@@ -1636,10 +1643,13 @@ _frame.app_main.page['init'].exportdata = function( form ){
                             if( improvement.resource && improvement.resource.length && improvement.resource.push ){
                                 improvement.resource.forEach( function( resource, index ){
                                     if( index && resource[4] ){
-                                        if( !_upgrade_for[resource[4]] )
-                                            _upgrade_for[resource[4]] = [null, []];
-                                        if( resource[4] != d.id && _upgrade_for[resource[4]][1].indexOf( d.id ) < 0 )
-                                            _upgrade_for[resource[4]][1].push( d.id )
+                                        if (Array.isArray(resource[4])) {
+                                            resource[4].forEach(reqitem => {
+                                                add(d.id, reqitem[0])
+                                            })
+                                        }else{
+                                            add(d.id, resource[4])
+                                        }
                                     }
                                 })
                             }
@@ -3212,6 +3222,7 @@ class TablelistEquipments_v2 extends Tablelist{
 			['索敌',	'los'],
 			['射程',	'range'],
 			['航程',	'distance'],
+			['可开发','craftable'],
 			['可改修','improvable']
 		]
 
@@ -3337,6 +3348,15 @@ class TablelistEquipments_v2 extends Tablelist{
 						.html(
 							equipment_data['stat']['range']
 								? _g.getStatRange( equipment_data['stat']['range'] )
+								: '<small class="zero">-</small>'
+						)
+						.appendTo(tr)
+					break;
+				case 'craftable':
+					$('<dd stat="craftable" value="' + (equipment_data['craftable'] ? '1' : '0') + '"/>')
+						.html(
+							equipment_data['craftable']
+								? '✓'
 								: '<small class="zero">-</small>'
 						)
 						.appendTo(tr)
@@ -8417,12 +8437,12 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             resource: [
                 // 必要资源		油/弹/钢/铝
                 [0, 0, 0, 0],
-                // +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0],
+                // +0 ~ +5		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / [需要装备 / 需要装备数量]
+                [0, 0, 0, 0, [null, 0]],
                 // +6 ~ MAX		开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0],
+                [0, 0, 0, 0, [null, 0]],
                 // 升级			开发资材 / 开发资材（确保） / 改修资财 / 改修资财（确保） / 需要装备 / 需要装备数量
-                [0, 0, 0, 0, null, 0]
+                [0, 0, 0, 0, [null, 0]]
             ],
             // 星期 & 秘书舰
             req: [
@@ -8608,20 +8628,42 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             ).appendTo(line)
 
             $('<label/>').html('装备').appendTo(line)
-            _comp.selector_equipment(
-                '',
-                '',
-                improvement.resource[i][4]
-            ).appendTo(line)
+            const equipments = $('<span class="equipments" />').appendTo(line)
+            let dataEquipments = []
+            if (Array.isArray(improvement.resource[i][4]))
+                dataEquipments = improvement.resource[i][4]
+            else if (typeof improvement.resource[i][4] !== 'undefined')
+                dataEquipments.push([improvement.resource[i][4], improvement.resource[i][5]])
+            const addDomEquipment = (d = [null, 0]) => {
+                const thisEquipment = $('<span class="equipment" />').appendTo(equipments)
+                _comp.selector_equipment(
+                    '',
+                    '',
+                    d[0]
+                ).appendTo(thisEquipment)
 
-            id = _g.newInputIndex()
-            $('<label for="' + id + '"/>').html('量').appendTo(line)
-            _frame.app_main.page['ships'].gen_input(
-                'number',
-                '',
-                id,
-                improvement.resource[i][5]
-            ).appendTo(line)
+                id = _g.newInputIndex()
+                $('<label for="' + id + '"/>').html('量').appendTo(thisEquipment)
+                _frame.app_main.page['ships'].gen_input(
+                    'number',
+                    '',
+                    id,
+                    d[1]
+                ).appendTo(thisEquipment)
+
+                $('<button class="remove" type="button">×</button>')
+                    .on('click', () => {
+                        thisEquipment.remove()
+                    })
+                    .appendTo(thisEquipment)
+
+                $('<button class="add" type="button">+</button>')
+                    .on('click', () => {
+                        addDomEquipment()
+                    })
+                    .appendTo(thisEquipment)
+            }
+            dataEquipments.forEach(addDomEquipment)
         }
 
         // 删除本条信息
@@ -8903,7 +8945,16 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     if( !isNaN(val) ){
                         val = parseInt($(this).val())
                     }
-                    data_improvement.resource[i].push(val || 0)
+                    if( inputindex > 3 ){
+                        if( typeof data_improvement.resource[i][4] === 'undefined' )
+                            data_improvement.resource[i][4] = []
+                        if( inputindex % 2 === 0 )
+                            data_improvement.resource[i][4].push([val || null])
+                        if( inputindex % 2 === 1 )
+                            data_improvement.resource[i][4][data_improvement.resource[i][4].length - 1][1] = val || 0
+                    }else{
+                        data_improvement.resource[i].push(val || 0)
+                    }
                 })
             })
             data['improvement'].push(data_improvement)
