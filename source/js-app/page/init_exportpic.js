@@ -226,13 +226,16 @@ _frame.app_main.page['init'].exportpicInit = form => {
             } else if (quality == 'mask') {
                 let target_mask_1 = node.path.parse(target)
                 target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext)
-                let mask = node.path.join(_g.root, '!designs/mask-' + is_lossless + '.png')
+                let mask = node.path.join(_g.root, './source/mask/mask-' + is_lossless + '.png')
                 let exec = require('child_process').exec
 
                 let gmComposite = 'gm composite -compose in "' + source + '" ' + mask + ' ' + target_mask_1
 
                 exec(gmComposite, function (err) {
-                    if (err) throw err
+                    if (err) {
+                        __log(err)
+                        throw err
+                    }
                     __log(
                         'pic file copied to ' + target_mask_1 + ' (mask-' + is_lossless + ')'
                     )
@@ -254,7 +257,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
             } else if (quality == 'entity-resize') {
                 let target_mask_1 = node.path.parse(target)
                 target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + target_mask_1.ext)
-                let mask = node.path.join(_g.root, '!designs/mask-0.png')
+                let mask = node.path.join(_g.root, './source/mask/mask-0.png')
                 let exec = require('child_process').exec
 
                 let gmComposite = 'gm composite -geometry 90x90+35-17 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
@@ -270,7 +273,7 @@ _frame.app_main.page['init'].exportpicInit = form => {
             } else if (quality == 'entity-resize-mask') {
                 let target_mask_1 = node.path.parse(target)
                 target_mask_1 = node.path.join(target_mask_1.dir, target_mask_1.name + '-mask-' + is_lossless + target_mask_1.ext)
-                let mask = node.path.join(_g.root, '!designs/mask-entity-' + is_lossless + '.png')
+                let mask = node.path.join(_g.root, './source/mask/mask-entity-' + is_lossless + '.png')
                 let exec = require('child_process').exec
 
                 let gmComposite = 'gm composite -geometry 90x90+35-16 -compose in "' + source + '" ' + mask + ' ' + target_mask_1
