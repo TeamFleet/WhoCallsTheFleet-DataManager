@@ -357,6 +357,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             else if (typeof improvement.resource[i][4] !== 'undefined')
                 dataEquipments.push([improvement.resource[i][4], improvement.resource[i][5]])
             const addDomEquipment = (d = [null, 0]) => {
+                if (d === null) return
                 const thisEquipment = $('<span class="equipment" />').appendTo(equipments)
                 _comp.selector_equipment(
                     '',
@@ -664,17 +665,17 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             $this.find('.resource').each(function (i) {
                 $(this).find('input, select').each(function (inputindex) {
                     let val = $(this).val()
-                    if( !isNaN(val) ){
+                    if (!isNaN(val)) {
                         val = parseInt($(this).val())
                     }
-                    if( inputindex > 3 ){
-                        if( typeof data_improvement.resource[i][4] === 'undefined' )
+                    if (inputindex > 3) {
+                        if (typeof data_improvement.resource[i][4] === 'undefined')
                             data_improvement.resource[i][4] = []
-                        if( inputindex % 2 === 0 )
+                        if (inputindex % 2 === 0)
                             data_improvement.resource[i][4].push([val || null])
-                        if( inputindex % 2 === 1 )
+                        if (inputindex % 2 === 1)
                             data_improvement.resource[i][4][data_improvement.resource[i][4].length - 1][1] = val || 0
-                    }else{
+                    } else {
                         data_improvement.resource[i].push(val || 0)
                     }
                 })
