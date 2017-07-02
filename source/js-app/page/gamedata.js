@@ -454,6 +454,16 @@ _frame.app_main.page['gamedata'].init_ship = function (data) {
                                     modified['remodel_cost.ammo'] = data['api_afterbull']
                                     modified['remodel_cost.steel'] = data['api_afterfuel']
                                     unset['remodel_cost.fuel'] = true
+                                    // extra slot extra equipable ids
+                                    let additional_exslot_item_ids = []
+                                    _frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship.forEach(ex => {
+                                        if(!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
+                                        additional_exslot_item_ids.push(ex.api_slotitem_id)
+                                    })
+                                    if(additional_exslot_item_ids.length)
+                                        modified['additional_exslot_item_ids'] = additional_exslot_item_ids
+                                    else
+                                        unset['additional_exslot_item_ids'] = true
                                     // misc
                                     modified['scrap'] = data['api_broken']
                                     modified['modernization'] = data['api_powup']
