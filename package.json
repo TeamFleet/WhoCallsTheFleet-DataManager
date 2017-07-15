@@ -43,7 +43,7 @@
     "gulp-watch-less2": "^2.0.4",
     "less-plugin-clean-css": "^1.5.1",
 
-    "eslint": "latest",
+    "eslint": "^4.2.0",
 
     "less": "^2.7.2"
   },

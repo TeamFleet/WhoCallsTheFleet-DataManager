@@ -1,0 +1,14 @@
+<div ng-controller="page-exillust-types">
+    <div ng-if="!ready" class="loading">
+        PLEASE WAIT...
+    </div>
+
+    <div ng-if="ready" class="toolbar">
+        <button ng-click="actions.new()">新建</button>
+    </div>
+    <div ng-if="ready" class="list">
+        <div class="item" ng-repeat="item in list">
+            <span ng-click="actions.edit(item)">{{ item.name.ja_jp }}</span>
+        </div>
+    </div>
+</div>

@@ -11981,24 +11981,20 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 				)
 		})
 }
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app;
+// 
+_frame.app_main.page['exillust'] = {
+    section: {}
+};
 
 (() => {
-    _frame.app_main.page['exillust'] = {}
-    _frame.app_main.page['exillust'].section = {}
-
     const exillust = _frame.app_main.page['exillust']
     const sections = exillust.section
 
     exillust.init = page => {
         page.find('section').on({
             'tabview-show': function () {
-                var section = $(this)
-                    , name = section.data('tabname')
+                const $section = $(this)
+                const name = $section.data('tabname')
 
                 if (!sections[name])
                     sections[name] = {}
@@ -12006,7 +12002,7 @@ if (!app) var app = window.app;
                 var _o = sections[name]
 
                 if (!_o.is_init && _o.init) {
-                    _o.init(section)
+                    _o.init($section)
                     _o.is_init = true
                 }
             }
@@ -12014,29 +12010,20 @@ if (!app) var app = window.app;
     }
 
     sections['类型'] = {
-        init: (section) => {
-            console.log(section)
-            $('<button/>', {
-                html: '新建'
-            }).on('click', function (e) {
-                _frame.modal.show(
-                    app.addTemplate({
-                        templateUrl: './templates/form-exillust-type.html'
-                    }),
-                    '新建图鉴类型'
-                )
-            }).appendTo(section)
+        init: $section => {
+            app.addTemplate('./templates/exillust/types.html')
+                .appendTo($section)
         }
     }
 
     sections['图鉴'] = {
-        init: (section) => {
-            app.addTemplate({
-                templateUrl: './templates/exillust/illusts.html'
-            }).appendTo(section)
+        init: $section => {
+            app.addTemplate('./templates/exillust/illusts.html')
+                .appendTo($section)
         }
     }
-})()
+})();
+
 _form.section_order = function( name, function_line, defaults ){
 	var section = $('<section class="form_section" data-name="'+name+'"/>')
 					.append( $('<h4>' + name + '</h4>') )

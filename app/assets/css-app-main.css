@@ -1995,7 +1995,8 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
 .item_types > .unit input:checked ~ label span {
   background-color: rgba(0, 0, 0, 0.5);
 }
-.new_container {
+.new_container,
+.toolbar {
   width: 100%;
   height: 1.5rem;
   line-height: 1.4000000000000001rem;
@@ -2006,19 +2007,23 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
   padding: 0 .85em;
   flex: 0 0 30px;
 }
-.new_container button {
+.new_container button,
+.toolbar button {
   color: #fff;
   margin-right: .7em;
   padding: 0 .25em;
   transition-property: text-shadow;
 }
-.new_container button:hover {
+.new_container button:hover,
+.toolbar button:hover {
   text-shadow: -0.1rem -0.1rem 0.025rem #23a0a1, -0.1rem 0rem 0.05rem #23a0a1, -0.1rem 0.1rem 0.025rem #23a0a1, 0rem -0.1rem 0.05rem #23a0a1, 0rem 0rem 0.075rem #23a0a1, 0rem 0.1rem 0.05rem #23a0a1, 0.1rem -0.1rem 0.025rem #23a0a1, 0.1rem 0rem 0.05rem #23a0a1, 0.1rem 0.1rem 0.025rem #23a0a1;
 }
-.new_container button:first-child {
+.new_container button:first-child,
+.toolbar button:first-child {
   margin-left: -0.25em;
 }
-.new_container + .main {
+.new_container + .main,
+.toolbar + .main {
   flex: 1 0 auto;
 }
 form.new_entity {
@@ -2829,4 +2834,19 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
 }
 form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="upgrade_to"] + label + input[type="number"] {
   width: 40px;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] {
+  display: flex;
+  flex-flow: column nowrap;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .toolbar {
+  flex: 0;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list {
+  flex: 1;
+  overflow: hidden;
+  overflow-y: hidden;
 }

@@ -2,7 +2,7 @@
     <form-line title="'内部ID'" ng-if="data._id">
         <input type="text" ng-value="data._id" disabled="disabled" />
     </form-line>
-    <form-line title="'ID'">
+    <form-line title="'ID'" ng-if="data._id">
         <input type="text" ng-value="data.id" disabled="disabled" />
     </form-line>
 
@@ -17,8 +17,19 @@
         <input type="text" ng-model="data.name.en_us">
     </form-line>
 
+    <h3>时间</h3>
+    <form-line title="'日'">
+        <input type="text" ng-model="data.time.ja_jp">
+    </form-line>
+    <form-line title="'简中'">
+        <input type="text" ng-model="data.time.zh_cn">
+    </form-line>
+    <form-line title="'英'">
+        <input type="text" ng-model="data.time.en_us">
+    </form-line>
+
     <p class="actions">
         <button type="submit" ng-disabled="!ready">提交</button>
-        <button type="button">删除</button>
+        <button type="button" ng-if="data._id">删除</button>
     </p>
 </form>

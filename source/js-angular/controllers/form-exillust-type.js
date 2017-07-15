@@ -1,50 +1,73 @@
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
+app.factory('dbExillustTypesUpdate', () => {
+    return {
+        update: function () {
+            this.timestamp = (new Date()).valueOf()
+        },
+        timestamp: (new Date()).valueOf()
+    }
+})
 
+app.controller('form-exillust-type', ($scope, dbExillustTypesUpdate) => {
+    // const path = node.path
+    // const db = new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true });
+    const onSubmit = () => {
+        dbExillustTypesUpdate.update()
+        $scope.$apply()
+    }
 
-
-
-app.controller('form-exillust-type', function ($scope) {
     $scope.data = {}
-    $scope.ready = true
+    $scope.ready = false
 
-    $scope.init = function (data) {
-        Object.assign($scope, data)
-        if (!$scope._id && $scope.data._id) {
-            $scope._id = $scope.data._id
-        } else {
-            $scope.ready = false
-            new Promise((resolve, reject) => {
-                resolve()
-            }).then(() => {
+    $scope.init = data => {
+        if (data && data._id && !data.id) {
+            _db.exillust_types.find({ _id: data._id }, (err, docs) => {
+                Object.assign($scope.data, docs[0])
                 console.log($scope.data)
                 $scope.ready = true
                 $scope.$apply()
             })
+        } else if (data && data._id && data.id) {
+            Object.assign($scope.data, data)
+            console.log($scope.data)
+            $scope.ready = true
+            $scope.$apply()
+        } else {
+            $scope.ready = true
+            $scope.$apply()
         }
     }
 
     $scope.actions = {
-        submit: function ($event) {
+        submit: ($event) => {
             let newData = Object.assign({}, $scope.data)
-
             console.log('form-exillust-type submitting', $scope._id, newData, $event)
-            // return;
-            _db.ship_exillust_types.update(
-                {
-                    '_id': $scope._id
-                },
-                {
-                    $set: newData
-                }, {}, function (err, numReplaced) {
-                    // btn.html(self.content_ship_type(newdata))
-                    _frame.modal.hide()
-                }
-            );
+            if ($scope.data._id) {
+                // 存在 _id，为更新操作
+                _db.exillust_types.update(
+                    {
+                        '_id': $scope.data._id
+                    },
+                    {
+                        $set: newData
+                    },
+                    {},
+                    function (/*err, numReplaced*/) {
+                        onSubmit()
+                        _frame.modal.hide()
+                    }
+                );
+            } else {
+                // 否则为新建操作
+                // 获取当前总数，决定 id
+                _db.exillust_types.count({}, function (err, count) {
+                    newData.id = count + 1
+                    newData.sort = newData.id
+                    _db.exillust_types.insert(newData, (/*err, newDoc*/) => {
+                        onSubmit()
+                        _frame.modal.hide()
+                    });
+                });
+            }
         }
     }
 })

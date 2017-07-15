@@ -346,7 +346,10 @@ window.app = angular.module('admin', [])
 app.addTemplateDefaults = {
     templateURL: null
 }
-app.addTemplate = function (options, initData) {
+app.addTemplate = (options, initData) => {
+    if (typeof options === 'string')
+        return app.addTemplate({ templateUrl: options }, initData)
+
     const settings = Object.assign({}, app.addTemplateDefaults, options)
 
     let container = $('<div/>')
@@ -360,7 +363,7 @@ app.addTemplate = function (options, initData) {
                 let _container = container
                 container = $(data)
                 _container.replaceWith(container)
-                container.attr('ng-init', `init(${JSON.stringify(initData||{})})`)
+                container.attr('ng-init', `init(${JSON.stringify(initData || {})})`)
                 setTimeout(() => {
                     angular.element(container).injector().invoke(
                         [
@@ -621,73 +624,141 @@ app.controller('form-ship-type', ["$scope", function ($scope) {
     }
     */
 }])
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
+app.factory('dbExillustTypesUpdate', () => {
+    return {
+        update: function () {
+            this.timestamp = (new Date()).valueOf()
+        },
+        timestamp: (new Date()).valueOf()
+    }
+})
 
+app.controller('form-exillust-type', ($scope, dbExillustTypesUpdate) => {
+    // const path = node.path
+    // const db = new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true });
+    const onSubmit = () => {
+        dbExillustTypesUpdate.update()
+        $scope.$apply()
+    }
 
-
-
-app.controller('form-exillust-type', ["$scope", function ($scope) {
     $scope.data = {}
-    $scope.ready = true
+    $scope.ready = false
 
-    $scope.init = function (data) {
-        Object.assign($scope, data)
-        if (!$scope._id && $scope.data._id) {
-            $scope._id = $scope.data._id
-        } else {
-            $scope.ready = false
-            new Promise((resolve, reject) => {
-                resolve()
-            }).then(() => {
+    $scope.init = data => {
+        if (data && data._id && !data.id) {
+            _db.exillust_types.find({ _id: data._id }, (err, docs) => {
+                Object.assign($scope.data, docs[0])
                 console.log($scope.data)
                 $scope.ready = true
                 $scope.$apply()
             })
+        } else if (data && data._id && data.id) {
+            Object.assign($scope.data, data)
+            console.log($scope.data)
+            $scope.ready = true
+            $scope.$apply()
+        } else {
+            $scope.ready = true
+            $scope.$apply()
         }
     }
 
     $scope.actions = {
-        submit: function ($event) {
+        submit: ($event) => {
             let newData = Object.assign({}, $scope.data)
-
             console.log('form-exillust-type submitting', $scope._id, newData, $event)
-            // return;
-            _db.ship_exillust_types.update(
-                {
-                    '_id': $scope._id
-                },
-                {
-                    $set: newData
-                }, {}, function (err, numReplaced) {
-                    // btn.html(self.content_ship_type(newdata))
-                    _frame.modal.hide()
-                }
-            );
+            if ($scope.data._id) {
+                // 存在 _id，为更新操作
+                _db.exillust_types.update(
+                    {
+                        '_id': $scope.data._id
+                    },
+                    {
+                        $set: newData
+                    },
+                    {},
+                    function (/*err, numReplaced*/) {
+                        onSubmit()
+                        _frame.modal.hide()
+                    }
+                );
+            } else {
+                // 否则为新建操作
+                // 获取当前总数，决定 id
+                _db.exillust_types.count({}, function (err, count) {
+                    newData.id = count + 1
+                    newData.sort = newData.id
+                    _db.exillust_types.insert(newData, (/*err, newDoc*/) => {
+                        onSubmit()
+                        _frame.modal.hide()
+                    });
+                });
+            }
         }
     }
-}])
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
+})
+app.controller('page-exillust-types', ($scope, dbExillustTypesUpdate) => {
+    // const path = node.path
+    // const db = new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
 
+    $scope.list = []
+    $scope.ready = false
+    $scope.updating = false
 
+    $scope.init = (/*data*/) => {
+        $scope.updating = true
+        new Promise((resolve, reject) => {
+            _db.exillust_types.find({}).sort({ sort: 1, id: 1 }).exec((err, docs) => {
+                if (err) reject(new Error(err))
+                else {
+                    $scope.list = docs
+                    resolve()
+                }
+            });
+        }).then(() => new Promise((resolve, reject) => {
+            resolve()
+        })).then(() => {
+            console.log('ready', $scope.list)
+            $scope.ready = true
+            $scope.updating = false
+            $scope.$apply()
+        })
+    }
 
+    $scope.$watch(
+        () => dbExillustTypesUpdate.timestamp,
+        (newValue, oldValue) => {
+            if (newValue === oldValue) return
+            // console.log(newValue + ' ' + oldValue);
+            // console.log(dbExillustTypesUpdate.timestamp);
+            $scope.init()
+        }
+    )
 
+    $scope.actions = {
+        new: () => {
+            _frame.modal.show(
+                app.addTemplate('./templates/form-exillust-type.html'),
+                '新建图鉴类型'
+            )
+        },
+        edit: item => {
+            _frame.modal.show(
+                app.addTemplate('./templates/form-exillust-type.html', {
+                    _id: item._id
+                }),
+                '编辑图鉴类型'
+            )
+        }
+    }
+})
 app.controller('page-exillust-illusts', ($scope) => {
     const fs = node.fs
     const path = node.path
-    const db = {
-        exillusts: new node.nedb({ filename: path.join(_g.path.db, 'exillusts.nedb'), autoload: true }),
-        exillust_types: new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
-    }
+    // const db = {
+    //     exillusts: new node.nedb({ filename: path.join(_g.path.db, 'exillusts.nedb'), autoload: true }),
+    //     exillust_types: new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
+    // }
     const dbItemDefaults = {
         // id: /extra_/(.+),
         // exclude: [8, 9]
@@ -704,13 +775,12 @@ app.controller('page-exillust-illusts', ($scope) => {
 
     let folders = []
 
-    $scope.init = data => {
+    $scope.init = (/*data*/) => {
         new Promise((resolve, reject) => {
             // 获得文件夹列表
             fs.readdir(_g.path.pics.ships, (err, files) => {
-                if (err) {
-                    reject(new Error(err))
-                } else {
+                if (err) reject(new Error(err))
+                else {
                     folders = files
                         .filter(file => /^extra_/.test(file))
                         .sort((a, b) =>
@@ -721,17 +791,14 @@ app.controller('page-exillust-illusts', ($scope) => {
             })
         }).then(() => new Promise((resolve, reject) => {
             // 读取DB
-            db.exillusts.find({}, (err, docs) => {
-                if (err) {
-                    reject(new Error(err))
-                } else {
-                    resolve(docs.map(doc => 'extra_' + doc.id))
-                }
+            _db.exillusts.find({}, (err, docs) => {
+                if (err) reject(new Error(err))
+                else resolve(docs.map(doc => 'extra_' + doc.id))
             });
-        })).then(items => new Promise((resolve, reject) => {
+        })).then(items => new Promise((resolve/*, reject*/) => {
             // 比对DB数据和文件夹列表，将DB中缺失的数据写入
             const itemsToInsert = folders.filter(folder => !items.includes(folder))
-            console.log(items, itemsToInsert)
+            // console.log(items, itemsToInsert)
             let chainInserting = new Promise(resolve => resolve())
             itemsToInsert.forEach(item => {
                 chainInserting = chainInserting.then(() => new Promise((resolve, reject) => {
@@ -743,23 +810,22 @@ app.controller('page-exillust-illusts', ($scope) => {
                         .filter(file => !files.includes(file))
                         .map(file => parseInt(file.replace(/\.png$/, '')))
                     if (Array.isArray(exclude) && exclude.length) doc.exclude = exclude
-                    db.exillusts.insert(doc, (err, newDoc) => {
-                        // newDoc is the newly inserted document, including its _id
-                        // newDoc has no key called notToBeSaved since its value was undefined
-                        if (err) {
-                            reject(new Error(err))
-                        } else {
-                            resolve()
-                        }
+                    _db.exillusts.insert(doc, (err/*, newDoc*/) => {
+                        if (err) reject(new Error(err))
+                        else resolve()
                     });
                 }))
             })
-            chainInserting = chainInserting.then(() => {
-                resolve()
-            })
+            chainInserting = chainInserting.then(() => resolve())
         })).then(() => new Promise((resolve, reject) => {
             // 初始化list
-            resolve()
+            _db.exillusts.find({}, (err, docs) => {
+                if (err) reject(new Error(err))
+                else {
+                    $scope.list = docs.sort((a, b) => a.id - b.id)
+                    resolve()
+                }
+            });
         })).then(() => {
             console.log('ready', $scope.list)
             $scope.ready = true
@@ -769,7 +835,7 @@ app.controller('page-exillust-illusts', ($scope) => {
 
     $scope.actions = {
         set: id => {
-
+            console.log(id)
         }
     }
 })

@@ -13,7 +13,10 @@ window.app = angular.module('admin', [])
 app.addTemplateDefaults = {
     templateURL: null
 }
-app.addTemplate = function (options, initData) {
+app.addTemplate = (options, initData) => {
+    if (typeof options === 'string')
+        return app.addTemplate({ templateUrl: options }, initData)
+
     const settings = Object.assign({}, app.addTemplateDefaults, options)
 
     let container = $('<div/>')
@@ -27,7 +30,7 @@ app.addTemplate = function (options, initData) {
                 let _container = container
                 container = $(data)
                 _container.replaceWith(container)
-                container.attr('ng-init', `init(${JSON.stringify(initData||{})})`)
+                container.attr('ng-init', `init(${JSON.stringify(initData || {})})`)
                 setTimeout(() => {
                     angular.element(container).injector().invoke(
                         [

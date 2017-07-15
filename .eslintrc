@@ -1,7 +1,7 @@
 {
     "extends": "eslint:recommended",
     "plugins": [
-        "react"
+        // "react"
     ],
     // 环境定义了预定义的全局变量。
     "env": {
@@ -14,7 +14,7 @@
         "mocha": true,
         "jquery": true
     },
-    "parser": "babel-eslint",
+    // "parser": "babel-eslint",
     // JavaScript 语言选项
     "parserOptions": {
         // ECMAScript 版本
@@ -27,23 +27,20 @@
             // impliedStric
             "impliedStrict": true,
             // 启用 JSX
-            "jsx": true,
+            // "jsx": true,
             "experimentalObjectRestSpread": true
         }
     },
     // 全局变量
     // ture 可以被重写，false 不可以被重写
     "globals": {
-        "__DEV__": false,
-        "__CLIENT__": false,
-        "__SERVER__": false,
-        "__APP__": false,
-        "__REDUX_STATE__": false,
-        "__PUBLIC__": false,
-        "__CHANNEL__": false,
-        "__BGIMG_LIST__": false,
-        "__ICONSVG__": false,
-        "_hmt": false
+        "_g": false,
+        "_frame": false,
+        "_p": false,
+        "_db": false,
+        "app": false,
+        "angular": false,
+        "node": false
     },
     "settings": {
         "import/ignore": [
@@ -90,8 +87,8 @@
             {
                 "SwitchCase": 1
             }
-        ],
-        "react/jsx-uses-react": "error",
-        "react/jsx-uses-vars": "error"
+        ]
+        // "react/jsx-uses-react": "error",
+        // "react/jsx-uses-vars": "error"
     }
 }

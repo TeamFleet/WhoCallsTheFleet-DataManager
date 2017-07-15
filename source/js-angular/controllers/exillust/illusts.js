@@ -1,20 +1,10 @@
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
-
-
-
-
 app.controller('page-exillust-illusts', ($scope) => {
     const fs = node.fs
     const path = node.path
-    const db = {
-        exillusts: new node.nedb({ filename: path.join(_g.path.db, 'exillusts.nedb'), autoload: true }),
-        exillust_types: new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
-    }
+    // const db = {
+    //     exillusts: new node.nedb({ filename: path.join(_g.path.db, 'exillusts.nedb'), autoload: true }),
+    //     exillust_types: new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
+    // }
     const dbItemDefaults = {
         // id: /extra_/(.+),
         // exclude: [8, 9]
@@ -31,13 +21,12 @@ app.controller('page-exillust-illusts', ($scope) => {
 
     let folders = []
 
-    $scope.init = data => {
+    $scope.init = (/*data*/) => {
         new Promise((resolve, reject) => {
             // 获得文件夹列表
             fs.readdir(_g.path.pics.ships, (err, files) => {
-                if (err) {
-                    reject(new Error(err))
-                } else {
+                if (err) reject(new Error(err))
+                else {
                     folders = files
                         .filter(file => /^extra_/.test(file))
                         .sort((a, b) =>
@@ -48,17 +37,14 @@ app.controller('page-exillust-illusts', ($scope) => {
             })
         }).then(() => new Promise((resolve, reject) => {
             // 读取DB
-            db.exillusts.find({}, (err, docs) => {
-                if (err) {
-                    reject(new Error(err))
-                } else {
-                    resolve(docs.map(doc => 'extra_' + doc.id))
-                }
+            _db.exillusts.find({}, (err, docs) => {
+                if (err) reject(new Error(err))
+                else resolve(docs.map(doc => 'extra_' + doc.id))
             });
-        })).then(items => new Promise((resolve, reject) => {
+        })).then(items => new Promise((resolve/*, reject*/) => {
             // 比对DB数据和文件夹列表，将DB中缺失的数据写入
             const itemsToInsert = folders.filter(folder => !items.includes(folder))
-            console.log(items, itemsToInsert)
+            // console.log(items, itemsToInsert)
             let chainInserting = new Promise(resolve => resolve())
             itemsToInsert.forEach(item => {
                 chainInserting = chainInserting.then(() => new Promise((resolve, reject) => {
@@ -70,23 +56,22 @@ app.controller('page-exillust-illusts', ($scope) => {
                         .filter(file => !files.includes(file))
                         .map(file => parseInt(file.replace(/\.png$/, '')))
                     if (Array.isArray(exclude) && exclude.length) doc.exclude = exclude
-                    db.exillusts.insert(doc, (err, newDoc) => {
-                        // newDoc is the newly inserted document, including its _id
-                        // newDoc has no key called notToBeSaved since its value was undefined
-                        if (err) {
-                            reject(new Error(err))
-                        } else {
-                            resolve()
-                        }
+                    _db.exillusts.insert(doc, (err/*, newDoc*/) => {
+                        if (err) reject(new Error(err))
+                        else resolve()
                     });
                 }))
             })
-            chainInserting = chainInserting.then(() => {
-                resolve()
-            })
+            chainInserting = chainInserting.then(() => resolve())
         })).then(() => new Promise((resolve, reject) => {
             // 初始化list
-            resolve()
+            _db.exillusts.find({}, (err, docs) => {
+                if (err) reject(new Error(err))
+                else {
+                    $scope.list = docs.sort((a, b) => a.id - b.id)
+                    resolve()
+                }
+            });
         })).then(() => {
             console.log('ready', $scope.list)
             $scope.ready = true
@@ -96,7 +81,7 @@ app.controller('page-exillust-illusts', ($scope) => {
 
     $scope.actions = {
         set: id => {
-
+            console.log(id)
         }
     }
 })
