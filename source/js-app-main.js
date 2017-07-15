@@ -19,6 +19,7 @@
 // @koala-prepend "js-app/page/update.js"
 // @koala-prepend "js-app/page/gamedata.js"
 // @koala-prepend "js-app/page/guide.js"
+// @koala-prepend "js-app/page/exillust.js"
 
 // @koala-prepend "js-app/form/_.js"
 

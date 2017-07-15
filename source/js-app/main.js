@@ -64,7 +64,10 @@ _g.data = {
     'ship_type_order': {},
     'ship_classes': {},
 
-    'consumables': {}
+    'consumables': {},
+
+    // 'exillusts': {},
+    // 'exillust_types': {}
 }
 
 var _db = {

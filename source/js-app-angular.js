@@ -7,3 +7,5 @@
 
 // @koala-prepend "js-angular/controllers/form-ship-class.js"
 // @koala-prepend "js-angular/controllers/form-ship-type.js"
+// @koala-prepend "js-angular/controllers/form-exillust-type.js"
+// @koala-prepend "js-angular/controllers/exillust/illusts.js"

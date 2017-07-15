@@ -823,6 +823,44 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     ).appendTo(details_misc)
     var base_class_select = base_class.find('select')
     _input('class_no', '编号', '号舰').appendTo(details_misc)
+    const lineNavy = $('<p/>').appendTo(details_misc)
+        , idNavy = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    $('<label for="' + idNavy + '"/>').html('军籍').appendTo(lineNavy)
+    _frame.app_main.page['ships'].gen_input(
+        'select',
+        'navy',
+        idNavy,
+        [
+            {
+                'value': 'km',
+                'title': '纳粹德国海军 / 战争海军 (Kriegsmarine)'
+            },
+            {
+                'value': 'rm',
+                'title': '意大利皇家海军 (Regia Marina)'
+            },
+            {
+                'value': 'mn',
+                'title': '法国海军 (Marine nationale)'
+            },
+            {
+                'value': 'rn',
+                'title': '英国皇家海军 (Royal Navy)'
+            },
+            {
+                'value': 'usn',
+                'title': '美国海军 (United States Navy)'
+            },
+            {
+                'value': 'vmf',
+                'title': '苏联海军 (Военно-морской флот СССР)'
+            }
+        ],
+        {
+            'default': d.navy
+        }
+    ).appendTo(lineNavy)
     // 链接
     _form.section_order(
         '链接',
@@ -1372,6 +1410,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         }
 
         if (!data['tp']) delete data['tp']
+        if (!data['navy']) delete data['navy']
 
         // console.log(data, data['slot'], data['equip'])
 

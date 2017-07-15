@@ -1,0 +1,24 @@
+<form ng-controller="form-exillust-type" ng-submit="actions.submit($event)">
+    <form-line title="'内部ID'" ng-if="data._id">
+        <input type="text" ng-value="data._id" disabled="disabled" />
+    </form-line>
+    <form-line title="'ID'">
+        <input type="text" ng-value="data.id" disabled="disabled" />
+    </form-line>
+
+    <h3>名称</h3>
+    <form-line title="'日'">
+        <input type="text" ng-model="data.name.ja_jp" required="required">
+    </form-line>
+    <form-line title="'简中'">
+        <input type="text" ng-model="data.name.zh_cn">
+    </form-line>
+    <form-line title="'英'">
+        <input type="text" ng-model="data.name.en_us">
+    </form-line>
+
+    <p class="actions">
+        <button type="submit" ng-disabled="!ready">提交</button>
+        <button type="button">删除</button>
+    </p>
+</form>

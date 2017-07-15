@@ -66,7 +66,10 @@ _g.data = {
     'ship_type_order': {},
     'ship_classes': {},
 
-    'consumables': {}
+    'consumables': {},
+
+    // 'exillusts': {},
+    // 'exillust_types': {}
 }
 
 var _db = {
@@ -6535,6 +6538,44 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     ).appendTo(details_misc)
     var base_class_select = base_class.find('select')
     _input('class_no', '编号', '号舰').appendTo(details_misc)
+    const lineNavy = $('<p/>').appendTo(details_misc)
+        , idNavy = '_input_g' + _g.inputIndex
+    _g.inputIndex++
+    $('<label for="' + idNavy + '"/>').html('军籍').appendTo(lineNavy)
+    _frame.app_main.page['ships'].gen_input(
+        'select',
+        'navy',
+        idNavy,
+        [
+            {
+                'value': 'km',
+                'title': '纳粹德国海军 / 战争海军 (Kriegsmarine)'
+            },
+            {
+                'value': 'rm',
+                'title': '意大利皇家海军 (Regia Marina)'
+            },
+            {
+                'value': 'mn',
+                'title': '法国海军 (Marine nationale)'
+            },
+            {
+                'value': 'rn',
+                'title': '英国皇家海军 (Royal Navy)'
+            },
+            {
+                'value': 'usn',
+                'title': '美国海军 (United States Navy)'
+            },
+            {
+                'value': 'vmf',
+                'title': '苏联海军 (Военно-морской флот СССР)'
+            }
+        ],
+        {
+            'default': d.navy
+        }
+    ).appendTo(lineNavy)
     // 链接
     _form.section_order(
         '链接',
@@ -7084,6 +7125,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         }
 
         if (!data['tp']) delete data['tp']
+        if (!data['navy']) delete data['navy']
 
         // console.log(data, data['slot'], data['equip'])
 
@@ -11939,6 +11981,62 @@ var duoshuoQuery = {short_name:"diablohu-kancolle"};
 				)
 		})
 }
+if (!_g) var _g = window._g
+if (!_p) var _p = window._p
+if (!_db) var _db = window._db
+if (!_frame) var _frame = window._frame
+if (!app) var app = window.app;
+
+(() => {
+    _frame.app_main.page['exillust'] = {}
+    _frame.app_main.page['exillust'].section = {}
+
+    const exillust = _frame.app_main.page['exillust']
+    const sections = exillust.section
+
+    exillust.init = page => {
+        page.find('section').on({
+            'tabview-show': function () {
+                var section = $(this)
+                    , name = section.data('tabname')
+
+                if (!sections[name])
+                    sections[name] = {}
+
+                var _o = sections[name]
+
+                if (!_o.is_init && _o.init) {
+                    _o.init(section)
+                    _o.is_init = true
+                }
+            }
+        })
+    }
+
+    sections['类型'] = {
+        init: (section) => {
+            console.log(section)
+            $('<button/>', {
+                html: '新建'
+            }).on('click', function (e) {
+                _frame.modal.show(
+                    app.addTemplate({
+                        templateUrl: './templates/form-exillust-type.html'
+                    }),
+                    '新建图鉴类型'
+                )
+            }).appendTo(section)
+        }
+    }
+
+    sections['图鉴'] = {
+        init: (section) => {
+            app.addTemplate({
+                templateUrl: './templates/exillust/illusts.html'
+            }).appendTo(section)
+        }
+    }
+})()
 _form.section_order = function( name, function_line, defaults ){
 	var section = $('<section class="form_section" data-name="'+name+'"/>')
 					.append( $('<h4>' + name + '</h4>') )
