@@ -2848,5 +2848,72 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list {
   flex: 1;
   overflow: hidden;
-  overflow-y: hidden;
+  overflow-y: scroll;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item {
+  display: flex;
+  flex-flow: row nowrap;
+  padding: .5em .25em .5em 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .name,
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .time {
+  flex: 1;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns {
+  flex: 0;
+  white-space: nowrap;
+  display: flex;
+  flex-flow: row nowrap;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button {
+  min-width: 1rem;
+  height: 1rem;
+  line-height: 1rem;
+  margin: 0;
+  text-align: center;
+  border-radius: 0;
+  margin-left: -1px;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button.edit {
+  padding-left: .5em;
+  padding-right: .5em;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button:first-of-type {
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button:last-of-type {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button[disabled] {
+  opacity: .5;
+  background-color: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item:hover {
+  background: rgba(97, 181, 169, 0.85);
+  color: #fff;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"].updating {
+  opacity: .25;
+  pointer-events: none;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] {
+  position: relative;
+  padding-left: 50%;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item {
+  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+  padding: 1em 0;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item:hover {
+  background: rgba(97, 181, 169, 0.85);
+  color: #fff;
 }

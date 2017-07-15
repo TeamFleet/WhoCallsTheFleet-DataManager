@@ -79,6 +79,12 @@ app.controller('page-exillust-illusts', ($scope) => {
         })
     }
 
+    $scope.getPic = (item, picId) => {
+        if (Array.isArray(item.exclude) && item.exclude.includes(picId))
+            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+        return path.join(_g.path.pics.ships, `extra_${item.id}`, `${picId}.png`)
+    }
+
     $scope.actions = {
         set: id => {
             console.log(id)

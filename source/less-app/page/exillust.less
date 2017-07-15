@@ -1,4 +1,6 @@
 #layout>main>.page[page="exillust"]{
+    @border-color:  hsla(0, 0%, 50%, 50%);
+
     [ng-controller="page-exillust-types"]{
         display:    flex;
         flex-flow:  column nowrap;
@@ -11,7 +13,78 @@
         .list{
             flex:       1;
             overflow:   hidden;
-            overflow-y: hidden;
+            overflow-y: scroll;
+            .item{
+                display:    flex;
+                flex-flow:  row nowrap;
+                padding:    .5em .25em .5em 0;
+                border-bottom: 1px solid @border-color;
+                .name, .time{
+                    flex:   1;
+                }
+                .btns{
+                    flex:       0;
+                    white-space:nowrap;
+                    display:    flex;
+                    flex-flow:  row nowrap;
+                    // overflow:   hidden;
+                    button{
+                        // float:      left;
+                        min-width:  1rem;
+                        height:     1rem;
+                        line-height:1rem;
+                        margin:     0;
+                        text-align: center;
+                        border-radius: 0;
+                        margin-left:-1px;
+                        &.edit{
+                            padding-left:   .5em;
+                            padding-right:  .5em;
+                        }
+                        &:first-of-type{
+                            border-top-left-radius: 5px;
+                            border-bottom-left-radius: 5px;
+                        }
+                        &:last-of-type{
+                            border-top-right-radius: 5px;
+                            border-bottom-right-radius: 5px;
+                        }
+                        &[disabled]{
+                            opacity:    .5;
+                            background-color: fade(#000,50%);
+                            pointer-events: none;
+                        }
+                    }
+                }
+                &:hover{
+                    background: fade(saturate( #67afa5, 5%), 85% );
+                    color:      #fff;
+                }
+            }
+        }
+        &.updating{
+            opacity:    .25;
+            pointer-events: none;
         }
     }
+
+    [ng-controller="page-exillust-illusts"]{
+        @size-img:  150px;
+        position:   relative;
+        padding-left:   50%;
+        .item{
+            border-bottom:  1px solid @border-color;
+            padding:    1em 0;
+            img{
+                width:      @size-img;
+                height:     @size-img;
+                object-fit: contain;
+            }
+            &:hover{
+                background: fade(saturate( #67afa5, 5%), 85% );
+                color:      #fff;
+            }
+        }
+    }
+
 }

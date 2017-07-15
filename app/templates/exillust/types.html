@@ -1,4 +1,4 @@
-<div ng-controller="page-exillust-types">
+<div ng-controller="page-exillust-types" ng-class="{updating: updating}">
     <div ng-if="!ready" class="loading">
         PLEASE WAIT...
     </div>
@@ -8,7 +8,14 @@
     </div>
     <div ng-if="ready" class="list">
         <div class="item" ng-repeat="item in list">
-            <span ng-click="actions.edit(item)">{{ item.name.ja_jp }}</span>
+            <span class="name">{{ item.name.zh_cn }}</span>
+            <span class="time">{{ item.time.zh_cn }}</span>
+            <span class="btns">
+                <button class="edit" type="button" ng-click="actions.edit(item)">EDIT</button>
+                <button class="up" type="button" ng-click="actions.moveup($index)" ng-disabled="!$index">⇧</button>
+                <button class="down" type="button" ng-click="actions.movedown($index)" ng-disabled="$index >= list.length -1">⇩</button>
+                <button class="delete" type="button" ng-click="actions.remove(item)">×</button>
+            </span>
         </div>
     </div>
 </div>

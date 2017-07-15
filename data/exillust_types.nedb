@@ -1,6 +1,14 @@
 {"name":{"zh_cn":"梅雨","ja_jp":"梅雨","en_us":"Rainy Season"},"time":{"zh_cn":"6月初","en_us":"Early June","ja_jp":"6月上旬"},"id":6,"sort":6,"_id":"10gvzkKBaCcHiMci"}
-{"name":{"zh_cn":"情人节","ja_jp":"バレンタイン","en_us":"Valentines"},"time":{"zh_cn":"2月中","ja_jp":"2月中旬","en_us":"Mid-February"},"id":3,"sort":3,"_id":"4iLWgFmJ5SBDtcgG"}
+{"name":{"zh_cn":"秋刀鱼祭","ja_jp":"秋刀魚祭り","en_us":"Mackerel"},"time":{"zh_cn":"10月中","ja_jp":"10月中旬","en_us":"Mid October"},"id":9,"sort":9,"_id":"4VfMus4ANwRfYWOO"}
+{"name":{"zh_cn":"情人节","ja_jp":"バレンタイン","en_us":"Valentines"},"time":{"zh_cn":"2月中","ja_jp":"2月中旬","en_us":"Mid February"},"id":3,"sort":3,"_id":"4iLWgFmJ5SBDtcgG"}
+{"name":{"zh_cn":"圣诞节","ja_jp":"クリスマス","en_us":"Christmas"},"time":{"zh_cn":"12月","ja_jp":"12月","en_us":"December"},"id":11,"sort":11,"_id":"7So2Wp0yj49sGhJS"}
+{"name":{"zh_cn":"铁骨番长","ja_jp":"鉄骨番長","en_us":"Tekkotsu Bancho"},"id":14,"sort":14,"_id":"AmzvCwpXV7MoQ7Nt"}
 {"name":{"zh_cn":"周年庆","ja_jp":"周年記念","en_us":"Anniversary"},"time":{"zh_cn":"4月底","ja_jp":"4月下旬","en_us":"Late April"},"id":5,"sort":5,"_id":"FFm1GR7jpxi6IGqj"}
+{"name":{"zh_cn":"泳装","ja_jp":"水着","en_us":"Swimsuit"},"time":{"ja_jp":"夏","zh_cn":"夏季","en_us":"Summer"},"id":7,"sort":7,"_id":"HJFFplD8oeE9lcvX"}
+{"name":{"zh_cn":"万圣节","ja_jp":"ハロウィン","en_us":"Halloween"},"time":{"zh_cn":"10月底","ja_jp":"10月底","en_us":"Late October"},"id":10,"sort":10,"_id":"VIM2tUXG1svUjmC0"}
+{"name":{"zh_cn":"扫除","ja_jp":"師走","en_us":"End of Year"},"time":{"zh_cn":"12月底","ja_jp":"12月下旬","en_us":"Late December"},"id":12,"sort":12,"_id":"YCDJMF4qtbzyYQwE"}
+{"name":{"zh_cn":"浴衣","ja_jp":"浴衣","en_us":"Yukata"},"time":{"ja_jp":"秋","zh_cn":"秋季","en_us":"Fall"},"id":8,"sort":8,"_id":"a5JawyvdLJi9jiHS"}
 {"name":{"zh_cn":"雏祭","ja_jp":"雛祭り","en_us":"Hinamatsuri"},"time":{"zh_cn":"2月底","en_us":"Late February","ja_jp":"2月下旬"},"id":4,"sort":4,"_id":"bb0s4wd7K9MerdG9"}
 {"name":{"zh_cn":"新年","ja_jp":"晴れ着","en_us":"New Year"},"id":1,"sort":1,"_id":"h4W4t1pX1cHTCHVM","time":{"ja_jp":"1月初旬","zh_cn":"1月初","en_us":"Early January"}}
-{"name":{"zh_cn":"节分","ja_jp":"節分","en_us":"Setsubun"},"id":2,"sort":2,"_id":"nHBvEj55KP4Z2zFt","time":{"ja_jp":"1月中旬","zh_cn":"1月中","en_us":"Mid-January"}}
+{"name":{"zh_cn":"节分","ja_jp":"節分","en_us":"Setsubun"},"id":2,"sort":2,"_id":"nHBvEj55KP4Z2zFt","time":{"ja_jp":"1月中旬","zh_cn":"1月中","en_us":"Mid January"}}
+{"name":{"zh_cn":"瑞云","ja_jp":"瑞雲","en_us":"Zuiun"},"id":13,"sort":13,"_id":"nfmzGAUlHjVUQUKT"}

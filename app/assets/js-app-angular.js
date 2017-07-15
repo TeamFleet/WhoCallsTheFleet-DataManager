@@ -749,7 +749,40 @@ app.controller('page-exillust-types', ($scope, dbExillustTypesUpdate) => {
                 }),
                 '编辑图鉴类型'
             )
-        }
+        },
+        move: (index, direction) => {
+            let count = $scope.list.length
+            const data = $scope.list[index]
+            $scope.updating = true
+            $scope.list.splice(index, 1)
+            $scope.list.splice(index + direction, 0, data)
+            let chainUpdating = new Promise(resolve => resolve())
+            $scope.list.forEach((item, index) => {
+                chainUpdating = chainUpdating.then(() => new Promise((resolve, reject) => {
+                    _db.exillust_types.update(
+                        {
+                            '_id': item._id
+                        },
+                        {
+                            $set: {
+                                sort: index + 1
+                            }
+                        },
+                        {},
+                        (err/*, numReplaced*/) => {
+                            if (err) reject(new Error(err))
+                            else resolve()
+                        }
+                    )
+                }))
+            })
+            chainUpdating = chainUpdating.then(() => {
+                dbExillustTypesUpdate.update()
+                $scope.$apply()
+            })
+        },
+        moveup: index => $scope.actions.move(index, -1),
+        movedown: index => $scope.actions.move(index, 1)
     }
 })
 app.controller('page-exillust-illusts', ($scope) => {
@@ -831,6 +864,12 @@ app.controller('page-exillust-illusts', ($scope) => {
             $scope.ready = true
             $scope.$apply()
         })
+    }
+
+    $scope.getPic = (item, picId) => {
+        if (Array.isArray(item.exclude) && item.exclude.includes(picId))
+            return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+        return path.join(_g.path.pics.ships, `extra_${item.id}`, `${picId}.png`)
     }
 
     $scope.actions = {

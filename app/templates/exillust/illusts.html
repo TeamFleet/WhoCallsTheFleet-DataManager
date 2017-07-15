@@ -2,9 +2,11 @@
     <div ng-if="!ready" class="loading">
         PLEASE WAIT...
     </div>
+
     <div ng-if="ready" class="list">
         <div class="item" ng-repeat="item in list">
-            {{ item.id }}
+            <img src="{{getPic(item, 8)}}" />
+            <img src="{{getPic(item, 9)}}" />
         </div>
     </div>
 </div>
