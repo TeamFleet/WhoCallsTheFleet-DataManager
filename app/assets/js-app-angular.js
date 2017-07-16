@@ -785,13 +785,9 @@ app.controller('page-exillust-types', ($scope, dbExillustTypesUpdate) => {
         movedown: index => $scope.actions.move(index, 1)
     }
 })
-app.controller('page-exillust-illusts', ($scope) => {
+app.controller('page-exillust-illusts', ($scope, dbExillustTypesUpdate) => {
     const fs = node.fs
     const path = node.path
-    // const db = {
-    //     exillusts: new node.nedb({ filename: path.join(_g.path.db, 'exillusts.nedb'), autoload: true }),
-    //     exillust_types: new node.nedb({ filename: path.join(_g.path.db, 'exillust_types.nedb'), autoload: true })
-    // }
     const dbItemDefaults = {
         // id: /extra_/(.+),
         // exclude: [8, 9]
@@ -802,14 +798,49 @@ app.controller('page-exillust-illusts', ($scope) => {
         '9.png'
     ]
 
-    $scope.list = []
+    $scope.list = {
+        unassigned: []
+    }
+    $scope.type = {
+        current: 'unassigned',
+        list: []
+    }
+    $scope.types = {}
     $scope.current = undefined
     $scope.ready = false
+    $scope.updating = false
 
     let folders = []
 
+    const reset = () => {
+        $scope.list = {
+            unassigned: []
+        }
+        $scope.type = {
+            current: 'unassigned',
+            list: []
+        }
+        $scope.types = {}
+        $scope.current = undefined
+
+        folders = []
+    }
+
     $scope.init = (/*data*/) => {
+        $scope.updating = true
         new Promise((resolve, reject) => {
+            // 获得类型
+            _db.exillust_types.find({}).sort({ sort: 1, id: 1 }).exec((err, docs) => {
+                if (err) reject(new Error(err))
+                else {
+                    docs.forEach(doc => {
+                        $scope.types[doc.id] = doc
+                        $scope.type.list.push(doc.id)
+                    })
+                    resolve()
+                }
+            });
+        }).then(() => new Promise((resolve, reject) => {
             // 获得文件夹列表
             fs.readdir(_g.path.pics.ships, (err, files) => {
                 if (err) reject(new Error(err))
@@ -822,7 +853,7 @@ app.controller('page-exillust-illusts', ($scope) => {
                     resolve()
                 }
             })
-        }).then(() => new Promise((resolve, reject) => {
+        })).then(() => new Promise((resolve, reject) => {
             // 读取DB
             _db.exillusts.find({}, (err, docs) => {
                 if (err) reject(new Error(err))
@@ -855,16 +886,37 @@ app.controller('page-exillust-illusts', ($scope) => {
             _db.exillusts.find({}, (err, docs) => {
                 if (err) reject(new Error(err))
                 else {
-                    $scope.list = docs.sort((a, b) => a.id - b.id)
+                    docs.sort((a, b) => a.id - b.id)
+                        .forEach(doc => {
+                            if (doc.type) {
+                                if (typeof $scope.list[doc.type] === 'undefined')
+                                    $scope.list[doc.type] = []
+                                $scope.list[doc.type].push(doc)
+                            } else {
+                                $scope.list.unassigned.push(doc)
+                            }
+                        })
                     resolve()
                 }
             });
         })).then(() => {
             console.log('ready', $scope.list)
             $scope.ready = true
+            $scope.updating = false
             $scope.$apply()
         })
     }
+
+    $scope.$watch(
+        () => dbExillustTypesUpdate.timestamp,
+        (newValue, oldValue) => {
+            if (newValue === oldValue) return
+            // console.log(newValue + ' ' + oldValue);
+            // console.log(dbExillustTypesUpdate.timestamp);
+            reset()
+            $scope.init()
+        }
+    )
 
     $scope.getPic = (item, picId) => {
         if (Array.isArray(item.exclude) && item.exclude.includes(picId))
@@ -873,8 +925,40 @@ app.controller('page-exillust-illusts', ($scope) => {
     }
 
     $scope.actions = {
-        set: id => {
-            console.log(id)
+        setCurrent: item => {
+            $scope.current = item
+        },
+        updateItemType: () => {
+            console.log($scope.current)
+            console.log(typeof $scope.current.type)
+            let update = {}
+            if (typeof $scope.current.type === 'number') {
+                update = {
+                    $set: {
+                        type: $scope.current.type
+                    }
+                }
+            } else {
+                update = {
+                    $unset: {
+                        type: true
+                    }
+                }
+            }
+            _db.exillusts.update(
+                {
+                    '_id': $scope.current._id
+                },
+                update,
+                {},
+                (err/*, numReplaced*/) => {
+                    if (err) throw (new Error(err))
+                    else {
+                        dbExillustTypesUpdate.update()
+                        $scope.$apply()
+                    }
+                }
+            )
         }
     }
 })

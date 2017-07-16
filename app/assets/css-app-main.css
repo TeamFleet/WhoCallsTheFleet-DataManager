@@ -2835,20 +2835,28 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
 form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="upgrade_to"] + label + input[type="number"] {
   width: 40px;
 }
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] {
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"],
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] {
   display: flex;
   flex-flow: column nowrap;
   position: relative;
   width: 100%;
   height: 100%;
 }
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .toolbar {
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .toolbar,
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .toolbar {
   flex: 0;
 }
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list {
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list,
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .list {
   flex: 1;
   overflow: hidden;
   overflow-y: scroll;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"].updating,
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"].updating {
+  opacity: .25;
+  pointer-events: none;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item {
   display: flex;
@@ -2896,15 +2904,41 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   background: rgba(97, 181, 169, 0.85);
   color: #fff;
 }
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"].updating {
-  opacity: .25;
-  pointer-events: none;
-}
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] {
-  position: relative;
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .list {
   padding-left: 50%;
+  position: relative;
+  overflow-y: hidden;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .preview {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  display: flex;
+  flex-flow: column nowrap;
+  text-align: center;
+  justify-content: center;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .preview img {
+  flex: 1;
+  object-fit: contain;
+  min-height: 0;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .preview label {
+  flex: 0 0 50px;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  overflow-y: auto;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item {
+  border-left: 1px solid rgba(128, 128, 128, 0.5);
   border-bottom: 1px solid rgba(128, 128, 128, 0.5);
   padding: 1em 0;
 }
@@ -2913,7 +2947,30 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   height: 150px;
   object-fit: contain;
 }
-#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item:hover {
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item:hover,
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item.on {
   background: rgba(97, 181, 169, 0.85);
   color: #fff;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body[data-type="unassigned"] {
+  display: flex;
+  flex-flow: row wrap;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body[data-type="unassigned"] .item {
+  display: block;
+  flex: 1 0 100px;
+  padding: .5em;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body:not([data-type="unassigned"]) {
+  display: flex;
+  flex-flow: row wrap;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body:not([data-type="unassigned"]) .item {
+  display: flex;
+  flex-flow: row nowrap;
+  flex: 1 0 100px;
+  padding: .5em;
+}
+#layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body:not([data-type="unassigned"]) .item img {
+  flex: 1;
 }

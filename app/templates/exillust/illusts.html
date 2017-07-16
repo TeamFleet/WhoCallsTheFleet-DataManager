@@ -1,12 +1,41 @@
-<div ng-controller="page-exillust-illusts">
+<div ng-controller="page-exillust-illusts" ng-class="{updating: updating}">
     <div ng-if="!ready" class="loading">
         PLEASE WAIT...
     </div>
 
+    <div ng-if="ready" class="toolbar">
+        <select ng-model="type.current">
+            <option value="unassigned">未指定</option>
+            <option disabled>----------</option>
+            <option ng-repeat="item in type.list" value="{{ item }}">{{ types[item].name.zh_cn }}</option>
+        </select>
+    </div>
     <div ng-if="ready" class="list">
-        <div class="item" ng-repeat="item in list">
-            <img src="{{getPic(item, 8)}}" />
-            <img src="{{getPic(item, 9)}}" />
+        <div class="preview" ng-if="!current">
+            PLEASE SELECT
+        </div>
+        <div class="preview" ng-if="current">
+            <img ng-src="{{ getPic(current, 8) }}" />
+            <img ng-src="{{ getPic(current, 9) }}" />
+            <label>
+                类型: <select ng-model="current.type">
+                    <option ng-value="{{ undefined }}">未指定</option>
+                    <option disabled>----------</option>
+                    <option ng-repeat="item in type.list" value="{{ item }}" ng-value="{{item}}">{{ types[item].name.zh_cn }}</option>
+                </select>
+                <button type="button" ng-click="actions.updateItemType()">SUBMIT</button>
+            </label>
+        </div>
+        <div ng-if="type.current == 'unassigned'" class="body" data-type="unassigned">
+            <span class="item" ng-repeat="item in list[type.current]" ng-click="actions.setCurrent(item)" ng-class="{on : item.id === current.id}">
+                {{ item.id }}
+            </span>
+        </div>
+        <div ng-if="type.current != 'unassigned'" class="body">
+            <div class="item" ng-repeat="item in list[type.current]" ng-click="actions.setCurrent(item)" ng-class="{on : item.id === current.id}">
+                <img ng-src="{{ getPic(item, 8) }}" />
+                <img ng-src="{{ getPic(item, 9) }}" />
+            </div>
         </div>
     </div>
 </div>
