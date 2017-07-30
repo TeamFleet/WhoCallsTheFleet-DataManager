@@ -408,6 +408,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         , details_stat = $('<section data-tabname="属性"/>').appendTo(details)
         , details_craft = $('<section data-tabname="开发&改修"/>').appendTo(details)
         , details_equipped = $('<section data-tabname="初装舰娘"/>').appendTo(details)
+        , details_misc = $('<section data-tabname="其他"/>').appendTo(details)
 
         // 标准图鉴
         , base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
@@ -455,6 +456,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
     _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
     _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
     _input('name.zh_cn', '<small>简中</small>').appendTo(base)
+    _input('name.en_us', '<small>EN</small>').appendTo(base)
 
 
     // 属性
@@ -560,7 +562,24 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     .appendTo(details_equipped)
             }
         }
-    })
+    });
+
+    // 其他
+    (() => {
+        // 补强增设
+        (() => {
+            const line = $('<p/>').appendTo(details_misc)
+                , id = '_input_g' + _g.inputIndex
+            _g.inputIndex++
+            _frame.app_main.page['ships'].gen_input(
+                'checkbox',
+                'equipable_exslot',
+                id,
+                d.equipable_exslot || false
+            ).appendTo(line)
+            $('<label for="' + id + '"/>').html('可装备于补强增设栏位').appendTo(line)
+        })();
+    })();
 
 
     // 提交等按钮
@@ -617,7 +636,19 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         data = $form.serializeObject()
         //data['default_equipped_on'] = d['default_equipped_on']
         delete (data['default_equipped_on'])
-        data['craftable'] = data['craftable'] ? true : false
+        data['craftable'] = data['craftable'] ? true : false;
+        // 以下数据如果为falsy，删除
+        [
+            'equipable_exslot'
+        ].forEach(key => {
+            if (!data[key]) delete data[key]
+        });
+        // 以下数据如果为'on'，改为true
+        [
+            'equipable_exslot'
+        ].forEach(key => {
+            if (data[key] === 'on') data[key] = true
+        });
 
         // 改修数据
         data.improvable = false
@@ -824,24 +855,41 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
 
             if (typeof data['equipable_on_type'] != 'object' && typeof data['equipable_on_type'] != 'undefined')
                 data['equipable_on_type'] = [data['equipable_on_type']]
-            data['equipable_on_type'] = data['equipable_on_type'] || []
+            data['equipable_on_type'] = data['equipable_on_type'] || [];
 
             /* scrapped 2015/05/26
             if( typeof data['equipable_on_stat'] != 'object' && typeof data['equipable_on_stat'] != 'undefined' )
                 data['equipable_on_stat'] = [data['equipable_on_stat']]
             data['equipable_on_stat'] = data['equipable_on_stat'] || []
             */
+            // 以下数据如果为falsy，删除
+            [
+                'equipable_exslot'
+            ].forEach(key => {
+                if (!data[key]) delete data[key]
+            });
+            // 以下数据如果为'on'，改为true
+            [
+                'equipable_exslot'
+            ].forEach(key => {
+                if (data[key] === 'on') data[key] = true
+            });
 
             if (is_edit) {
                 // 编辑操作
-                _db.item_types.update({
-                    '_id': data_edit['_id']
-                }, {
+                _db.item_types.update(
+                    {
+                        '_id': data_edit['_id']
+                    },
+                    {
                         $set: data
-                    }, {}, function (err, numReplaced) {
+                    },
+                    {},
+                    function (err, numReplaced) {
                         callback(data)
                         _frame.modal.hide()
-                    });
+                    }
+                );
             } else {
                 // 新建操作
                 // 获取当前总数，确定数字ID
@@ -857,8 +905,11 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
         })
         , input_container = $('<div/>').appendTo(form)
 
+    if (is_edit) console.log(data_edit)
+
     self.field_input_text('name.ja_jp', '日', is_edit ? data_edit['name']['ja_jp'] : null).appendTo(input_container)
     self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
+    self.field_input_text('name.en_us', 'EN', is_edit ? data_edit['name']['en_us'] : null).appendTo(input_container)
 
     $('<h4/>').html('图标').appendTo(input_container)
     // icon
@@ -932,6 +983,17 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
             .appendTo(unitDOM)
         $('<label for="' + input_id + '"/>').html(stats[i][0]).appendTo(unitDOM)
     }
+
+    $('<h4/>').html('其他特性').appendTo(input_container);
+    (() => {
+        var input_id = '_input_g' + _g.inputIndex
+            , unitDOM = $('<p/>').appendTo(input_container)
+        _g.inputIndex++
+        $(`<input type="checkbox" name="equipable_exslot" id="${input_id}">`)
+            .prop('checked', is_edit ? data_edit['equipable_exslot'] : false)
+            .appendTo(unitDOM)
+        $('<label for="' + input_id + '"/>').html("可装备于补强增设栏位").appendTo(unitDOM)
+    })()
 
     /* scrapped 2015/05/26
     $('<h4/>').html('当存在以下属性时可装备').appendTo(input_container)
