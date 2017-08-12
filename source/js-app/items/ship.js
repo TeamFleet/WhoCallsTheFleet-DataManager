@@ -32,4 +32,20 @@ class Ship extends ITEM{
 				? _g['data']['ship_series'][this['series']]['ships']
 				: []
 	}
+
+	/**
+	 * 获取所属海军简称
+	 * 
+	 * @readonly
+	 * @returns {String}
+	 */
+	getNavy() {
+		if (this.navy) return this.navy
+		return this.class
+			? (_g['data'].ship_classes[this.class].navy || 'ijn')
+			: 'ijn'
+	}
+	get _navy() {
+		return this.getNavy()
+	}
 }

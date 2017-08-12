@@ -258,6 +258,17 @@ class TablelistShips_v2 extends Tablelist{
 			,label = $('<label class="checkbox"/>')
 			,has_extra_illust = false
 			,seriesData = ship_data.getSeriesData()
+
+		function getNavy() {
+			if (ship_data.navy) return ship_data.navy
+			return ship_data.class
+				? (_g.data.ship_classes[ship_data.class].navy || 'ijn')
+				: 'ijn'
+		}
+		const navy = getNavy()
+		if (navy) {
+			name += '<span class="flag-navy" data-navy="' + navy + '"></span>'
+		}
 		
 		seriesData.forEach(function(data_cur, i){
 			let data_prev = i ? seriesData[ i - 1 ] : null
