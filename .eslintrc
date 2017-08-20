@@ -38,6 +38,8 @@
         "_frame": false,
         "_p": false,
         "_db": false,
+        "_comp": false,
+        "_form": false,
         "app": false,
         "angular": false,
         "node": false

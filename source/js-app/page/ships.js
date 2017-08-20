@@ -1,18 +1,9 @@
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-
-
-
-
 
 _frame.app_main.page['ships'] = {}
 _frame.app_main.page['ships'].section = {}
 
 
-_frame.app_main.page['ships'].gen_table = function (d) {
+_frame.app_main.page['ships'].gen_table = function (/*d*/) {
     var table = $('<table/>')
     return table
 }
@@ -165,21 +156,27 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     d.slot = d.slot || []
     d.equip = d.equip || []
     d.remodel_next = d.remodel.next || null
+
+    let d_series = {}
+
     console.log(d)
-    function _input(name, label, suffix, options) {
+
+    const _input = function (name, label, suffix, options) {
         return _frame.app_main.page['ships'].gen_form_line(
             'text', name, label, eval('d.' + name) || '', suffix, options
         )
     }
-    function _stat(stat, label) {
-        var line = $('<p/>')
-            , id = '_input_g' + _g.inputIndex
+
+    const _stat = function (stat, label) {
+        const line = $('<p/>')
+        let id = '_input_g' + _g.inputIndex
+        let input
         _g.inputIndex++
 
         switch (stat) {
-            case 'consum':
+            case 'consum': {
                 $('<label for="' + id + '"/>').html('燃料').appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                input = _frame.app_main.page['ships'].gen_input(
                     'number',
                     'consum.fuel',
                     id,
@@ -196,11 +193,12 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                     d.consum.ammo
                 ).appendTo(line)
                 break;
-            case 'speed':
-                var value = d.stat[stat]
+            }
+            case 'speed': {
+                const value = d.stat[stat]
 
                 $('<label for="' + id + '"/>').html(label).appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                input = _frame.app_main.page['ships'].gen_input(
                     'select',
                     'stat.' + stat,
                     id,
@@ -220,11 +218,12 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 ).appendTo(line)
                 $('<label for="' + id + '"/>').html('当前值: ' + value).appendTo(line)
                 break;
-            case 'range':
+            }
+            case 'range': {
                 var value = d.stat[stat]
 
                 $('<label for="' + id + '"/>').html(label).appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                input = _frame.app_main.page['ships'].gen_input(
                     'select',
                     'stat.' + stat,
                     id,
@@ -252,11 +251,12 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 ).appendTo(line)
                 $('<label for="' + id + '"/>').html('当前值: ' + value).appendTo(line)
                 break;
-            default:
-                var value = d.stat[stat]
+            }
+            default: {
+                const value = d.stat[stat]
 
                 $('<label for="' + id + '"/>').html(label).appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                input = _frame.app_main.page['ships'].gen_input(
                     'number',
                     'stat.' + stat,
                     id,
@@ -305,13 +305,16 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 }
                 */
                 break;
+            }
         }
 
         return line
     }
-    function _slot(no, carry, equip) {
-        var line = $('<p/>')
-            , id = '_input_g' + _g.inputIndex
+
+    const _slot = function (no, carry, equip) {
+        const line = $('<p/>')
+        let id = '_input_g' + _g.inputIndex
+
         _g.inputIndex++
 
         $('<label for="' + id + '"/>').html('#<span>' + no + '</span> 搭载').appendTo(line)
@@ -321,12 +324,12 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             id,
             carry
         ).on({
-            'change, input': function () {
-                var total = 0
-                details_slot.find('input[name="slot"]').each(function () {
-                    total += parseInt($(this).val())
-                })
-            }
+            // 'change, input': function () {
+            //     let total = 0
+            //     details_slot.find('input[name="slot"]').each(function () {
+            //         total += parseInt($(this).val())
+            //     })
+            // }
         }).appendTo(line)
 
         id = '_input_g' + _g.inputIndex
@@ -358,7 +361,8 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
         return line
     }
-    function _link(no, name, url) {
+
+    const _link = function (no, name, url) {
         var line = $('<p/>')
             , id = '_input_g' + _g.inputIndex
         _g.inputIndex++
@@ -396,15 +400,17 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
         return line
     }
-    function _series(stat, extra_illust_no) {
-        var line = $('<p/>')
-            , id = '_input_g' + _g.inputIndex
+
+    const _series = function (stat, extra_illust_no) {
+        let line = $('<p/>')
+        let id = '_input_g' + _g.inputIndex
+        // let input
         _g.inputIndex++
 
         switch (stat) {
-            case 'remodel':
+            case 'remodel': {
                 $('<label for="' + id + '" class="remodel"/>').html('改造前ID').appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                _frame.app_main.page['ships'].gen_input(
                     'number',
                     'series.remodel_prev',
                     id,
@@ -461,7 +467,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 id = '_input_g' + _g.inputIndex
                 _g.inputIndex++
                 $('<label for="' + id + '" class="remodel"/>').html('改造后ID').appendTo(line2)
-                var input = _frame.app_main.page['ships'].gen_input(
+                _frame.app_main.page['ships'].gen_input(
                     'number',
                     'series.remodel_next',
                     id,
@@ -516,7 +522,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 // 基础等级
                 id = '_input_g' + _g.inputIndex
                 _g.inputIndex++
-                var input = _frame.app_main.page['ships'].gen_input(
+                _frame.app_main.page['ships'].gen_input(
                     'hidden',
                     'base_lvl',
                     id,
@@ -526,7 +532,8 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
                 line = line.add(line2)
                 break;
-            case 'illust_delete':
+            }
+            case 'illust_delete': {
                 _frame.app_main.page['ships'].gen_input(
                     'checkbox',
                     'series.illust_delete',
@@ -536,10 +543,11 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 ).addClass('delete_illust').appendTo(line)
                 $('<label for="' + id + '"/>').html('删除该舰娘图鉴大图').appendTo(line)
                 break;
-            case 'illust_extra':
-                var no = extra_illust_no ? (parseInt(extra_illust_no) + 1) : 1
+            }
+            case 'illust_extra': {
+                const no = extra_illust_no ? (parseInt(extra_illust_no) + 1) : 1
                 $('<label for="' + id + '" class="extra_illust"/>').html('额外图鉴#' + no + ' extra_').appendTo(line)
-                var input = _frame.app_main.page['ships'].gen_input(
+                _frame.app_main.page['ships'].gen_input(
                     'number',
                     'series.illust_extra',
                     id,
@@ -547,6 +555,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                     { 'notRequired': true }
                 ).appendTo(line)
                 break;
+            }
         }
 
         return line
@@ -564,475 +573,511 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         , details_slot = $('<section data-tabname="装备"/>').appendTo(details)
         , details_misc = $('<section data-tabname="其他"/>').appendTo(details)
         , details_series = $('<section data-tabname="系列"/>').appendTo(details)
-        , details_extra = $('<section data-tabname="额外"/>').appendTo(details)
+        , details_extra = $('<section data-tabname="额外"/>').appendTo(details);
 
-        // 标准图鉴
-        , base_image = $('<div class="image"/>').css('background-image', 'url(../pics/ships/' + d['id'] + '/2.png)').appendTo(base)
+    let base_class_select,
+        d_series_true,
+        d_series_true_index;
+
+    // 标准图鉴
+    $('<div class="image"/>').css('background-image', 'url(../pics/ships/' + d['id'] + '/2.png)').appendTo(base);
 
     // 基础信息
-    _input('id', 'ID', null, { 'required': true }).appendTo(base)
-    _input('no', '图鉴ID', null, { 'required': true }).appendTo(base)
-    var h4 = $('<h4/>').html('舰娘名').appendTo(base)
-    var checkbox_id = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    var _checkbox = _frame.app_main.page['ships'].gen_input(
-        'checkbox',
-        null,
-        checkbox_id,
-        false,
-        {
-            'onchange': function (checkbox) {
-                if (checkbox.prop('checked')) {
-                    base.find('input[name^="name."]').not('input[name="name.suffix"]').prop('required', false)
-                    base.find('select[name="name.suffix"]').prop('required', true)
-                } else {
-                    base.find('input[name^="name."]').not('input[name="name.suffix"]').prop('required', true)
-                    base.find('select[name="name.suffix"]').prop('required', false)
+    (() => {
+        _input('id', 'ID', null, { 'required': true }).appendTo(base)
+        _input('no', '图鉴ID', null, { 'required': true }).appendTo(base)
+        var h4 = $('<h4/>').html('舰娘名').appendTo(base)
+        var checkbox_id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        var _checkbox = _frame.app_main.page['ships'].gen_input(
+            'checkbox',
+            null,
+            checkbox_id,
+            false,
+            {
+                'onchange': function (checkbox) {
+                    if (checkbox.prop('checked')) {
+                        base.find('input[name^="name."]').not('input[name="name.suffix"]').prop('required', false)
+                        base.find('select[name="name.suffix"]').prop('required', true)
+                    } else {
+                        base.find('input[name^="name."]').not('input[name="name.suffix"]').prop('required', true)
+                        base.find('select[name="name.suffix"]').prop('required', false)
+                    }
                 }
             }
-        }
-    ).insertBefore(h4)
-    $('<label for="' + checkbox_id + '" class="name_suffix"/>').html('仅后缀').insertBefore(_checkbox)
-    _input('name.ja_jp', '<small>日</small>').appendTo(base)
-    _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
-    _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
-    _input('name.zh_cn', '<small>简中</small>').appendTo(base)
-    var base_suffix = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'name.suffix',
-        '后缀名',
-        [],
-        null,
-        {
-            'notRequired': true
-        }
-    ).appendTo(base)
-    _db.ship_namesuffix.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
-        if (!err) {
-            var suffix = []
-                , sel = base_suffix.find('select')
-            for (var i in docs) {
-                suffix.push({
-                    //'value': 	docs[i]['_id'],
-                    'value': docs[i]['id'],
-                    'title': docs[i]['zh_cn']
-                })
+        ).insertBefore(h4)
+        $('<label for="' + checkbox_id + '" class="name_suffix"/>').html('仅后缀').insertBefore(_checkbox)
+        _input('name.ja_jp', '<small>日</small>').appendTo(base)
+        _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
+        _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
+        _input('name.zh_cn', '<small>简中</small>').appendTo(base)
+        _input('name.en_us', '<small>EN</small>').appendTo(base)
+        var base_suffix = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'name.suffix',
+            '后缀名',
+            [],
+            null,
+            {
+                'notRequired': true
             }
-            // 实时载入舰种数据
-            _frame.app_main.page['ships'].gen_input(
-                'select',
-                sel.attr('name'),
-                sel.attr('id'),
-                suffix,
-                {
-                    'default': d['name']['suffix'],
-                    'notRequired': true,
-                    'new': function (select) {
-                        console.log('NEW SHIP SUFFIX', select)
-                    },
-                }).insertBefore(sel)
-            sel.remove()
-        }
-    })
-
+        ).appendTo(base)
+        _db.ship_namesuffix.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err) {
+                var suffix = []
+                    , sel = base_suffix.find('select')
+                for (var i in docs) {
+                    suffix.push({
+                        //'value': 	docs[i]['_id'],
+                        'value': docs[i]['id'],
+                        'title': docs[i]['zh_cn']
+                    })
+                }
+                // 实时载入舰种数据
+                _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    sel.attr('name'),
+                    sel.attr('id'),
+                    suffix,
+                    {
+                        'default': d['name']['suffix'],
+                        'notRequired': true,
+                        'new': function (select) {
+                            console.log('NEW SHIP SUFFIX', select)
+                        },
+                    }).insertBefore(sel)
+                sel.remove()
+            }
+        })
+    })();
 
     // 属性
-    _stat('fire', '火力').appendTo(details_stat)
-    _stat('torpedo', '雷装').appendTo(details_stat)
-    _stat('aa', '对空').appendTo(details_stat)
-    _stat('asw', '对潜').appendTo(details_stat)
+    (() => {
+        _stat('fire', '火力').appendTo(details_stat)
+        _stat('torpedo', '雷装').appendTo(details_stat)
+        _stat('aa', '对空').appendTo(details_stat)
+        _stat('asw', '对潜').appendTo(details_stat)
 
-    _stat('hp', '耐久').appendTo(details_stat)
-    _stat('armor', '装甲').appendTo(details_stat)
-    _stat('evasion', '回避').appendTo(details_stat)
-    _stat('carry', '搭载').appendTo(details_stat)
+        _stat('hp', '耐久').appendTo(details_stat)
+        _stat('armor', '装甲').appendTo(details_stat)
+        _stat('evasion', '回避').appendTo(details_stat)
+        _stat('carry', '搭载').appendTo(details_stat)
 
-    _stat('speed', '速力').appendTo(details_stat)
-    _stat('range', '射程').appendTo(details_stat)
-    _stat('los', '索敌').appendTo(details_stat)
-    _stat('luck', '　运').appendTo(details_stat)
+        _stat('speed', '速力').appendTo(details_stat)
+        _stat('range', '射程').appendTo(details_stat)
+        _stat('los', '索敌').appendTo(details_stat)
+        _stat('luck', '　运').appendTo(details_stat)
 
-    $('<h4/>').html('消耗').appendTo(details_stat)
-    _stat('consum').appendTo(details_stat)
-
+        $('<h4/>').html('消耗').appendTo(details_stat)
+        _stat('consum').appendTo(details_stat)
+    })();
 
     // 装备
-    for (var i = 0; i < Math.max(d['slot'].length, d['equip'].length); i++) {
-        _slot(
-            (i + 1),
-            d['slot'][i] || 0,
-            d['equip'][i] || null
-        ).appendTo(details_slot)
-    }
-    var btn_add_slot = $('<button class="add" type="button"/>').on('click', function () {
-        _slot(
-            details_slot.find('input[name="slot"]').length + 1,
-            0,
-            null
-        ).insertBefore(btn_add_slot)
-    }).html('添加栏位').appendTo(details_slot)
-
+    (() => {
+        for (var i = 0; i < Math.max(d['slot'].length, d['equip'].length); i++) {
+            _slot(
+                (i + 1),
+                d['slot'][i] || 0,
+                d['equip'][i] || null
+            ).appendTo(details_slot)
+        }
+        var btn_add_slot = $('<button class="add" type="button"/>').on('click', function () {
+            _slot(
+                details_slot.find('input[name="slot"]').length + 1,
+                0,
+                null
+            ).insertBefore(btn_add_slot)
+        }).html('添加栏位').appendTo(details_slot)
+    })();
 
     // 其他
     // 声优
-    var _misc_cv = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'rels.cv',
-        '声优',
-        []
-    ).appendTo(details_misc)
-    _db['entities'].find({}).sort({ 'id': 1 }).exec(function (err, docs) {
-        if (!err) {
-            var types = []
-                , sel = _misc_cv.find('select')
-            for (var i in docs) {
-                types.push({
-                    //'value': 	docs[i]['_id'],
-                    'value': docs[i]['id'],
-                    'title': docs[i]['name']['zh_cn']
-                })
+    (() => {
+        var _misc_cv = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'rels.cv',
+            '声优',
+            []
+        ).appendTo(details_misc)
+        _db['entities'].find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err) {
+                var types = []
+                    , sel = _misc_cv.find('select')
+                for (var i in docs) {
+                    types.push({
+                        //'value': 	docs[i]['_id'],
+                        'value': docs[i]['id'],
+                        'title': docs[i]['name']['zh_cn']
+                    })
+                }
+                // 实时载入舰种数据
+                _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    sel.attr('name'),
+                    sel.attr('id'),
+                    types,
+                    {
+                        'default': d['rels']['cv'],
+                        'new': function (select) {
+                            console.log('NEW ENTITY', select)
+                        }
+                    }).insertBefore(sel)
+                sel.remove()
             }
-            // 实时载入舰种数据
-            _frame.app_main.page['ships'].gen_input(
-                'select',
-                sel.attr('name'),
-                sel.attr('id'),
-                types,
-                {
-                    'default': d['rels']['cv'],
-                    'new': function (select) {
-                        console.log('NEW ENTITY', select)
-                    }
-                }).insertBefore(sel)
-            sel.remove()
-        }
-    })
-    // 画师
-    var _misc_illustrator = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'rels.illustrator',
-        '画师',
-        []
-    ).appendTo(details_misc)
-    _db['entities'].find({}).sort({ 'id': 1 }).exec(function (err, docs) {
-        if (!err) {
-            var types = []
-                , sel = _misc_illustrator.find('select')
-            for (var i in docs) {
-                types.push({
-                    //'value': 	docs[i]['_id'],
-                    'value': docs[i]['id'],
-                    'title': docs[i]['name']['zh_cn']
-                })
-            }
-            // 实时载入舰种数据
-            _frame.app_main.page['ships'].gen_input(
-                'select',
-                sel.attr('name'),
-                sel.attr('id'),
-                types,
-                {
-                    'default': d['rels']['illustrator'],
-                    'new': function (select) {
-                        console.log('NEW ENTITY', select)
-                    }
-                }).insertBefore(sel)
-            sel.remove()
-        }
-    })
-    $('<h4/>').html('舰种&舰级').appendTo(details_misc)
-    // 舰种
-    var base_type = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'type',
-        '舰种',
-        []
-    ).appendTo(details_misc)
-    _db.ship_types.find({}).sort({ 'code': 1, 'full': 1 }).exec(function (err, docs) {
-        if (!err) {
-            var types = []
-                , sel = base_type.find('select')
-            for (var i in docs) {
-                types.push({
-                    //'value': 	docs[i]['_id'],
-                    'value': docs[i]['id'],
-                    'title': '[' + docs[i]['code'] + '] ' + docs[i].name.zh_cn
-                })
-            }
-            // 实时载入舰种数据
-            _frame.app_main.page['ships'].gen_input(
-                'select',
-                sel.attr('name'),
-                sel.attr('id'),
-                types,
-                {
-                    'default': d['type'],
-                    'new': function (select) {
-                        console.log('NEW SHIP TYPE', select)
-                    },
-                    // 改变舰种后，实时读取舰级数据
-                    'onchange': function (select) {
-                        base_class_select.html('<option value=""/>...</option>')
-                        _db.ship_classes.find({
-                            'ship_type_id': parseInt(select.val())
-                        }, function (err_classes, docs_classes) {
-                            if (!err_classes) {
-                                var classes = []
-                                    , _sel = base_class_select
-                                for (var j in docs_classes) {
-                                    classes.push({
-                                        //'value': 	docs_classes[j]['_id'],
-                                        'value': docs_classes[j]['id'],
-                                        'title': docs_classes[j].name.zh_cn + '级'
-                                    })
-                                }
-                                if (!docs_classes || !docs_classes.length) {
-                                    classes.push({
-                                        'value': '',
-                                        'title': ''
-                                    })
-                                }
-                                base_class_select = _frame.app_main.page['ships'].gen_input(
-                                    'select',
-                                    _sel.attr('name'),
-                                    _sel.attr('id'),
-                                    classes,
-                                    {
-                                        'new': function (select) {
-                                            console.log('NEW SHIP CLASS', select)
-                                        }
-                                    }).insertBefore(_sel)
-                                _sel.remove()
+        })
+    })();
 
-                                if (d['type'] && base_type.find('select').val() == d['type']) {
-                                    base_class_select.val(d['class'])
-                                }
-                            }
-                        })
-                    }
-                }).insertBefore(sel)
-            sel.remove()
-        }
-    })
-    // 舰级
-    var base_class = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'class',
-        '舰级',
-        []
-    ).appendTo(details_misc)
-    var base_class_select = base_class.find('select')
-    _input('class_no', '编号', '号舰').appendTo(details_misc)
-    const lineNavy = $('<p/>').appendTo(details_misc)
-        , idNavy = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    $('<label for="' + idNavy + '"/>').html('军籍').appendTo(lineNavy)
-    _frame.app_main.page['ships'].gen_input(
-        'select',
-        'navy',
-        idNavy,
-        [
-            {
-                'value': 'km',
-                'title': '纳粹德国海军 / 战争海军 (Kriegsmarine)'
-            },
-            {
-                'value': 'rm',
-                'title': '意大利皇家海军 (Regia Marina)'
-            },
-            {
-                'value': 'mn',
-                'title': '法国海军 (Marine nationale)'
-            },
-            {
-                'value': 'rn',
-                'title': '英国皇家海军 (Royal Navy)'
-            },
-            {
-                'value': 'usn',
-                'title': '美国海军 (United States Navy)'
-            },
-            {
-                'value': 'vmf',
-                'title': '苏联海军 (Военно-морской флот СССР)'
+    // 画师
+    (() => {
+        var _misc_illustrator = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'rels.illustrator',
+            '画师',
+            []
+        ).appendTo(details_misc)
+        _db['entities'].find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err) {
+                var types = []
+                    , sel = _misc_illustrator.find('select')
+                for (var i in docs) {
+                    types.push({
+                        //'value': 	docs[i]['_id'],
+                        'value': docs[i]['id'],
+                        'title': docs[i]['name']['zh_cn']
+                    })
+                }
+                // 实时载入舰种数据
+                _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    sel.attr('name'),
+                    sel.attr('id'),
+                    types,
+                    {
+                        'default': d['rels']['illustrator'],
+                        'new': function (select) {
+                            console.log('NEW ENTITY', select)
+                        }
+                    }).insertBefore(sel)
+                sel.remove()
             }
-        ],
-        {
-            'default': d.navy
-        }
-    ).appendTo(lineNavy)
-    // 链接
-    _form.section_order(
-        '链接',
-        function (data, index) {
-            return _link(index + 1, data['name'] || null, data['url'] || null)
-        },
-        $.extend(true,
+        })
+    })();
+
+    $('<h4/>').html('舰种&舰级').appendTo(details_misc);
+    // 舰种
+    (() => {
+        var base_type = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'type',
+            '舰种',
+            []
+        ).appendTo(details_misc)
+        _db.ship_types.find({}).sort({ 'code': 1, 'full': 1 }).exec(function (err, docs) {
+            if (!err) {
+                var types = []
+                    , sel = base_type.find('select')
+                for (var i in docs) {
+                    types.push({
+                        //'value': 	docs[i]['_id'],
+                        'value': docs[i]['id'],
+                        'title': '[' + docs[i]['code'] + '] ' + docs[i].name.zh_cn
+                    })
+                }
+                // 实时载入舰种数据
+                _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    sel.attr('name'),
+                    sel.attr('id'),
+                    types,
+                    {
+                        'default': d['type'],
+                        'new': function (select) {
+                            console.log('NEW SHIP TYPE', select)
+                        },
+                        // 改变舰种后，实时读取舰级数据
+                        'onchange': function (select) {
+                            base_class_select.html('<option value=""/>...</option>')
+                            _db.ship_classes.find({
+                                'ship_type_id': parseInt(select.val())
+                            }, function (err_classes, docs_classes) {
+                                if (!err_classes) {
+                                    var classes = []
+                                        , _sel = base_class_select
+                                    for (var j in docs_classes) {
+                                        classes.push({
+                                            //'value': 	docs_classes[j]['_id'],
+                                            'value': docs_classes[j]['id'],
+                                            'title': docs_classes[j].name.zh_cn + '级'
+                                        })
+                                    }
+                                    if (!docs_classes || !docs_classes.length) {
+                                        classes.push({
+                                            'value': '',
+                                            'title': ''
+                                        })
+                                    }
+                                    base_class_select = _frame.app_main.page['ships'].gen_input(
+                                        'select',
+                                        _sel.attr('name'),
+                                        _sel.attr('id'),
+                                        classes,
+                                        {
+                                            'new': function (select) {
+                                                console.log('NEW SHIP CLASS', select)
+                                            }
+                                        }).insertBefore(_sel)
+                                    _sel.remove()
+
+                                    if (d['type'] && base_type.find('select').val() == d['type']) {
+                                        base_class_select.val(d['class'])
+                                    }
+                                }
+                            })
+                        }
+                    }).insertBefore(sel)
+                sel.remove()
+            }
+        })
+    })();
+
+    // 舰级
+    (() => {
+        var base_class = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'class',
+            '舰级',
+            []
+        ).appendTo(details_misc)
+        base_class_select = base_class.find('select')
+        _input('class_no', '编号', '号舰').appendTo(details_misc)
+    })();
+
+    // 军籍
+    (() => {
+        const lineNavy = $('<p/>').appendTo(details_misc)
+            , idNavy = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        $('<label for="' + idNavy + '"/>').html('军籍').appendTo(lineNavy)
+        _frame.app_main.page['ships'].gen_input(
+            'select',
+            'navy',
+            idNavy,
             [
                 {
-                    'name': '日文WIKI',
-                    'url': null
+                    'value': 'km',
+                    'title': '纳粹德国海军 / 战争海军 (Kriegsmarine)'
                 },
                 {
-                    'name': '英文WIKI',
-                    'url': null
+                    'value': 'rm',
+                    'title': '意大利皇家海军 (Regia Marina)'
+                },
+                {
+                    'value': 'mn',
+                    'title': '法国海军 (Marine nationale)'
+                },
+                {
+                    'value': 'rn',
+                    'title': '英国皇家海军 (Royal Navy)'
+                },
+                {
+                    'value': 'usn',
+                    'title': '美国海军 (United States Navy)'
+                },
+                {
+                    'value': 'vmf',
+                    'title': '苏联海军 (Военно-морской флот СССР)'
                 }
             ],
-            d['links']
-        )
-    ).appendTo(details_misc)
+            {
+                'default': d.navy
+            }
+        ).appendTo(lineNavy)
+    })();
+
+    // 链接
+    (() => {
+        _form.section_order(
+            '链接',
+            function (data, index) {
+                return _link(index + 1, data['name'] || null, data['url'] || null)
+            },
+            $.extend(true,
+                [
+                    {
+                        'name': '日文WIKI',
+                        'url': null
+                    },
+                    {
+                        'name': '英文WIKI',
+                        'url': null
+                    }
+                ],
+                d['links']
+            )
+        ).appendTo(details_misc)
+    })();
     /*
-    $('<h4/>').html('链接').appendTo(details_misc)
-    var link_defaults = [
-        '日文WIKI',
-        '英文WIKI'
-    ]
-        ,_links_exists = parseInt( d['links'] ? d['links'].length : 0 )
-    for( var i in d['links'] ){
-        _link((parseInt(i)+1), d['links'][i]['name'], d['links'][i]['url']).appendTo(details_misc)
-        if( $.inArray(d['links'][i]['name'], link_defaults) > -1 )
-            link_defaults.splice( $.inArray(d['links'][i]['name'], link_defaults), 1 )
-    }
-    for( var i in link_defaults ){
-        _link((_links_exists + parseInt(i) +1), link_defaults[i], '').appendTo(details_misc)
-    }
-    var btn_add_link = $('<button class="add" type="button"/>').on('click', function(){
-        _link(
-            details_misc.find('input[name="link_name"]').length + 1,
-            '',
-            ''
-        ).insertBefore(btn_add_link)
-    }).html('添加链接').appendTo(details_misc)
+        $('<h4/>').html('链接').appendTo(details_misc)
+        var link_defaults = [
+            '日文WIKI',
+            '英文WIKI'
+        ]
+            ,_links_exists = parseInt( d['links'] ? d['links'].length : 0 )
+        for( var i in d['links'] ){
+            _link((parseInt(i)+1), d['links'][i]['name'], d['links'][i]['url']).appendTo(details_misc)
+            if( $.inArray(d['links'][i]['name'], link_defaults) > -1 )
+                link_defaults.splice( $.inArray(d['links'][i]['name'], link_defaults), 1 )
+        }
+        for( var i in link_defaults ){
+            _link((_links_exists + parseInt(i) +1), link_defaults[i], '').appendTo(details_misc)
+        }
+        var btn_add_link = $('<button class="add" type="button"/>').on('click', function(){
+            _link(
+                details_misc.find('input[name="link_name"]').length + 1,
+                '',
+                ''
+            ).insertBefore(btn_add_link)
+        }).html('添加链接').appendTo(details_misc)
     */
 
-
     // 系列
-    var d_series = {
-        'illust_extra': []
-    }
-        , d_series_true = null
-        , d_series_true_index = null
-    _db.ship_series.find({ 'id': d['series'] }).exec(function (err, docs) {
-        if (!err && docs && docs.length) {
-            d_series_true = docs[0]
-            for (var i in docs[0].ships) {
-                var index = parseInt(i)
-                if (d['id'] == docs[0].ships[index]['id']) {
-                    d_series_true_index = index
-                    if (index > 0) {
-                        d_series.remodel_prev = docs[0].ships[index - 1]['id'] || null
-                        d_series.remodel_prev_lvl = docs[0].ships[index - 1]['next_lvl'] || null
-                        d_series.remodel_prev_blueprint = docs[0].ships[index - 1]['next_blueprint'] || false
-                        d_series.remodel_prev_catapult = docs[0].ships[index - 1]['next_catapult'] || false
-                        d_series.remodel_prev_loop = docs[0].ships[index - 1]['next_loop'] || false
+    (() => {
+        d_series = {
+            'illust_extra': []
+        }
+        // let d_series_true = null
+        // let d_series_true_index = null
+        _db.ship_series.find({ 'id': d['series'] }).exec(function (err, docs) {
+            if (!err && docs && docs.length) {
+                d_series_true = docs[0]
+                for (var i in docs[0].ships) {
+                    var index = parseInt(i)
+                    if (d['id'] == docs[0].ships[index]['id']) {
+                        d_series_true_index = index
+                        if (index > 0) {
+                            d_series.remodel_prev = docs[0].ships[index - 1]['id'] || null
+                            d_series.remodel_prev_lvl = docs[0].ships[index - 1]['next_lvl'] || null
+                            d_series.remodel_prev_blueprint = docs[0].ships[index - 1]['next_blueprint'] || false
+                            d_series.remodel_prev_catapult = docs[0].ships[index - 1]['next_catapult'] || false
+                            d_series.remodel_prev_loop = docs[0].ships[index - 1]['next_loop'] || false
+                        }
+                        if (docs[0].ships[index + 1]) {
+                            d_series.remodel_next = docs[0].ships[index + 1]['id'] || null
+                            d.remodel_next = d.remodel_next || (docs[0].ships[index + 1]['id'] || null)
+                        }
+                        d_series.remodel_next_lvl = docs[0].ships[index]['next_lvl'] || null
+                        if (d.remodel.next) {
+                            d_series.remodel_next = parseInt(d.remodel.next) || null
+                        }
+                        if (d.remodel.next_lvl) {
+                            d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
+                        }
+                        d_series.remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
+                        d_series.remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
+                        d_series.remodel_next_loop = docs[0].ships[index]['next_loop'] || false
+                        d_series.illust_delete = docs[0].ships[index]['illust_delete'] || false
+                        d_series.illust_extra = docs[0].ships[index]['illust_extra'] || []
+                        break
                     }
-                    if (docs[0].ships[index + 1]) {
-                        d_series.remodel_next = docs[0].ships[index + 1]['id'] || null
-                        d.remodel_next = d.remodel_next || (docs[0].ships[index + 1]['id'] || null)
-                    }
-                    d_series.remodel_next_lvl = docs[0].ships[index]['next_lvl'] || null
-                    if (d.remodel.next) {
-                        d_series.remodel_next = parseInt(d.remodel.next) || null
-                    }
-                    if (d.remodel.next_lvl) {
-                        d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
-                    }
-                    d_series.remodel_next_blueprint = docs[0].ships[index]['next_blueprint'] || false
-                    d_series.remodel_next_catapult = docs[0].ships[index]['next_catapult'] || false
-                    d_series.remodel_next_loop = docs[0].ships[index]['next_loop'] || false
-                    d_series.illust_delete = docs[0].ships[index]['illust_delete'] || false
-                    d_series.illust_extra = docs[0].ships[index]['illust_extra'] || []
-                    break
                 }
-            }
-            if (!d_series.remodel_prev) {
+                if (!d_series.remodel_prev) {
+                    d_series.remodel_prev = parseInt(d.remodel.prev) || null
+                    d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
+                    d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
+                    d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
+                    d_series.remodel_prev_loop = d.remodel.prev_loop || false
+                }
+            } else {
                 d_series.remodel_prev = parseInt(d.remodel.prev) || null
                 d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
                 d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
                 d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
                 d_series.remodel_prev_loop = d.remodel.prev_loop || false
+                d_series.remodel_next = parseInt(d.remodel.next) || null
+                d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
+                d_series.remodel_next_blueprint = d.remodel.next_blueprint || false
+                d_series.remodel_next_catapult = d.remodel.next_catapult || false
+                d_series.remodel_next_loop = d.remodel.next_loop || false
+                d.remodel_next = d.remodel_next || (parseInt(d.remodel.next) || null)
             }
-        } else {
-            d_series.remodel_prev = parseInt(d.remodel.prev) || null
-            d_series.remodel_prev_lvl = parseInt(d.remodel.prev_lvl) || null
-            d_series.remodel_prev_blueprint = d.remodel.prev_blueprint || false
-            d_series.remodel_prev_catapult = d.remodel.prev_catapult || false
-            d_series.remodel_prev_loop = d.remodel.prev_loop || false
-            d_series.remodel_next = parseInt(d.remodel.next) || null
-            d_series.remodel_next_lvl = parseInt(d.remodel.next_lvl) || null
-            d_series.remodel_next_blueprint = d.remodel.next_blueprint || false
-            d_series.remodel_next_catapult = d.remodel.next_catapult || false
-            d_series.remodel_next_loop = d.remodel.next_loop || false
-            d.remodel_next = d.remodel_next || (parseInt(d.remodel.next) || null)
-        }
 
-        $('<h4/>').html('改造').appendTo(details_series)
-        _series('remodel').appendTo(details_series)
+            $('<h4/>').html('改造').appendTo(details_series)
+            _series('remodel').appendTo(details_series)
 
-        $('<h4/>').html('图鉴').appendTo(details_series)
-        _series('illust_delete').appendTo(details_series)
-        var _illust_extra = d_series.illust_extra || [1]
-        if (!_illust_extra.length)
-            _illust_extra = [1]
-        for (var i in _illust_extra) {
-            _series(
-                'illust_extra',
-                i
-            ).appendTo(details_series)
-        }
-        var btn_add_extraillust = $('<button class="add" type="button"/>').on('click', function () {
-            _series(
-                'illust_extra',
-                details_series.find('input[name="series.illust_extra"]').length
-            ).insertBefore(btn_add_extraillust)
-        }).html('添加额外图鉴').appendTo(details_series)
+            $('<h4/>').html('图鉴').appendTo(details_series)
+            _series('illust_delete').appendTo(details_series)
+            var _illust_extra = d_series.illust_extra || [1]
+            if (!_illust_extra.length)
+                _illust_extra = [1]
+            for (let i in _illust_extra) {
+                _series(
+                    'illust_extra',
+                    i
+                ).appendTo(details_series)
+            }
+            var btn_add_extraillust = $('<button class="add" type="button"/>').on('click', function () {
+                _series(
+                    'illust_extra',
+                    details_series.find('input[name="series.illust_extra"]').length
+                ).insertBefore(btn_add_extraillust)
+            }).html('添加额外图鉴').appendTo(details_series)
 
-        d.remodel_next = d.remodel_next || d_series.remodel_next
-        if (d.remodel_next)
-            $('<input type="hidden" name="remodel_next"/>').val(d.remodel_next).appendTo(details_series)
-    })
-
+            d.remodel_next = d.remodel_next || d_series.remodel_next
+            if (d.remodel_next)
+                $('<input type="hidden" name="remodel_next"/>').val(d.remodel_next).appendTo(details_series)
+        })
+    })();
 
     // 额外
-    $('<h4/>').html('额外属性').appendTo(details_extra)
-    let line_additional_night_shelling = $('<p/>').appendTo(details_extra)
-        , id_additional_night_shelling = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    _frame.app_main.page['ships'].gen_input(
-        'checkbox',
-        'additional_night_shelling',
-        id_additional_night_shelling,
-        d.additional_night_shelling || false
-    ).appendTo(line_additional_night_shelling)
-    $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
-    _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
+    // 基础
+    (() => {
+        $('<h4/>').html('额外属性').appendTo(details_extra)
+        let line_additional_night_shelling = $('<p/>').appendTo(details_extra)
+            , id_additional_night_shelling = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        _frame.app_main.page['ships'].gen_input(
+            'checkbox',
+            'additional_night_shelling',
+            id_additional_night_shelling,
+            d.additional_night_shelling || false
+        ).appendTo(line_additional_night_shelling)
+        $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
+        _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
+    })();
+
     // 修改舰级航速规则
-    $('<h4/>').html('修改舰级航速规则').appendTo(details_extra)
-    var lineOverideSpeedRule = $('<p/>').appendTo(details_extra)
-        , idOverideSpeedRule = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    var valuesSpeedRule = [
-        'low-1',
-        'low-2',
-        'low-3',
-        'high-1',
-        'high-2',
-        'high-3',
-        'high-4'
-    ]
-    _frame.app_main.page['ships'].gen_input(
-        'select',
-        'speed_rule',
-        idOverideSpeedRule,
-        valuesSpeedRule,
-        {
-            'default': d.speed_rule
-        }
-    ).appendTo(lineOverideSpeedRule)
-    $('<h4/>').html('额外装备类型').appendTo(details_extra)
-    _form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo(details_extra)
+    (() => {
+        $('<h4/>').html('修改舰级航速规则').appendTo(details_extra)
+        var lineOverideSpeedRule = $('<p/>').appendTo(details_extra)
+            , idOverideSpeedRule = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        var valuesSpeedRule = [
+            'low-1',
+            'low-2',
+            'low-3',
+            'high-1',
+            'high-2',
+            'high-3',
+            'high-4'
+        ]
+        _frame.app_main.page['ships'].gen_input(
+            'select',
+            'speed_rule',
+            idOverideSpeedRule,
+            valuesSpeedRule,
+            {
+                'default': d.speed_rule
+            }
+        ).appendTo(lineOverideSpeedRule)
+    })();
 
-
+    // 装备类型
+    (() => {
+        $('<h4/>').html('额外装备类型').appendTo(details_extra)
+        _form.create_item_types('additional_item_types', d['additional_item_types'] || []).appendTo(details_extra)
+        $('<h4/>').html('不可装备类型').appendTo(details_extra)
+        _form.create_item_types('additional_disable_item_types', d['additional_disable_item_types'] || []).appendTo(details_extra)
+    })();
 
     // 提交等按钮
     var line = $('<p class="actions"/>').appendTo(form)
@@ -1080,7 +1125,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             // 否则则为新建操作
             if (!d_series_true && (data['series']['remodel_prev'] || data['series']['remodel_next'])) {
                 series_id = null
-                function _do_check(check_id, is_last) {
+                const _do_check = function (check_id, is_last) {
                     _db.ships.find({ 'id': check_id }, function (err, docs) {
                         if (!err && docs && docs.length)
                             series_id = docs[0].series
@@ -1143,7 +1188,6 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 _do_parse()
             }
 
-
             function _do_parse() {
                 if (d_series_true) {
                     if (!d_series_true_index && d_series_true_index !== 0)
@@ -1185,12 +1229,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                     series_id = d_series_true['id']
                     _db.ship_series.update({
                         '_id': d_series_true['_id']
-                    }, {
-                            $set: d_series_true
-                        }, {}, function (err, numReplaced) {
-                            console.log('SERIES UPDATE', d_series_true)
-                            start_db_operate()
-                        });
+                    }, { $set: d_series_true }, {}, function (/*err, numReplaced*/) {
+                        console.log('SERIES UPDATE', d_series_true)
+                        start_db_operate()
+                    });
                 } else {
                     d_series_true = {
                         'ships': []
@@ -1253,13 +1295,11 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
                             _db['entities'].update({
                                 '_id': docs[0]._id
-                            }, {
-                                    $set: entity_update_set
-                                }, {}, function (err, numReplaced) {
-                                    console.log('ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
-                                    rels_to_parse.shift()
-                                    parse_rels()
-                                })
+                            }, { $set: entity_update_set }, {}, function (err, numReplaced) {
+                                console.log('ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
+                                rels_to_parse.shift()
+                                parse_rels()
+                            })
                         } else {
                             rels_to_parse.shift()
                             parse_rels()
@@ -1278,7 +1318,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                     '9.png',
                     '10.png'
                 ]
-                function _delete() {
+                const _delete = function () {
                     node.fs.unlink(_g.path.pics.ships + '/' + data['id'] + '/' + files[0], function (err) {
                         if (files.length) {
                             files.shift()
@@ -1301,22 +1341,19 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 console.log('EDIT', data)
                 _db.ships.update({
                     '_id': d._id
-                }, {
-                        $set: data,
-                        $unset: unset
-                    }, {}, function (err, numReplaced) {
-                        console.log('UPDATE COMPLETE', numReplaced, data)
-                        data._id = d._id
-                        // 在已入库表格中更改原有数据行
-                        var oldTr = _frame.app_main.page['ships'].section['已入库'].dom.section
-                            //_frame.app_main.page['ships'].section['已入库'].dom.table
-                            .find('tr[data-shipId="' + data['id'] + '"]')
-                        //_frame.app_main.page['ships'].section['已入库'].append_table_tr( data )
-                        _frame.app_main.page['ships'].section['已入库'].dom.section.data('shiplist').append_ship(data)
-                            .insertBefore(oldTr)
-                        oldTr.remove()
-                        _frame.modal.hide()
-                    })
+                }, { $set: data, $unset: unset }, {}, function (err, numReplaced) {
+                    console.log('UPDATE COMPLETE', numReplaced, data)
+                    data._id = d._id
+                    // 在已入库表格中更改原有数据行
+                    var oldTr = _frame.app_main.page['ships'].section['已入库'].dom.section
+                        //_frame.app_main.page['ships'].section['已入库'].dom.table
+                        .find('tr[data-shipId="' + data['id'] + '"]')
+                    //_frame.app_main.page['ships'].section['已入库'].append_table_tr( data )
+                    _frame.app_main.page['ships'].section['已入库'].dom.section.data('shiplist').append_ship(data)
+                        .insertBefore(oldTr)
+                    oldTr.remove()
+                    _frame.modal.hide()
+                })
             } else {
                 // 不存在 _id，当前为新建操作
                 data.time_created = _g.timeNow()
@@ -1400,6 +1437,14 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         if (!data['additional_item_types'].length) {
             delete data['additional_item_types']
             unset.additional_item_types = true
+        }
+
+        if (typeof data['additional_disable_item_types'] != 'object' && typeof data['additional_disable_item_types'] != 'undefined')
+            data['additional_disable_item_types'] = [data['additional_disable_item_types']]
+        data['additional_disable_item_types'] = data['additional_disable_item_types'] || []
+        if (!data['additional_disable_item_types'].length) {
+            delete data['additional_disable_item_types']
+            unset.additional_disable_item_types = true
         }
 
         if (data['additional_night_shelling']) {
