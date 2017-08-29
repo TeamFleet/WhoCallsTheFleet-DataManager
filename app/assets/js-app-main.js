@@ -10812,10 +10812,10 @@ _frame.app_main.page['gamedata'].init_ship = function (data) {
                                     // extra slot extra equipable ids
                                     let additional_exslot_item_ids = []
                                     _frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship.forEach(ex => {
-                                        if(!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
+                                        if (!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
                                         additional_exslot_item_ids.push(ex.api_slotitem_id)
                                     })
-                                    if(additional_exslot_item_ids.length)
+                                    if (additional_exslot_item_ids.length)
                                         modified['additional_exslot_item_ids'] = additional_exslot_item_ids
                                     else
                                         unset['additional_exslot_item_ids'] = true
@@ -10925,24 +10925,36 @@ _frame.app_main.page['gamedata'].init_slotitem = function (data) {
                                     _log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
                                     count++
 
-                                    let modified = {}
-                                        , unset = {}
+                                    const modified = {}
+                                    const unset = {}
+                                    const getApiData = (key, apiName) => {
+                                        if (typeof data['api_' + apiName] === 'undefined') {
+                                            unset[key] = true
+                                            return undefined
+                                        }
+                                        modified[key] = data['api_' + apiName]
+                                        return data['api_' + apiName]
+                                    }
+
                                     // base
-                                    modified['rarity'] = data['api_rare']
+                                    getApiData('rarity', 'rare')
                                     // stat
-                                    modified['stat.fire'] = data['api_houg']
-                                    modified['stat.torpedo'] = data['api_raig']
-                                    modified['stat.bomb'] = data['api_baku']
-                                    modified['stat.asw'] = data['api_tais']
-                                    modified['stat.aa'] = data['api_tyku']
-                                    modified['stat.armor'] = data['api_souk']
-                                    modified['stat.evasion'] = data['api_houk']
-                                    modified['stat.hit'] = data['api_houm']
-                                    modified['stat.los'] = data['api_saku']
-                                    modified['stat.range'] = data['api_leng']
-                                    modified['stat.distance'] = data['api_distance']
+                                    getApiData('stat.fire', 'houg')
+                                    getApiData('stat.torpedo', 'raig')
+                                    getApiData('stat.bomb', 'baku')
+                                    getApiData('stat.asw', 'tais')
+                                    getApiData('stat.aa', 'tyku')
+                                    getApiData('stat.armor', 'souk')
+                                    getApiData('stat.evasion', 'houk')
+                                    getApiData('stat.hit', 'houm')
+                                    getApiData('stat.los', 'saku')
+                                    getApiData('stat.range', 'leng')
+                                    getApiData('stat.distance', 'distance')
+                                    getApiData('stat.cost', 'cost')
+                                    // type ingame
+                                    getApiData('type_ingame', 'type')
                                     // misc
-                                    modified['dismantle'] = data['api_broken']
+                                    getApiData('dismantle', 'broken')
                                     modified['time_modified'] = _g.timeNow()
 
                                     _log(modified)
