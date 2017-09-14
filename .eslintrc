@@ -42,7 +42,9 @@
         "_form": false,
         "app": false,
         "angular": false,
-        "node": false
+        "node": false,
+        "jf": false,
+        "Q": false
     },
     "settings": {
         "import/ignore": [

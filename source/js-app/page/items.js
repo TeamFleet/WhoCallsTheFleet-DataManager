@@ -904,12 +904,41 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
             }
         })
         , input_container = $('<div/>').appendTo(form)
+        , data_ingame
 
-    if (is_edit) console.log(data_edit)
+    if (is_edit) {
+        console.log(data_edit)
+        const {
+            api_data: data
+        } = _g.getGameApi()
+        const {
+            api_mst_slotitem_equiptype: types
+        } = data
+        const map = []
+        for (let i in types) {
+            const obj = types[i]
+            // map.push({
+            //     id: obj.api_id,
+            //     name: obj.api_name
+            // })
+            map.push(`[${obj.api_id}] ${obj.api_name}`)
+        }
+        console.log(map)
+        if (data_edit.id_ingame) {
+        }
+    }
 
     self.field_input_text('name.ja_jp', '日', is_edit ? data_edit['name']['ja_jp'] : null).appendTo(input_container)
     self.field_input_text('name.zh_cn', '简中', is_edit ? data_edit['name']['zh_cn'] : null).appendTo(input_container)
     self.field_input_text('name.en_us', 'EN', is_edit ? data_edit['name']['en_us'] : null).appendTo(input_container)
+
+    $('<br/>').appendTo(input_container)
+
+    if (is_edit) {
+        const line = self.field_input_text('id', 'ID', is_edit ? data_edit.id : null).appendTo(input_container)
+        line.find('[type="text"]').attr('disabled', true)
+    }
+    self.field_input_text('id_ingame', 'ID (in-game)', is_edit ? data_edit.id_ingame : null).appendTo(input_container)
 
     $('<h4/>').html('图标').appendTo(input_container)
     // icon

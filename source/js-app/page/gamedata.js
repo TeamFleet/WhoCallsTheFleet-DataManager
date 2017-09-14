@@ -522,115 +522,208 @@ _frame.app_main.page['gamedata'].init_slotitem = function (data) {
             let promise_chain = Q.fcall(function () { })
                 , thisDb = _db.items
 
+            const { api_data: api_data } = _g.getGameApi()
+            const {
+                api_mst_equip_exslot,
+                api_mst_equip_exslot_ship,
+                api_mst_slotitem
+            } = api_data
+
+            console.log(api_data)
+
             function _log(msg) {
                 console.log(msg)
             }
 
+            _log('')
+            _log('更新装备数据库')
+
             // 开始异步函数链
             promise_chain
 
-                // 获取全部 _id & id
-                .then(function () {
-                    var deferred = Q.defer()
-                    thisDb.find({}, function (err, docs) {
-                        if (err) {
-                            deferred.reject(err)
-                        } else {
-                            var d = {}
-                            for (var i in docs) {
-                                d[docs[i].id] = docs[i]._id
-                            }
-                            deferred.resolve(d)
-                        }
+                // 更新数据 - 所有装备类型
+                // 获取装备类型数据
+                .then(() => {
+                    console.log('丨')
+                    console.log('丨 处理装备类型')
+                    console.log('丨 > 补强增设栏位装备类型', api_mst_equip_exslot)
+                    console.log('丨 > 从数据库读取所有装备类型数据')
+                    const deferred = Q.defer()
+                    _db.item_types.find({}, (err, docs) => {
+                        if (err) return deferred.reject(err)
+                        console.log('丨 > 从数据库读取所有装备类型数据 - 完成')
+                        deferred.resolve(docs)
                     })
                     return deferred.promise
                 })
 
-                // 更新数据
-                .then(function (map) {
-                    _log(map)
-                    _log('开始遍历装备数据')
-
-                    var count = 0
-                        , list = _frame.app_main.page['gamedata'].data['api_mst_slotitem']
-                        , max = list.length
-
-                    list.forEach(function (data) {
-                        (function (data) {
-                            function _done(cur) {
-                                if (cur >= max) {
-                                    promise_chain.fin(function () {
-                                        _log('遍历装备数据完成')
-                                    })
-                                }
+                .then(types => {
+                    const deferred = Q.defer()
+                    let chain = Q(() => true)
+                    console.log('丨 > 检查匹配')
+                    // console.log(types, api_mst_equip_exslot)
+                    types.forEach(type => {
+                        const modify = {}
+                        const matched = api_mst_equip_exslot.includes(type.id_ingame)
+                        if (matched) {
+                            modify['$set'] = {
+                                equipable_exslot: true
                             }
-                            promise_chain = promise_chain.then(function () {
-                                var deferred = Q.defer()
-                                if (map[data.api_id]) {
-                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 开始处理')
-                                    count++
-
-                                    const modified = {}
-                                    const unset = {}
-                                    const getApiData = (key, apiName) => {
-                                        if (typeof data['api_' + apiName] === 'undefined') {
-                                            unset[key] = true
-                                            return undefined
-                                        }
-                                        modified[key] = data['api_' + apiName]
-                                        return data['api_' + apiName]
-                                    }
-
-                                    // base
-                                    getApiData('rarity', 'rare')
-                                    // stat
-                                    getApiData('stat.fire', 'houg')
-                                    getApiData('stat.torpedo', 'raig')
-                                    getApiData('stat.bomb', 'baku')
-                                    getApiData('stat.asw', 'tais')
-                                    getApiData('stat.aa', 'tyku')
-                                    getApiData('stat.armor', 'souk')
-                                    getApiData('stat.evasion', 'houk')
-                                    getApiData('stat.hit', 'houm')
-                                    getApiData('stat.los', 'saku')
-                                    getApiData('stat.range', 'leng')
-                                    getApiData('stat.distance', 'distance')
-                                    getApiData('stat.cost', 'cost')
-                                    // type ingame
-                                    getApiData('type_ingame', 'type')
-                                    // misc
-                                    getApiData('dismantle', 'broken')
-                                    modified['time_modified'] = _g.timeNow()
-
-                                    _log(modified)
-                                    thisDb.update({
-                                        '_id': map[data['api_id']]
-                                    }, {
-                                            $set: modified,
-                                            $unset: unset
-                                        }, function () {
-                                            deferred.resolve()
-                                            _done(count)
-                                        })
-                                } else {
-                                    _log('    [' + data.api_id + '] ' + data.api_name + ' 不存在于数据库，跳过')
-                                    count++
+                        } else {
+                            modify['$unset'] = {
+                                equipable_exslot: true
+                            }
+                        }
+                        chain = chain.then(() => {
+                            const deferred = Q.defer()
+                            _db.item_types.update(
+                                {
+                                    '_id': type._id
+                                }, modify, function (err) {
+                                    if (err) return deferred.reject(err)
+                                    if (matched)
+                                        console.log(`丨   > 匹配: [${type.id}] (${type.id_ingame}) ${type.name.ja_jp}`)
                                     deferred.resolve()
-                                    _done(count)
                                 }
-                                return deferred.promise
-                            })
-                        })(data)
+                            )
+                            return deferred.promise
+                        })
                     })
-                    return true
+
+                    chain = chain
+                        .then(() => deferred.resolve())
+                        .catch(err => deferred.reject(err))
+
+                    return deferred.promise
                 })
+                .then(() => console.log('丨 处理装备类型 - 完成'))
+
+                // 获取全部装备数据
+                .then(() => {
+                    console.log('丨')
+                    console.log('丨 处理装备')
+                    console.log('丨 > 从数据库读取所有装备数据')
+                    const deferred = Q.defer()
+                    _db.items.find({}, (err, docs) => {
+                        if (err) return deferred.reject(err)
+                        console.log('丨 > 从数据库读取所有装备数据 - 完成')
+                        deferred.resolve(docs)
+                    })
+                    return deferred.promise
+                })
+
+                // 更新数据 - 所有装备
+                .then(items => {
+                    // _log(map)
+
+                    // var count = 0
+                    //     , list = api_data.api_mst_slotitem
+                    //     , max = list.length
+
+                    const deferred = Q.defer()
+                    const mapIdIndex = {}
+                    let chain = Q(() => true)
+
+                    console.log('丨 > 从游戏API获取装备ID与Index的对应')
+                    api_mst_slotitem.forEach((item, index) => {
+                        mapIdIndex[item.api_id] = index
+                    })
+                    // console.log(mapIdIndex)
+                    console.log('丨 > 从游戏API获取装备ID与Index的对应 - 完成')
+
+                    items.forEach(item => {
+                        chain = chain.then(() => {
+                            const deferred = Q.defer()
+                            const index = mapIdIndex[item.id]
+                            // console.log(item)
+
+                            if (typeof index === 'undefined') {
+                                setTimeout(() => {
+                                    deferred.resolve()
+                                })
+                            }
+
+                            const set = {}
+                            const unset = {}
+                            const data = api_mst_slotitem[index]
+                            const getApiData = (key, apiName) => {
+                                if (typeof data['api_' + apiName] === 'undefined') {
+                                    unset[key] = true
+                                    return undefined
+                                }
+                                set[key] = data['api_' + apiName]
+                                return data['api_' + apiName]
+                            }
+
+                            // base
+                            getApiData('rarity', 'rare')
+                            // stat
+                            getApiData('stat.fire', 'houg')
+                            getApiData('stat.torpedo', 'raig')
+                            getApiData('stat.bomb', 'baku')
+                            getApiData('stat.asw', 'tais')
+                            getApiData('stat.aa', 'tyku')
+                            getApiData('stat.armor', 'souk')
+                            getApiData('stat.evasion', 'houk')
+                            getApiData('stat.hit', 'houm')
+                            getApiData('stat.los', 'saku')
+                            getApiData('stat.range', 'leng')
+                            getApiData('stat.distance', 'distance')
+                            getApiData('stat.cost', 'cost')
+                            // type ingame
+                            getApiData('type_ingame', 'type')
+                            // misc
+                            getApiData('dismantle', 'broken')
+                            set['time_modified'] = _g.timeNow()
+                            // ex-slot extra ships
+                            api_mst_equip_exslot_ship.filter(obj => (
+                                obj.api_slotitem_id === item.id
+                            )).forEach(obj => {
+                                console.log(`丨   > [${item.id}] ${item.name.ja_jp} - 补强增设栏位额外舰娘: `, obj.api_ship_ids)
+                                set.exslot_on_ship = obj.api_ship_ids
+                            })
+                            if (!Array.isArray(set.exslot_on_ship) || !set.exslot_on_ship.length) {
+                                unset.exslot_on_ship = true
+                            }
+                            // 清除历史遗留数据
+                            [
+                                'equipable_exslot_on_ship'
+                            ].forEach(key => {
+                                unset[key] = true
+                            })
+
+                            // _log(set)
+                            _db.items.update(
+                                {
+                                    '_id': item._id
+                                }, {
+                                    $set: set,
+                                    $unset: unset
+                                }, (err) => {
+                                    if (err) return deferred.reject(err)
+                                    // console.log(`丨   > 修改后: `, set)
+                                    deferred.resolve()
+                                }
+                            )
+                            return deferred.promise
+                        })
+                    })
+
+                    chain = chain
+                        .then(() => deferred.resolve())
+                        .catch(err => deferred.reject(err))
+
+                    return deferred.promise
+                })
+                .then(() => console.log('丨 处理装备 - 完成'))
 
                 // 错误处理
                 .catch(function (err) {
                     _log(err)
                 })
                 .done(function () {
-                    _log('ALL DONE')
+                    console.log('丨')
+                    _log('更新装备数据库 - 完成')
                 })
         }).appendTo(section)
 

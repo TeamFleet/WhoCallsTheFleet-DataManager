@@ -124,6 +124,7 @@ _g.log = function (msg) {
     try { _log(msg) }
     catch (e) { }
 }
+_g.getGameApi = () => jf.readFileSync(node.path.join(_g.root, '/fetched_data/api_start2.json'))
 
 
 
