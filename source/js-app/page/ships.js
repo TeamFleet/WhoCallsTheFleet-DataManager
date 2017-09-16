@@ -1032,17 +1032,35 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     // 基础
     (() => {
         $('<h4/>').html('额外属性').appendTo(details_extra)
-        let line_additional_night_shelling = $('<p/>').appendTo(details_extra)
-            , id_additional_night_shelling = '_input_g' + _g.inputIndex
-        _g.inputIndex++
-        _frame.app_main.page['ships'].gen_input(
+        _frame.app_main.page['ships'].gen_form_line(
+            'number',
+            'capabilities.count_as_landing_craft',
+            '算作：登陆艇',
+            d.capabilities ? d.capabilities.count_as_landing_craft : undefined
+        ).appendTo($('<p/>').appendTo(details_extra))
+        _frame.app_main.page['ships'].gen_form_line(
+            'number',
+            'capabilities.count_as_night_operation_aviation_personnel',
+            '算作：夜间航空要员',
+            d.capabilities ? d.capabilities.count_as_night_operation_aviation_personnel : undefined
+        ).appendTo($('<p/>').appendTo(details_extra))
+        _frame.app_main.page['ships'].gen_form_line(
             'checkbox',
-            'additional_night_shelling',
-            id_additional_night_shelling,
-            d.additional_night_shelling || false
-        ).appendTo(line_additional_night_shelling)
-        $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
-        _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
+            'capabilities.participate_night_battle_when_equip_swordfish',
+            '当装备剑鱼时可参与夜战',
+            d.capabilities ? d.capabilities.participate_night_battle_when_equip_swordfish : undefined
+        ).appendTo($('<p/>').appendTo(details_extra))
+        // let line_additional_night_shelling = $('<p/>').appendTo(details_extra)
+        //     , id_additional_night_shelling = '_input_g' + _g.inputIndex
+        // _g.inputIndex++
+        // _frame.app_main.page['ships'].gen_input(
+        //     'checkbox',
+        //     'additional_night_shelling',
+        //     id_additional_night_shelling,
+        //     d.additional_night_shelling || false
+        // ).appendTo(line_additional_night_shelling)
+        // $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
+        // _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
     })();
 
     // 修改舰级航速规则
@@ -1086,6 +1104,8 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
     // 提交函数
     form.on('submit', function (e) {
+        console.log(``)
+        console.log(`UPDATING SHIP [${d.id}] ${d._name}`)
         var function_queue = []
 
             , ship_next = null
@@ -1192,7 +1212,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 if (d_series_true) {
                     if (!d_series_true_index && d_series_true_index !== 0)
                         d_series_true_index = d_series_true.ships.length
-                    console.log(d_series_true, d_series_true_index, data)
+                    console.log('> SERIES ', d_series_true, d_series_true_index, data)
                     var _length = d_series_true.ships.length
                         , _prev = d_series_true_index > 0 ? d_series_true.ships[d_series_true_index - 1] : null
                         , _next = d_series_true_index < _length - 1 ? d_series_true.ships[d_series_true_index + 1] : null
@@ -1230,7 +1250,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                     _db.ship_series.update({
                         '_id': d_series_true['_id']
                     }, { $set: d_series_true }, {}, function (/*err, numReplaced*/) {
-                        console.log('SERIES UPDATE', d_series_true)
+                        console.log('> SERIES UPDATE', d_series_true)
                         start_db_operate()
                     });
                 } else {
@@ -1266,7 +1286,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                         _db.ship_series.insert(
                             d_series_true,
                             function (err, newDoc) {
-                                console.log('SERIES INSERT', newDoc)
+                                console.log('> SERIES INSERT', newDoc)
                                 data['series'] = newDoc['id']
                                 series_id = newDoc['id']
                                 start_db_operate()
@@ -1296,7 +1316,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                             _db['entities'].update({
                                 '_id': docs[0]._id
                             }, { $set: entity_update_set }, {}, function (err, numReplaced) {
-                                console.log('ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
+                                console.log('> ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
                                 rels_to_parse.shift()
                                 parse_rels()
                             })
@@ -1338,11 +1358,12 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             if (_id) {
                 // 存在 _id，当前为更新操作
                 data.time_modified = _g.timeNow()
-                console.log('EDIT', data)
+                console.log('> EDIT - set', data)
+                console.log('> EDIT - unset', unset)
                 _db.ships.update({
                     '_id': d._id
                 }, { $set: data, $unset: unset }, {}, function (err, numReplaced) {
-                    console.log('UPDATE COMPLETE', numReplaced, data)
+                    console.log('> UPDATE COMPLETE', numReplaced, data)
                     data._id = d._id
                     // 在已入库表格中更改原有数据行
                     var oldTr = _frame.app_main.page['ships'].section['已入库'].dom.section
@@ -1360,7 +1381,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 // 删除JSON数据
                 node.fs.unlink(_g.path.fetched.ships + '/' + data['id'] + '.json', function (err) {
                     _db.ships.insert(data, function (err, newDoc) {
-                        console.log('INSERT COMPLETE', newDoc)
+                        console.log('> INSERT COMPLETE', newDoc)
                         // 删除“未入库”表格中对应的行
                         try {
                             _frame.app_main.page['ships'].section['未入库'].dom.table
@@ -1405,6 +1426,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         // 处理所有数据，将带有 . 的数据变为 object 元素
         data = $(this).serializeObject()
         data['class_no'] = parseInt(data['class_no'])
+
         delete_illust = data['series']['illust_delete']
         if (!data['series']['illust_extra'].push)
             data['series']['illust_extra'] = [data['series']['illust_extra']]
@@ -1416,10 +1438,14 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             if (data['series']['illust_extra'])
                 data.illust_extra = data['series']['illust_extra']
         }
-        if (!data.illust_same_as_prev)
+        if (!data.illust_same_as_prev) {
             delete data.illust_same_as_prev
-        if (!data.illust_extra || !data.illust_extra.length || data.illust_extra.every(item => (!item)))
+            unset.illust_same_as_prev = true
+        }
+        if (!data.illust_extra || !data.illust_extra.length || data.illust_extra.every(item => (!item))) {
             delete data.illust_extra
+            unset.illust_extra = true
+        }
 
         if (!data['slot'])
             data['slot'] = []
@@ -1496,13 +1522,33 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         }
         data['stat']['carry'] = carry_num
 
+        // 额外能力
+        let capabilities_count = 0
+        for (let key in data.capabilities) {
+            const value = data.capabilities[key]
+            if (value === 'on')
+                data.capabilities[key] = true
+            if (value !== undefined && value !== null && value !== '') {
+                capabilities_count++
+            } else {
+                delete data.capabilities[key]
+                unset[`capabilities.${key}`] = true
+            }
+        }
+        if (!capabilities_count) {
+            delete data.capabilities
+            unset.capabilities = true
+        }
+
         // 航速规则
         if (_g.data.ship_classes[data.class]) {
             if (_g.data.ship_classes[data.class].speed_rule === data.speed_rule)
                 delete data.speed_rule
         }
-        if (!data.speed_rule)
+        if (!data.speed_rule) {
             delete data.speed_rule
+            unset.speed_rule = true
+        }
 
         // 系列
         //if( data.series.illust_delete ){
