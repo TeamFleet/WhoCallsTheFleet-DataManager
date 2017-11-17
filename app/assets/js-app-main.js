@@ -458,7 +458,12 @@ _frame.app_main = {
                                             })()
                                             _db.ships.find({}).sort({
                                                 //'class': 1, 'class_no': 1, 'series': 1, 'type': 1, 'time_created': 1, 'name.suffix': 1
-                                                'type': 1, 'class': 1, 'class_no': 1, 'time_created': 1, 'name.suffix': 1
+                                                'type': 1,
+                                                'class': 1,
+                                                'class_no': 1,
+                                                'name.ja_jp': 1,
+                                                'time_created': 1,
+                                                'name.suffix': 1
                                             }).exec(function (dberr2, docs) {
                                                 if (dberr2) {
                                                     deferred.reject(new Error(dberr))
