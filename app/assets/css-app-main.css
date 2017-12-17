@@ -2612,23 +2612,26 @@ form.iteminfo > .tabview > section[data-tabname="属性"] p input[type="text"][n
 form.iteminfo > .tabview > section[data-tabname="属性"] p input[type="number"][name="dismantle"] {
   width: calc(25% - 50px);
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] {
+form.iteminfo > .tabview > section[data-tabname="改修"] {
   counter-reset: section;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="upgrade_to"] {
+form.iteminfo > .tabview > section[data-tabname="改修"] p select[name="upgrade_to"] {
   width: calc(100% - 214px);
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="upgrade_to"] + label {
+form.iteminfo > .tabview > section[data-tabname="改修"] p select[name="upgrade_to"] + label {
   width: 80px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="upgrade_to"] + label + input[type="number"] {
+form.iteminfo > .tabview > section[data-tabname="改修"] p select[name="upgrade_to"] + label + input[type="number"] {
   width: 40px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement {
   padding-left: 20px;
   position: relative;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  margin-bottom: 15px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement:before {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement:before {
   counter-increment: section;
   content: '改修项 #' counter(section);
   display: block;
@@ -2636,101 +2639,101 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement:be
   margin-left: -20px;
   font-size: 14px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement > button.delete {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement > button.delete {
   position: absolute;
   top: 0;
   right: 0;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p {
   display: flex;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p label {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p label {
   flex: 0 0 auto;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p h5 {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p h5 {
   flex: none;
   display: block;
   width: 100%;
   margin: 0;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="number"],
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="text"],
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p select {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="number"],
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="text"],
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p select {
   flex: 1 1 auto;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="number"] ~ label,
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="text"] ~ label,
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p select ~ label {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="number"] ~ label,
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="text"] ~ label,
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p select ~ label {
   padding-left: 10px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="number"] {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="number"] {
   flex-basis: 25px;
   min-width: 25px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p input[type="number"]::-webkit-inner-spin-button {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p input[type="number"]::-webkit-inner-spin-button {
   display: none;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.upgrade select {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.upgrade select {
   flex-basis: 160px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.upgrade input[type="number"] {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.upgrade input[type="number"] {
   flex: 0 0 40px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource {
   padding: 20px 0 0 18px;
   position: relative;
   box-sizing: content-box;
   height: auto;
   min-height: 1rem;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource h5 {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource h5 {
   position: absolute;
   top: 0;
   left: 0;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource label {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource label {
   font-size: 12px;
   padding: 0 2px !important;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource select {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource select {
   flex-grow: 2;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipments {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipments {
   flex: 999999999;
   display: block;
   overflow: hidden;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipment {
   width: 100%;
   display: flex;
   flex-flow: row nowrap;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment .add {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipment .add {
   flex: 0;
   display: none;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment .remove {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipment .remove {
   flex: 0;
   display: block;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment:last-of-type .add {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipment:last-of-type .add {
   display: block;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement p.resource .equipment:last-of-type .remove {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement p.resource .equipment:last-of-type .remove {
   display: none;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require {
   padding-left: 20px;
   counter-reset: section_req;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require > h5 {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require > h5 {
   margin-left: -20px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require > div {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require > div {
   padding-left: 40px;
   position: relative;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require > div:before {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require > div:before {
   counter-increment: section_req;
   content: '项 #' counter(section_req);
   display: block;
@@ -2738,13 +2741,48 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement di
   margin-left: -40px;
   font-size: 14px;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require > div > button.delete {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require > div > button.delete {
   position: absolute;
   top: 0;
   right: 0;
 }
-form.iteminfo > .tabview > section[data-tabname="开发&改修"] .improvement div.require > div h6 {
+form.iteminfo > .tabview > section[data-tabname="改修"] .improvement div.require > div h6 {
   margin-left: -20px;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] {
+  counter-reset: section;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus {
+  padding-left: 20px;
+  position: relative;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  margin-bottom: 15px;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus:before {
+  counter-increment: section;
+  content: '额外属性类别 #' counter(section);
+  display: block;
+  font-weight: bold;
+  margin-left: -20px;
+  font-size: 14px;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus > button.delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus .block {
+  padding-left: 20px;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus .block > h5 {
+  margin-left: -20px;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus .ship {
+  display: flex;
+}
+form.iteminfo > .tabview > section[data-section="stat-bonus"] .stat-bonus .ship select {
+  flex: 1 1 auto;
 }
 #layout > main > .page[page="update"] > .tabview > section[data-tabname="更新日志"] .main {
   position: relative;

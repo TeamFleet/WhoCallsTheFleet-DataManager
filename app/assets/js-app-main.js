@@ -8458,10 +8458,11 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             'text', name, label, eval('d.' + name) || '', suffix, options
         )
     }
-    function _stat(stat, label) {
+    function _stat(stat, label, defaultValue) {
         var line = $('<p/>')
             , id = '_input_g' + _g.inputIndex
         _g.inputIndex++
+        const hasDefaultValue = typeof defaultValue !== 'undefined'
 
         switch (stat) {
             case 'dismantle':
@@ -8504,12 +8505,12 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                 ).appendTo(line)
                 break;
             case 'range':
-                var value = d.stat[stat]
+                var value = hasDefaultValue ? defaultValue : d.stat[stat]
 
                 $('<label for="' + id + '"/>').html(label).appendTo(line)
                 var input = _frame.app_main.page['ships'].gen_input(
                     'select',
-                    'stat.' + stat,
+                    hasDefaultValue ? null : 'stat.' + stat,
                     id,
                     [
                         {
@@ -8533,14 +8534,15 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                         'default': value
                     }
                 ).appendTo(line)
-                $('<label for="' + id + '"/>').html('当前值: ' + value).appendTo(line)
+                if (value)
+                    $('<label for="' + id + '"/>').html('当前值: ' + value).appendTo(line)
                 break;
             default:
-                var value = d.stat[stat]
+                var value = hasDefaultValue ? defaultValue : d.stat[stat]
                 $('<label for="' + id + '"/>').html(label).appendTo(line)
                 var input = _frame.app_main.page['ships'].gen_input(
                     'number',
-                    'stat.' + stat,
+                    hasDefaultValue ? null : 'stat.' + stat,
                     id,
                     value
                 ).appendTo(line)
@@ -8829,177 +8831,262 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         return block
     }
 
-    var form = $('<form class="iteminfo new"/>')
+    const form = $('<form class="iteminfo new"/>')
+    const details = $('<div class="tabview"/>').appendTo(form)
+    // 如果有 _id 则表明已存在数据，当前为编辑操作，否则为新建操作
+    const _id = d._id ? $('<input type="hidden"/>').val(d._id) : null
 
-        , base = $('<div class="base"/>').appendTo(form)
-        , details = $('<div class="tabview"/>').appendTo(form)
-
-        // 如果有 _id 则表明已存在数据，当前为编辑操作，否则为新建操作
-        , _id = d._id ? $('<input type="hidden"/>').val(d._id) : null
-
-        , details_stat = $('<section data-tabname="属性"/>').appendTo(details)
-        , details_craft = $('<section data-tabname="开发&改修"/>').appendTo(details)
-        , details_equipped = $('<section data-tabname="初装舰娘"/>').appendTo(details)
-        , details_misc = $('<section data-tabname="其他"/>').appendTo(details)
-
-        // 标准图鉴
-        , base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
 
     // 基础信息
-    _input('id', 'ID', null, { 'required': true }).appendTo(base)
-    _input('rarity', '稀有度', null, { 'required': true }).appendTo(base)
-    // 类型
-    var base_type = _frame.app_main.page['ships'].gen_form_line(
-        'select',
-        'type',
-        '类型',
-        []
-    ).appendTo(base)
-    _db.item_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
-        if (!err) {
-            var types = []
-                , sel = base_type.find('select')
-            for (var i in docs) {
-                types.push({
-                    //'value': 	docs[i]['_id'],
-                    'value': docs[i]['id'],
-                    'title': docs[i]['name']['zh_cn']
-                })
+    {
+        const base = $('<div class="base"/>').appendTo(form)
+
+        // 标准图鉴
+        const base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
+
+        _input('id', 'ID', null, { 'required': true }).appendTo(base)
+        _input('rarity', '稀有度', null, { 'required': true }).appendTo(base)
+        // 类型
+        var base_type = _frame.app_main.page['ships'].gen_form_line(
+            'select',
+            'type',
+            '类型',
+            []
+        ).appendTo(base)
+        _db.item_types.find({}).sort({ 'id': 1 }).exec(function (err, docs) {
+            if (!err) {
+                var types = []
+                    , sel = base_type.find('select')
+                for (var i in docs) {
+                    types.push({
+                        //'value': 	docs[i]['_id'],
+                        'value': docs[i]['id'],
+                        'title': docs[i]['name']['zh_cn']
+                    })
+                }
+                // 实时载入类型数据
+                _frame.app_main.page['ships'].gen_input(
+                    'select',
+                    sel.attr('name'),
+                    sel.attr('id'),
+                    types,
+                    {
+                        'default': d['type'],
+                        'new': function (select) {
+                            console.log('NEW SHIP TYPE', select)
+                        }
+                    }).insertBefore(sel)
+                sel.remove()
             }
-            // 实时载入类型数据
-            _frame.app_main.page['ships'].gen_input(
-                'select',
-                sel.attr('name'),
-                sel.attr('id'),
-                types,
-                {
-                    'default': d['type'],
-                    'new': function (select) {
-                        console.log('NEW SHIP TYPE', select)
-                    }
-                }).insertBefore(sel)
-            sel.remove()
-        }
-    })
-    var h4 = $('<h4/>').html('装备名').appendTo(base)
-    var checkbox_id = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    _input('name.ja_jp', '<small>日</small>').appendTo(base)
-    _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
-    _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
-    _input('name.zh_cn', '<small>简中</small>').appendTo(base)
-    _input('name.en_us', '<small>EN</small>').appendTo(base)
+        })
+        var h4 = $('<h4/>').html('装备名').appendTo(base)
+        var checkbox_id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        _input('name.ja_jp', '<small>日</small>').appendTo(base)
+        _input('name.ja_kana', '<small>日假名</small>').appendTo(base)
+        _input('name.ja_romaji', '<small>罗马音</small>').appendTo(base)
+        _input('name.zh_cn', '<small>简中</small>').appendTo(base)
+        _input('name.en_us', '<small>EN</small>').appendTo(base)
+    }
 
 
     // 属性
-    _stat('fire', '火力').appendTo(details_stat)
-    _stat('torpedo', '雷装').appendTo(details_stat)
-    _stat('bomb', '爆装').appendTo(details_stat)
-    _stat('asw', '对潜').appendTo(details_stat)
-    _stat('aa', '对空').appendTo(details_stat)
-    _stat('armor', '装甲').appendTo(details_stat)
-    _stat('evasion', '回避').appendTo(details_stat)
-    _stat('hit', '命中').appendTo(details_stat)
-    _stat('los', '索敌').appendTo(details_stat)
-    _stat('range', '射程').appendTo(details_stat)
-    _stat('distance', '距离').appendTo(details_stat)
+    {
+        const details_stat = $('<section data-tabname="属性"/>').appendTo(details)
 
-    $('<h4/>').html('废弃资源').appendTo(details_stat)
-    _stat('dismantle').appendTo(details_stat)
+        _stat('fire', '火力').appendTo(details_stat)
+        _stat('torpedo', '雷装').appendTo(details_stat)
+        _stat('bomb', '爆装').appendTo(details_stat)
+        _stat('asw', '对潜').appendTo(details_stat)
+        _stat('aa', '对空').appendTo(details_stat)
+        _stat('armor', '装甲').appendTo(details_stat)
+        _stat('evasion', '回避').appendTo(details_stat)
+        _stat('hit', '命中').appendTo(details_stat)
+        _stat('los', '索敌').appendTo(details_stat)
+        _stat('range', '射程').appendTo(details_stat)
+        _stat('distance', '距离').appendTo(details_stat)
+
+        $('<h4/>').html('废弃资源').appendTo(details_stat)
+        _stat('dismantle').appendTo(details_stat)
+
+        $('<h4/>').html('其他信息').appendTo(details_stat)
+        { // 可开发
+            var line = $('<p/>').appendTo(details_stat)
+                , id = '_input_g' + _g.inputIndex
+            _g.inputIndex++
+            _frame.app_main.page['ships'].gen_input(
+                'checkbox',
+                'craftable',
+                id,
+                d.craftable || false
+            ).appendTo(line)
+            $('<label for="' + id + '"/>').html('可开发').appendTo(line)
+        }
+        /*
+        { // 可提升熟练度
+            line = $('<p/>').appendTo(details_stat)
+            id = '_input_g' + _g.inputIndex
+            _g.inputIndex++
+            _frame.app_main.page['ships'].gen_input(
+                'checkbox',
+                'rankupgradable',
+                id,
+                d.rankupgradable || false
+            ).appendTo(line)
+            $('<label for="' + id + '"/>').html('可提升熟练度').appendTo(line)
+        }
+        */
+    }
 
 
-    // 开发&改修
-    var line = $('<p/>').appendTo(details_craft)
-        , id = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    _frame.app_main.page['ships'].gen_input(
-        'checkbox',
-        'craftable',
-        id,
-        d.craftable || false
-    ).appendTo(line)
-    $('<label for="' + id + '"/>').html('可开发').appendTo(line)
+    { // BONUS
+        const container = $('<section data-tabname="BONUS" data-section="stat-bonus"/>').appendTo(details)
+        const data = d.stat_bonus || []
+        const defaults = {
+            ships: [],
+            bonus: {}
+        }
+        const _bonus = (o = defaults) => {
+            const block = $('<div class="stat-bonus"/>')
 
-    line = $('<p/>').appendTo(details_craft)
-    id = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    _frame.app_main.page['ships'].gen_input(
-        'checkbox',
-        'rankupgradable',
-        id,
-        d.rankupgradable || false
-    ).appendTo(line)
-    $('<label for="' + id + '"/>').html('可提升熟练度').appendTo(line)
+            { // 舰娘列表
+                const subblock = $('<div class="block ships"/>').html('<h5>舰娘</h5>').appendTo(block)
+                const ships = o.ships || []
+                const _ship = (shipId) => {
+                    const line = $('<p class="ship"/>')
+                    _comp.selector_ship(null, null, shipId).appendTo(line)
+                    // 删除本条信息
+                    $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                        line.remove()
+                    }).appendTo(line)
+                    return line
+                }
+                ships.forEach(ship => _ship(ship).appendTo(subblock))
+                var btn_add_ship = $('<button class="add" type="button"/>').on('click', function () {
+                    _ship().insertBefore(btn_add_ship)
+                }).html('+ 舰娘').appendTo(subblock)
+            }
+
+            { // 属性
+                const subblock = $('<div class="block stats"/>').html('<h5>属性</h5>').appendTo(block)
+                const stats = o.bonus
+                const addStat = (stat, name) =>
+                    _stat(stat, name, stats[stat] || 0)
+                        .attr(`data-stat`, stat)
+                        .appendTo(subblock)
+
+                addStat('fire', '火力')
+                addStat('torpedo', '雷装')
+                addStat('bomb', '爆装')
+                addStat('asw', '对潜')
+                addStat('aa', '对空')
+                addStat('armor', '装甲')
+                addStat('evasion', '回避')
+                addStat('hit', '命中')
+                addStat('los', '索敌')
+                addStat('range', '射程')
+                addStat('distance', '距离')
+            }
+
+            // 删除本条信息
+            $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                block.remove()
+            }).appendTo(block)
+
+            return block
+        }
+
+        data.forEach(bonus =>
+            _bonus(bonus).appendTo(container)
+        )
+
+        const btn_add = $('<button class="add" type="button"/>').on('click', function () {
+            _bonus().insertBefore(btn_add)
+        }).html('+ 额外属性类别').appendTo(container)
+    }
+
 
     // 改修
-    $('<h4/>').html('改修').appendTo(details_craft)
-    for (var i = 0; i < (d['improvement'] ? d['improvement'].length : 0); i++) {
-        _improvement(d['improvement'] ? d['improvement'][i] : null).appendTo(details_craft)
+    {
+        const details_craft = $('<section data-tabname="改修"/>').appendTo(details)
+
+        // 改修
+        // $('<h4/>').html('改修').appendTo(details_craft)
+        for (var i = 0; i < (d['improvement'] ? d['improvement'].length : 0); i++) {
+            _improvement(d['improvement'] ? d['improvement'][i] : null).appendTo(details_craft)
+        }
+        var btn_add_improvement = $('<button class="add" type="button"/>').on('click', function () {
+            _improvement().insertBefore(btn_add_improvement)
+        }).html('+ 改修项目').appendTo(details_craft)
+        /*
+        var line = $('<p/>').appendTo( details_craft )
+            ,id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        _frame.app_main.page['ships'].gen_input(
+                'checkbox',
+                'improvable',
+                id,
+                d.improvable || false
+            ).appendTo(line)
+        $('<label for="'+id+'"/>').html( '可改修' ).appendTo(line)
+        for(var i=0; i<(d['upgrade_to'] ? d['upgrade_to'].length : 0); i++ ){
+            _upgrade_to(
+                (i+1),
+                d['upgrade_to'][i][0] || null,
+                d['upgrade_to'][i][1] || '0'
+            ).appendTo(details_craft)
+        }
+        var btn_add_upgrade_to = $('<button class="add" type="button"/>').on('click', function(){
+            details_craft.find('input[name="improvable"]').prop('checked', true)
+            _upgrade_to(
+                details_craft.find('input[name="upgrade_to"]').length + 1,
+                null,
+                '0'
+            ).insertBefore(btn_add_upgrade_to)
+        }).html('+ 可升级为...').appendTo(details_craft)
+        */
     }
-    var btn_add_improvement = $('<button class="add" type="button"/>').on('click', function () {
-        _improvement().insertBefore(btn_add_improvement)
-    }).html('+ 改修项目').appendTo(details_craft)
-    /*
-    var line = $('<p/>').appendTo( details_craft )
-        ,id = '_input_g' + _g.inputIndex
-    _g.inputIndex++
-    _frame.app_main.page['ships'].gen_input(
-            'checkbox',
-            'improvable',
-            id,
-            d.improvable || false
-        ).appendTo(line)
-    $('<label for="'+id+'"/>').html( '可改修' ).appendTo(line)
-    for(var i=0; i<(d['upgrade_to'] ? d['upgrade_to'].length : 0); i++ ){
-        _upgrade_to(
-            (i+1),
-            d['upgrade_to'][i][0] || null,
-            d['upgrade_to'][i][1] || '0'
-        ).appendTo(details_craft)
-    }
-    var btn_add_upgrade_to = $('<button class="add" type="button"/>').on('click', function(){
-        details_craft.find('input[name="improvable"]').prop('checked', true)
-        _upgrade_to(
-            details_craft.find('input[name="upgrade_to"]').length + 1,
-            null,
-            '0'
-        ).insertBefore(btn_add_upgrade_to)
-    }).html('+ 可升级为...').appendTo(details_craft)
-    */
 
 
     // 初装舰娘
-    var ships_equipped = {}
-    _db.ships.find({ "equip": d['id'] }, function (err, docs) {
-        for (var i in docs) {
-            if (typeof ships_equipped[docs[i]['series']] == 'undefined')
-                ships_equipped[docs[i]['series']] = []
-            ships_equipped[docs[i]['series']].push(docs[i])
-        }
-        for (var i in ships_equipped) {
-            ships_equipped[i].sort(function (a, b) {
-                return a['name']['suffix'] - b['name']['suffix']
-            })
-            for (var j in ships_equipped[i]) {
-                d['default_equipped_on'].push(ships_equipped[i][j]['id'])
-                $('<div/>')
-                    .html(
-                    '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
-                    + '[' + ships_equipped[i][j]['id'] + '] '
-                    + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
-                    + (ships_equipped[i][j]['name']['suffix']
-                        ? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
-                        : '')
-                    )
-                    .appendTo(details_equipped)
+    {
+        const details_equipped = $('<section data-tabname="初装"/>').appendTo(details)
+
+        var ships_equipped = {}
+        _db.ships.find({ "equip": d['id'] }, function (err, docs) {
+            for (var i in docs) {
+                if (typeof ships_equipped[docs[i]['series']] == 'undefined')
+                    ships_equipped[docs[i]['series']] = []
+                ships_equipped[docs[i]['series']].push(docs[i])
             }
-        }
-    });
+            for (var i in ships_equipped) {
+                ships_equipped[i].sort(function (a, b) {
+                    return a['name']['suffix'] - b['name']['suffix']
+                })
+                for (var j in ships_equipped[i]) {
+                    d['default_equipped_on'].push(ships_equipped[i][j]['id'])
+                    $('<div/>')
+                        .html(
+                        '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
+                        + '[' + ships_equipped[i][j]['id'] + '] '
+                        + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
+                        + (ships_equipped[i][j]['name']['suffix']
+                            ? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
+                            : '')
+                        )
+                        .appendTo(details_equipped)
+                }
+            }
+        });
+    }
+
 
     // 其他
-    (() => {
+    {
+        const details_misc = $('<section data-tabname="其他"/>').appendTo(details)
+
         // 补强增设
-        (() => {
+        {
             const line = $('<p/>').appendTo(details_misc)
                 , id = '_input_g' + _g.inputIndex
             _g.inputIndex++
@@ -9010,8 +9097,8 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                 d.equipable_exslot || false
             ).appendTo(line)
             $('<label for="' + id + '"/>').html('可装备于补强增设栏位').appendTo(line)
-        })();
-    })();
+        }
+    }
 
 
     // 提交等按钮
@@ -9029,9 +9116,11 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                 // 存在 _id，当前为更新操作
                 data.time_modified = _g.timeNow()
                 console.log('EDIT', data)
-                _db.items.update({
-                    '_id': d._id
-                }, {
+                _db.items.update(
+                    {
+                        '_id': d._id
+                    },
+                    {
                         $set: data
                     }, {}, function (err, numReplaced) {
                         console.log('UPDATE COMPLETE', numReplaced, data)
@@ -9043,7 +9132,8 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                             .insertBefore(oldTr)
                         oldTr.remove()
                         _frame.modal.hide()
-                    })
+                    }
+                )
             } else {
                 // 不存在 _id，当前为新建操作
                 data.time_created = _g.timeNow()
@@ -9082,69 +9172,106 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             if (data[key] === 'on') data[key] = true
         });
 
-        // 改修数据
-        data.improvable = false
-        data.upgrade_to = null
-        data['improvement'] = false
-        $form.find('.improvement').each(function (index) {
-            data.improvable = true
-            if (!data['improvement'])
-                data['improvement'] = []
-            var data_improvement = {
-                'upgrade': false,
-                'req': [],
-                'resource': [[], [], [], []]
-            }
-                , $this = $(this)
-            // upgrade
-            var upgrade = $this.find('.upgrade')
-                , upgrade_to = parseInt(upgrade.find('select').val())
-            if (!isNaN(upgrade_to)) {
-                if (!data.upgrade_to)
-                    data.upgrade_to = []
-                var base_star = parseInt($this.find('input[type="number"]').val()) || 0
-                data_improvement.upgrade = [
-                    upgrade_to,
-                    base_star
-                ]
-                data.upgrade_to.push([upgrade_to, base_star])
-            }
-            // req
-            $this.find('.require>div').each(function (i) {
-                var data_req = [[], false]
-                $(this).find('input[type="checkbox"]').each(function (weekday) {
-                    data_req[0][weekday] = $(this).prop('checked')
+        { // 额外属性数据
+            delete data.stat_bonus
+            const stat_bonus = []
+
+            $form.find('.stat-bonus').each((index, el) => {
+                let hasData = false
+
+                const data = {
+                    ships: [],
+                    bonus: {}
+                }
+                const $this = $(el)
+
+                $this.find('.ships .ship select').each((index, el) => {
+                    const value = el.value
+                    if (!value) return
+                    data.ships.push(parseInt(value))
                 })
-                $(this).find('select').each(function (shipindex) {
-                    if (!data_req[1])
-                        data_req[1] = []
-                    var val = $(this).val()
-                    if (val)
-                        data_req[1].push(parseInt(val))
+
+                $this.find('.stats [data-stat]').each((index, line) => {
+                    const $line = $(line)
+                    const stat = $line.attr('data-stat')
+                    const value = $line.find('input, select').eq(0).val()
+                    if (!value) return
+                    hasData = true
+                    data.bonus[stat] = parseInt(value)
                 })
-                data_improvement.req.push(data_req)
+
+                if (hasData)
+                    stat_bonus.push(data)
             })
-            // resource
-            $this.find('.resource').each(function (i) {
-                $(this).find('input, select').each(function (inputindex) {
-                    let val = $(this).val()
-                    if (!isNaN(val)) {
-                        val = parseInt($(this).val())
-                    }
-                    if (inputindex > 3) {
-                        if (typeof data_improvement.resource[i][4] === 'undefined')
-                            data_improvement.resource[i][4] = []
-                        if (inputindex % 2 === 0)
-                            data_improvement.resource[i][4].push([val || null])
-                        if (inputindex % 2 === 1)
-                            data_improvement.resource[i][4][data_improvement.resource[i][4].length - 1][1] = val || 0
-                    } else {
-                        data_improvement.resource[i].push(val || 0)
-                    }
+
+            if (Array.isArray(stat_bonus) && stat_bonus.length)
+                data.stat_bonus = stat_bonus
+        }
+
+        { // 改修数据
+            data.improvable = false
+            data.upgrade_to = null
+            data['improvement'] = false
+            $form.find('.improvement').each(function (index) {
+                data.improvable = true
+                if (!data['improvement'])
+                    data['improvement'] = []
+                var data_improvement = {
+                    'upgrade': false,
+                    'req': [],
+                    'resource': [[], [], [], []]
+                }
+                    , $this = $(this)
+                // upgrade
+                var upgrade = $this.find('.upgrade')
+                    , upgrade_to = parseInt(upgrade.find('select').val())
+                if (!isNaN(upgrade_to)) {
+                    if (!data.upgrade_to)
+                        data.upgrade_to = []
+                    var base_star = parseInt($this.find('input[type="number"]').val()) || 0
+                    data_improvement.upgrade = [
+                        upgrade_to,
+                        base_star
+                    ]
+                    data.upgrade_to.push([upgrade_to, base_star])
+                }
+                // req
+                $this.find('.require>div').each(function (i) {
+                    var data_req = [[], false]
+                    $(this).find('input[type="checkbox"]').each(function (weekday) {
+                        data_req[0][weekday] = $(this).prop('checked')
+                    })
+                    $(this).find('select').each(function (shipindex) {
+                        if (!data_req[1])
+                            data_req[1] = []
+                        var val = $(this).val()
+                        if (val)
+                            data_req[1].push(parseInt(val))
+                    })
+                    data_improvement.req.push(data_req)
                 })
+                // resource
+                $this.find('.resource').each(function (i) {
+                    $(this).find('input, select').each(function (inputindex) {
+                        let val = $(this).val()
+                        if (!isNaN(val)) {
+                            val = parseInt($(this).val())
+                        }
+                        if (inputindex > 3) {
+                            if (typeof data_improvement.resource[i][4] === 'undefined')
+                                data_improvement.resource[i][4] = []
+                            if (inputindex % 2 === 0)
+                                data_improvement.resource[i][4].push([val || null])
+                            if (inputindex % 2 === 1)
+                                data_improvement.resource[i][4][data_improvement.resource[i][4].length - 1][1] = val || 0
+                        } else {
+                            data_improvement.resource[i].push(val || 0)
+                        }
+                    })
+                })
+                data['improvement'].push(data_improvement)
             })
-            data['improvement'].push(data_improvement)
-        })
+        }
         // 改修升级数据
         /*
             data['improvable'] = data['improvable'] ? true : false
@@ -9167,7 +9294,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             }
         */
         console.log(data)
-        //return data
+        // return data
 
         // 写入数据库
         start_db_operate()
