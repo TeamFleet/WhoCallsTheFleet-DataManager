@@ -517,6 +517,24 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         const _bonus = (o = defaults) => {
             const block = $('<div class="stat-bonus"/>')
 
+            { // 舰级列表
+                const subblock = $('<div class="block ship-classes"/>').html('<h5>舰级</h5>').appendTo(block)
+                const classes = o.ship_classes || []
+                const genItem = (classId) => {
+                    const line = $('<p class="ship"/>')
+                    _comp.selector_ship_class(null, null, classId).appendTo(line)
+                    // 删除本条信息
+                    $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                        line.remove()
+                    }).appendTo(line)
+                    return line
+                }
+                classes.forEach(ship => genItem(ship).appendTo(subblock))
+                const btn_add_ship = $('<button class="add" type="button"/>').on('click', function () {
+                    genItem().insertBefore(btn_add_ship)
+                }).html('+ 舰级').appendTo(subblock)
+            }
+
             { // 舰娘列表
                 const subblock = $('<div class="block ships"/>').html('<h5>舰娘</h5>').appendTo(block)
                 const ships = o.ships || []
@@ -530,13 +548,13 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     return line
                 }
                 ships.forEach(ship => _ship(ship).appendTo(subblock))
-                var btn_add_ship = $('<button class="add" type="button"/>').on('click', function () {
+                const btn_add_ship = $('<button class="add" type="button"/>').on('click', function () {
                     _ship().insertBefore(btn_add_ship)
                 }).html('+ 舰娘').appendTo(subblock)
             }
 
             { // 属性
-                const subblock = $('<div class="block stats"/>').html('<h5>属性</h5>').appendTo(block)
+                const subblock = $('<div class="block stats"/>').html('<h5>附加属性</h5>').appendTo(block)
                 const stats = o.bonus
                 const addStat = (stat, name) =>
                     _stat(stat, name, stats[stat] || 0)
@@ -748,14 +766,23 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                 let hasData = false
 
                 const data = {
-                    ships: [],
                     bonus: {}
                 }
                 const $this = $(el)
 
+                $this.find('.ship-classes .ship select').each((index, el) => {
+                    const value = el.value
+                    if (!value) return
+                    if (!Array.isArray(data.ship_classes))
+                        data.ship_classes = []
+                    data.ship_classes.push(parseInt(value))
+                })
+
                 $this.find('.ships .ship select').each((index, el) => {
                     const value = el.value
                     if (!value) return
+                    if (!Array.isArray(data.ships))
+                        data.ships = []
                     data.ships.push(parseInt(value))
                 })
 
