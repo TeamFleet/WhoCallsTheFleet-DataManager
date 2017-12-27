@@ -792,7 +792,8 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     const value = $line.find('input, select').eq(0).val()
                     if (!value) return
                     hasData = true
-                    data.bonus[stat] = parseInt(value)
+                    if (parseInt(value))
+                        data.bonus[stat] = parseInt(value)
                 })
 
                 if (hasData)
