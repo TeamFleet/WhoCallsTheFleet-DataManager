@@ -312,6 +312,9 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     }
 
     const _slot = function (no, carry, equip) {
+        const equipmentId = equip && typeof equip === 'object' ? equip.id : equip
+        const equipmentStar = equip && typeof equip === 'object' ? equip.star : undefined
+
         const line = $('<p/>')
         let id = '_input_g' + _g.inputIndex
 
@@ -338,7 +341,17 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         _comp.selector_equipment(
             'equip',
             '',
-            equip
+            equipmentId
+        ).appendTo(line)
+
+        id = '_input_g' + _g.inputIndex
+        _g.inputIndex++
+        $('<label for="' + id + '"/>').html('★').appendTo(line)
+        _frame.app_main.page['ships'].gen_input(
+            'number',
+            'slot-equipment-star',
+            id,
+            equipmentStar
         ).appendTo(line)
         /*
         _frame.app_main.page['ships'].gen_input(
@@ -1111,12 +1124,6 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             , ship_next = null
             , ship_id_next = null
             , series_id = null
-            , delete_illust = false
-
-            , rels_to_parse = [
-                'cv',
-                'illustrator'
-            ]
 
             , unset = {}
 
@@ -1296,64 +1303,6 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 }
             }
         }
-        function _parse_db_rels() {
-            // data['rels']['cv']
-            function parse_rels() {
-                if (rels_to_parse.length) {
-                    _db['entities'].find({ 'id': data['rels'][rels_to_parse[0]] || -1 }, function (err, docs) {
-                        if (!err && docs && docs.length) {
-                            var entity_update_set_rels = docs[0]['rels'] || {}
-                            if (typeof entity_update_set_rels[rels_to_parse[0]] == 'undefined')
-                                entity_update_set_rels[rels_to_parse[0]] = []
-
-                            if ($.inArray(data['id'], entity_update_set_rels[rels_to_parse[0]]) < 0)
-                                entity_update_set_rels[rels_to_parse[0]].push(data['id'])
-
-                            var entity_update_set = {
-                                'rels': entity_update_set_rels
-                            }
-
-                            _db['entities'].update({
-                                '_id': docs[0]._id
-                            }, { $set: entity_update_set }, {}, function (err, numReplaced) {
-                                console.log('> ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
-                                rels_to_parse.shift()
-                                parse_rels()
-                            })
-                        } else {
-                            rels_to_parse.shift()
-                            parse_rels()
-                        }
-                    })
-                } else {
-                    _parse_db_series()
-                }
-            }
-            parse_rels()
-        }
-        function _delete_illust() {
-            if (delete_illust) {
-                var files = [
-                    '8.png',
-                    '9.png',
-                    '10.png'
-                ]
-                const _delete = function () {
-                    node.fs.unlink(_g.path.pics.ships + '/' + data['id'] + '/' + files[0], function (err) {
-                        if (files.length) {
-                            files.shift()
-                            _delete()
-                        } else {
-                            //function_queue_run()
-                            _parse_db_rels()
-                        }
-                    })
-                }
-                _delete()
-            } else {
-                _parse_db_rels()
-            }
-        }
         function start_db_operate() {
             if (_id) {
                 // 存在 _id，当前为更新操作
@@ -1427,7 +1376,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         data = $(this).serializeObject()
         data['class_no'] = parseInt(data['class_no'])
 
-        delete_illust = data['series']['illust_delete']
+        const delete_illust = data['series']['illust_delete'] || false
         if (!data['series']['illust_extra'].push)
             data['series']['illust_extra'] = [data['series']['illust_extra']]
         if (delete_illust) {
@@ -1446,16 +1395,6 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             delete data.illust_extra
             unset.illust_extra = true
         }
-
-        if (!data['slot'])
-            data['slot'] = []
-        else if (typeof data['slot'] != 'object')
-            data['slot'] = [data['slot']]
-
-        if (!data['equip'])
-            data['equip'] = []
-        else if (typeof data['equip'] != 'object')
-            data['equip'] = [data['equip']]
 
         if (typeof data['additional_item_types'] != 'object' && typeof data['additional_item_types'] != 'undefined')
             data['additional_item_types'] = [data['additional_item_types']]
@@ -1483,71 +1422,113 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         if (!data['tp']) delete data['tp']
         if (!data['navy']) delete data['navy']
 
-        // console.log(data, data['slot'], data['equip'])
-
-        // 名称
-        if (!data['name']['suffix'])
-            data['name']['suffix'] = null
-        // 存在后缀时，删除其他名称
-        /*
-            if( data['name']['suffix'] ){
-                for( var i in data['name'] ){
-                    if( i != 'suffix' )
-                        delete data['name'][i]
-                }
-            }*/
-
-        // 链接
-        data['links'] = []
-        details_misc.find('input[name="link_name"]').each(function (index) {
-            var name = $(this)
-                , line = $(this).parent()
-                , url = line.find('input[name="link_url"]').val()
-            name = name.val()
-
-            data['links'].push({
-                'name': name,
-                'url': url
-            })
-        })
-        data.link_name = null
-        data.link_url = null
-        delete data.link_name
-        delete data.link_url
-
-        // 搭载
-        var carry_num = 0
-        for (var i in data['slot']) {
-            carry_num += parseInt(data['slot'][i])
+        { // 名称
+            if (!data['name']['suffix'])
+                data['name']['suffix'] = null
+            // 存在后缀时，删除其他名称
+            /*
+                if( data['name']['suffix'] ){
+                    for( var i in data['name'] ){
+                        if( i != 'suffix' )
+                            delete data['name'][i]
+                    }
+                }*/
         }
-        data['stat']['carry'] = carry_num
 
-        // 额外能力
-        let capabilities_count = 0
-        for (let key in data.capabilities) {
-            const value = data.capabilities[key]
-            if (value === 'on')
-                data.capabilities[key] = true
-            if (value !== undefined && value !== null && value !== '') {
-                capabilities_count++
-            } else {
-                delete data.capabilities[key]
-                unset[`capabilities.${key}`] = true
+        { // 格数 & 装备 & 搭载总量
+            if (!data['slot'])
+                data['slot'] = []
+            else if (!Array.isArray(data['slot']))
+                data['slot'] = [data['slot']]
+
+            if (!data['equip'])
+                data['equip'] = []
+            else if (!Array.isArray(data['equip']))
+                data['equip'] = [data['equip']]
+
+            const {
+                // ['slot-equipment-star']: slotEquipmentStar,
+                equip,
+                slot
+            } = data
+
+            // console.log(slotEquipmentStar)
+            const slotEquipmentStar = []
+            form.find('[name="slot-equipment-star"]').each((index, el) => {
+                // console.log(el, el.value)
+                slotEquipmentStar.push(el.value)
+            })
+            // console.log(slotEquipmentStar)
+            data.equip = slot.map((carry, index) => {
+                const equipmentId = Array.isArray(equip) ? (
+                    equip[index] && typeof equip[index] === 'object'
+                        ? equip[index].id
+                        : equip[index]
+                ) : undefined
+                if (equipmentId && Array.isArray(slotEquipmentStar) && slotEquipmentStar[index]) {
+                    return {
+                        id: isNaN(equipmentId) ? undefined : parseInt(equipmentId),
+                        star: isNaN(slotEquipmentStar[index]) ? undefined : parseInt(slotEquipmentStar[index])
+                    }
+                }
+                return equipmentId || undefined
+            })
+            delete data['slot-equipment-star']
+
+            let carry_num = 0
+            for (const i in data['slot']) {
+                carry_num += parseInt(data['slot'][i])
+            }
+            data['stat']['carry'] = carry_num
+        }
+
+        { // 链接
+            data['links'] = []
+            details_misc.find('input[name="link_name"]').each(function (index) {
+                var name = $(this)
+                    , line = $(this).parent()
+                    , url = line.find('input[name="link_url"]').val()
+                name = name.val()
+
+                data['links'].push({
+                    'name': name,
+                    'url': url
+                })
+            })
+            data.link_name = null
+            data.link_url = null
+            delete data.link_name
+            delete data.link_url
+        }
+
+        { // 额外能力
+            let capabilities_count = 0
+            for (let key in data.capabilities) {
+                const value = data.capabilities[key]
+                if (value === 'on')
+                    data.capabilities[key] = true
+                if (value !== undefined && value !== null && value !== '') {
+                    capabilities_count++
+                } else {
+                    delete data.capabilities[key]
+                    unset[`capabilities.${key}`] = true
+                }
+            }
+            if (!capabilities_count) {
+                delete data.capabilities
+                unset.capabilities = true
             }
         }
-        if (!capabilities_count) {
-            delete data.capabilities
-            unset.capabilities = true
-        }
 
-        // 航速规则
-        if (_g.data.ship_classes[data.class]) {
-            if (_g.data.ship_classes[data.class].speed_rule === data.speed_rule)
+        { // 航速规则
+            if (_g.data.ship_classes[data.class]) {
+                if (_g.data.ship_classes[data.class].speed_rule === data.speed_rule)
+                    delete data.speed_rule
+            }
+            if (!data.speed_rule) {
                 delete data.speed_rule
-        }
-        if (!data.speed_rule) {
-            delete data.speed_rule
-            unset.speed_rule = true
+                unset.speed_rule = true
+            }
         }
 
         // 系列
@@ -1567,7 +1548,75 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
         //function_queue_run()
 
-        _delete_illust()
+        // 删除多余图鉴
+        new Promise(resolve => {
+            if (delete_illust) {
+                var files = [
+                    '8.png',
+                    '9.png',
+                    '10.png'
+                ]
+                const _delete = function () {
+                    node.fs.unlink(_g.path.pics.ships + '/' + data['id'] + '/' + files[0], function (err) {
+                        if (files.length) {
+                            files.shift()
+                            _delete()
+                        } else {
+                            resolve()
+                        }
+                    })
+                }
+                _delete()
+            } else {
+                resolve()
+            }
+        })
+            // 更新关系数据
+            .then(() => new Promise(resolve => {
+                const rels_to_parse = [
+                    'cv',
+                    'illustrator'
+                ]
+                const parse_rels = () => {
+                    if (rels_to_parse.length) {
+                        _db['entities'].find({ 'id': data['rels'][rels_to_parse[0]] || -1 }, function (err, docs) {
+                            if (!err && docs && docs.length) {
+                                var entity_update_set_rels = docs[0]['rels'] || {}
+                                if (typeof entity_update_set_rels[rels_to_parse[0]] == 'undefined')
+                                    entity_update_set_rels[rels_to_parse[0]] = []
+
+                                if ($.inArray(data['id'], entity_update_set_rels[rels_to_parse[0]]) < 0)
+                                    entity_update_set_rels[rels_to_parse[0]].push(data['id'])
+
+                                var entity_update_set = {
+                                    'rels': entity_update_set_rels
+                                }
+
+                                _db['entities'].update({
+                                    '_id': docs[0]._id
+                                }, { $set: entity_update_set }, {}, function (err, numReplaced) {
+                                    console.log('> ENTITY UPDATE COMPLETE', numReplaced, entity_update_set)
+                                    rels_to_parse.shift()
+                                    parse_rels()
+                                })
+                            } else {
+                                rels_to_parse.shift()
+                                parse_rels()
+                            }
+                        })
+                    } else {
+                        resolve()
+                    }
+                }
+                parse_rels()
+            }))
+
+            .then(() => {
+                _parse_db_series()
+            })
+
+        // console.log(data)
+        // return
 
     })
 

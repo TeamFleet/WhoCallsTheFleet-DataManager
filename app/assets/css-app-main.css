@@ -2392,35 +2392,31 @@ form.iteminfo > .tabview > section[data-tabname="属性"] p select ~ label {
   text-align: left;
   padding-left: 16px;
 }
-form.shipinfo > .tabview > section[data-tabname="装备"] p label,
-form.iteminfo > .tabview > section[data-tabname="装备"] p label {
-  width: 64px;
+form.shipinfo > .tabview > section[data-tabname="装备"] p,
+form.iteminfo > .tabview > section[data-tabname="装备"] p {
+  display: flex;
+  flex-flow: row nowrap;
 }
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="text"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="text"],
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="number"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="number"] {
-  width: 40px;
+form.shipinfo > .tabview > section[data-tabname="装备"] p > label,
+form.iteminfo > .tabview > section[data-tabname="装备"] p > label {
+  flex: 0 0 auto;
+  padding-left: 6px;
 }
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label,
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label,
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label,
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label {
-  width: 70px;
+form.shipinfo > .tabview > section[data-tabname="装备"] p > button,
+form.iteminfo > .tabview > section[data-tabname="装备"] p > button {
+  flex: 0 0 20px;
 }
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ input[type="text"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ input[type="text"],
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ input[type="text"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ input[type="text"],
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ input[type="number"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ input[type="number"],
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ input[type="number"],
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ input[type="number"],
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ select,
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="text"] ~ label ~ select,
-form.shipinfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ select,
-form.iteminfo > .tabview > section[data-tabname="装备"] p input[type="number"] ~ label ~ select {
-  width: calc(100% - 200px);
+form.shipinfo > .tabview > section[data-tabname="装备"] p [name="slot"],
+form.iteminfo > .tabview > section[data-tabname="装备"] p [name="slot"] {
+  flex: 0 0 40px;
+}
+form.shipinfo > .tabview > section[data-tabname="装备"] p [name="equip"],
+form.iteminfo > .tabview > section[data-tabname="装备"] p [name="equip"] {
+  flex: 1;
+}
+form.shipinfo > .tabview > section[data-tabname="装备"] p [name="slot-equipment-star"],
+form.iteminfo > .tabview > section[data-tabname="装备"] p [name="slot-equipment-star"] {
+  flex: 0 0 40px;
 }
 form.shipinfo > .tabview > section[data-tabname="其他"] p label,
 form.iteminfo > .tabview > section[data-tabname="其他"] p label {

@@ -254,21 +254,41 @@ form.iteminfo{
 				}
 			}
 			&[data-tabname="装备"]{
+				// p{
+				// 	label{
+				// 		width:		64px;
+				// 	}
+				// 	input[type="text"],
+				// 	input[type="number"]{
+				// 		width:	40px;
+				// 		&~label{
+				// 			width:		70px;
+				// 			&~input[type="text"],
+				// 			&~input[type="number"],
+				// 			&~select{
+				// 				width:	~"calc(100% - 200px)";
+				// 			}
+				// 		}
+				// 	}
+				// }
 				p{
-					label{
-						width:		64px;
+					display: flex;
+					flex-flow: row nowrap;
+					& > label{
+						flex: 0 0 auto;
+						padding-left: 6px;
 					}
-					input[type="text"],
-					input[type="number"]{
-						width:	40px;
-						&~label{
-							width:		70px;
-							&~input[type="text"],
-							&~input[type="number"],
-							&~select{
-								width:	~"calc(100% - 200px)";
-							}
-						}
+					& > button{
+						flex: 0 0 20px;
+					}
+					[name="slot"]{
+						flex: 0 0 40px;
+					}
+					[name="equip"]{
+						flex: 1;
+					}
+					[name="slot-equipment-star"]{
+						flex: 0 0 40px;
 					}
 				}
 			}
