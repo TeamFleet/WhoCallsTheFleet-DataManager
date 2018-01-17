@@ -1489,22 +1489,34 @@ _frame.app_main.page['init'].exportdata = function( form ){
             __log('= 批处理开始')
 
             function _get_ships( item_id, _id, _index ){
-                _db.ships.find({"equip": item_id}, function(err2, docs2){
-                    var ships_equipped = {}
-                    for(var j in docs2){
-                        if( typeof ships_equipped[docs2[j]['series']] == 'undefined' )
-                            ships_equipped[docs2[j]['series']] = []
-                        ships_equipped[docs2[j]['series']].push( docs2[j] )
+                const ships_equipped = {}
+                let ships = []
+                new Promise(resolve => {
+                    _db.ships.find({"equip": item_id}, function(err2, docs2){
+                        ships = ships.concat(docs2)
+                        resolve()
+                    })
+                }).then(() => new Promise(resolve => {
+                    _db.ships.find({"equip.id": item_id}, function(err2, docs2){
+                        ships = ships.concat(docs2)
+                        resolve()
+                    })
+                })).then(() => {
+                    for(const j in ships){
+                        if( typeof ships_equipped[ships[j]['series']] == 'undefined' )
+                            ships_equipped[ships[j]['series']] = []
+                        ships_equipped[ships[j]['series']].push( ships[j] )
                     }
-                    for(var j in ships_equipped){
+                    for(const j in ships_equipped){
                         ships_equipped[j].sort(function(a,b){
                             return a['name']['suffix'] - b['name']['suffix']
                         })
-                        for( var k in ships_equipped[j] ){
+                        for( const k in ships_equipped[j] ){
                             equipped_by_item_id[_id].push( ships_equipped[j][k]['id'] )
                             //d['default_equipped_on'].push( ships_equipped[j][k]['id'] )
                         }
                     }
+                }).then(() => {
                     if( _index >= length - 1 )
                         _db_do_all()
                 })
@@ -1512,7 +1524,7 @@ _frame.app_main.page['init'].exportdata = function( form ){
             function _db_do_all(){
                 function _db_do( _id, set_data, _index ){
                     _db.items.update({
-                        '_id': 		_id
+                        '_id': _id
                     },{
                         $set: set_data
                     },{}, function(err, numReplaced){
