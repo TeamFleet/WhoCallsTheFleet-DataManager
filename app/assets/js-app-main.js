@@ -2022,9 +2022,10 @@ _frame.app_main.page['init'].exportdata = function( form ){
             _g.data.ship_id_by_type.forEach(function(thisType){
                 thisType.forEach(function(shipId){
                     let thisShip = _ship[shipId]
-                        ,thisSeries = thisShip.series
-                        ,thisCV = thisShip.getRel('cv')
-                        ,thisIllustrator = thisShip.getRel('illustrator')
+                    if (!thisShip) return
+                    let thisSeries = thisShip.series
+                    let thisCV = thisShip.getRel('cv')
+                    let thisIllustrator = thisShip.getRel('illustrator')
                     
                     if( !byEntitySeriesCV[thisCV] )
                         byEntitySeriesCV[thisCV] = []					
@@ -2054,8 +2055,9 @@ _frame.app_main.page['init'].exportdata = function( form ){
                                 ,ships = typeof thisSeriesId == 'object' ? thisSeriesId : _ship_series[thisSeriesId].ships
                             ships.forEach(function(thisData){
                                 let thisShipId = thisData.id
-                                    ,thisShip = _ship[thisShipId]
-                                    ,thisRel = thisShip.getRel(t)
+                                let thisShip = _ship[thisShipId]
+                                if (!thisShip) return
+                                let thisRel = thisShip.getRel(t)
                                 if( thisRel == i )
                                     arr.push(thisShipId)
                             })
