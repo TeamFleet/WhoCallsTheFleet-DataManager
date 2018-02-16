@@ -409,15 +409,33 @@ app.component('formLine', {
     }
 })
 
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
-
-
-
+app.component('formElementCapabilities', {
+    template: `<div class="form-element-capabilities">
+    {{ $ctrl.data }}
+    {{ $ctrl.test }}
+</div>`,
+    bindings: {
+        'data': '=',
+    },
+    controller: function () {
+        const capabilities = [
+            {
+                key: 'count_as_landing_craft',
+                name: '算作：登陆艇',
+            },
+            {
+                key: 'count_as_night_operation_aviation_personnel',
+                name: '算作：夜间航空要员',
+            },
+            {
+                key: 'participate_night_battle_when_equip_swordfish',
+                name: '当装备剑鱼时可参与夜战',
+            },
+        ]
+        console.log(this)
+        // this.test = 'test'
+    }
+})
 
 app.controller('form-ship-class', ["$scope", function ($scope) {
     $scope.data = {}
@@ -436,24 +454,29 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
                 _db.ship_classes.find({
                     '_id': $scope._id
                 }, function (err, docs) {
+                    if (err) return reject(err)
                     $scope.data = docs[0]
                     if (!$scope.data.extraSlotExtra) $scope.data.extraSlotExtra = []
-                    else $scope.data.extraSlotExtra = $scope.data.extraSlotExtra.map(item => ''+item)
+                    else $scope.data.extraSlotExtra = $scope.data.extraSlotExtra.map(item => '' + item)
                     resolve()
                 })
             }).then(() => new Promise((resolve, reject) => {
-                _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec((err, docs) => {
-                    docs.forEach((doc) => {
-                        const equipment = new Equipment(doc)
-                        const typeId = equipment.type
-                        const type = _g.data.item_types[typeId].name.zh_cn
+                _db.items
+                    .find({})
+                    .sort({ 'type': 1, 'rarity': 1, 'id': 1 })
+                    .exec((err, docs) => {
+                        if (err) return reject(err)
+                        docs.forEach((doc) => {
+                            const equipment = new Equipment(doc)
+                            const typeId = equipment.type
+                            const type = _g.data.item_types[typeId].name.zh_cn
 
-                        if(!this.items[typeId]) this.items[typeId] = [type, []]
+                            if (!this.items[typeId]) this.items[typeId] = [type, []]
 
-                        this.items[typeId][1].push(equipment)
+                            this.items[typeId][1].push(equipment)
+                        })
+                        resolve()
                     })
-                    resolve()
-                })
             })).then(() => {
                 console.log($scope.data)
                 $scope.ready = true
@@ -467,7 +490,7 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
             $scope.data.extraSlotExtra.push(null)
         },
         removeExtraSlotExtra: (index) => {
-            $scope.data.extraSlotExtra.splice( index, 1 )
+            $scope.data.extraSlotExtra.splice(index, 1)
         },
         submit: function ($event) {
             let newData = Object.assign({}, $scope.data)
@@ -485,7 +508,7 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
                 },
                 {
                     $set: newData
-                }, {}, function (err, numReplaced) {
+                }, {}, function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
                     _frame.modal.hide()
                 }
@@ -538,6 +561,7 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
         }
     }
 }])
+
 if (!_g) var _g = window._g
 if (!_p) var _p = window._p
 if (!_db) var _db = window._db

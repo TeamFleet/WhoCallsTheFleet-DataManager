@@ -1,68 +1,72 @@
 <form class="ship_class loading" ng-controller="form-ship-class" ng-submit="actions.submit($event)">
-    <form-line title="'内部ID'">
-        <input type="text" ng-value="data._id" disabled="disabled" />
-    </form-line>
-    <form-line title="'ID'">
-        <input type="text" ng-value="data.id" disabled="disabled" />
-    </form-line>
-    <form-line title="'舰种ID'">
-        <input type="text" ng-value="data.ship_tye_id" disabled="disabled" />
-    </form-line>
+    <div class="wrapper">
+        <form-line title="'NeDB ID'">
+            <input type="text" ng-value="data._id" disabled="disabled" />
+        </form-line>
+        <form-line title="'ID'">
+            <input type="text" ng-value="data.id" disabled="disabled" />
+        </form-line>
+        <form-line title="'舰种ID'">
+            <input type="text" ng-value="data.ship_tye_id" disabled="disabled" />
+        </form-line>
 
-    <h3>名称</h3>
-    <form-line title="'日'">
-        <input type="text" ng-model="data.name.ja_jp" required="required">
-    </form-line>
-    <form-line title="'简中'">
-        <input type="text" ng-model="data.name.zh_cn">
-    </form-line>
-    <form-line title="'英'">
-        <input type="text" ng-model="data.name.en_us">
-    </form-line>
+        <h4>名称</h4>
+        <form-line title="'日'">
+            <input type="text" ng-model="data.name.ja_jp" required="required">
+        </form-line>
+        <form-line title="'简中'">
+            <input type="text" ng-model="data.name.zh_cn">
+        </form-line>
+        <form-line title="'英'">
+            <input type="text" ng-model="data.name.en_us">
+        </form-line>
 
-    <h3>航速规则</h3>
-    <form-line title="'规则类型'">
-        <select ng-model="data.speed_rule" required="required">
-            <optgroup label="低速舰">
-                <option value="low-1">低速A</option>
-                <option value="low-2">低速B</option>
-                <option value="low-3">低速C</option>
-            </optgroup>
-            <optgroup label="高速舰">
-                <option value="high-1">高速A</option>
-                <option value="high-2">高速B</option>
-                <option value="high-3">高速C</option>
-                <option value="high-4">高速D</option>
-            </optgroup>
-        </select>
-    </form-line>
-
-    <h3>补强增设栏位可额外装备</h3>
-    <div class="form_section">
-        <div ng-repeat="o in data.extraSlotExtra track by $index" class="line-sortable">
-            <select ng-model="data.extraSlotExtra[$index]">
-                <optgroup ng-repeat="type in items" label="{{ type[0] }}">
-                    <option ng-repeat="equipment in type[1]" value="{{ equipment.id }}">{{equipment.name.zh_cn}}</option>
+        <h4>基础信息</h4>
+        <form-line title="'海军'">
+            <select ng-model="data.navy">
+                <option value="km">纳粹德国海军 / 战争海军 (Kriegsmarine)</option>
+                <option value="rm">意大利皇家海军 (Regia Marina)</option>
+                <option value="mn">法国海军 (Marine nationale)</option>
+                <option value="rn">英国皇家海军 (Royal Navy)</option>
+                <option value="usn">美国海军 (United States Navy)</option>
+                <option value="vmf">苏联海军 (Военно-морской флот СССР)</option>
+            </select>
+        </form-line>
+        <form-line title="'规则类型'">
+            <select ng-model="data.speed_rule" required="required">
+                <optgroup label="低速舰">
+                    <option value="low-1">低速A</option>
+                    <option value="low-2">低速B</option>
+                    <option value="low-3">低速C</option>
+                </optgroup>
+                <optgroup label="高速舰">
+                    <option value="high-1">高速A</option>
+                    <option value="high-2">高速B</option>
+                    <option value="high-3">高速C</option>
+                    <option value="high-4">高速D</option>
                 </optgroup>
             </select>
-            <span class="btns">
-                <button class="delete" type="button" ng-click="actions.removeExtraSlotExtra($index)">×</button>
-            </span>
-        </div>
-        <button class="add" type="button" ng-click="actions.addExtraSlotExtra()">添加</button>
-    </div>
+        </form-line>
 
-    <h3>其他信息</h3>
-    <form-line title="'海军'">
-        <select ng-model="data.navy">
-            <option value="km">纳粹德国海军 / 战争海军 (Kriegsmarine)</option>
-            <option value="rm">意大利皇家海军 (Regia Marina)</option>
-            <option value="mn">法国海军 (Marine nationale)</option>
-            <option value="rn">英国皇家海军 (Royal Navy)</option>
-            <option value="usn">美国海军 (United States Navy)</option>
-            <option value="vmf">苏联海军 (Военно-морской флот СССР)</option>
-        </select>
-    </form-line>
+        <h4>能力</h4>
+        <form-element-capabilities>
+        </form-element-capabilities>
+
+        <h4>补强增设栏位可额外装备</h4>
+        <div class="form_section">
+            <div ng-repeat="o in data.extraSlotExtra track by $index" class="line-sortable">
+                <select ng-model="data.extraSlotExtra[$index]">
+                    <optgroup ng-repeat="type in items" label="{{ type[0] }}">
+                        <option ng-repeat="equipment in type[1]" value="{{ equipment.id }}">{{equipment.name.zh_cn}}</option>
+                    </optgroup>
+                </select>
+                <span class="btns">
+                    <button class="delete" type="button" ng-click="actions.removeExtraSlotExtra($index)">×</button>
+                </span>
+            </div>
+            <button class="add" type="button" ng-click="actions.addExtraSlotExtra()">添加</button>
+        </div>
+    </div>
 
     <p class="actions">
         <button type="submit" ng-disabled="!ready">提交</button>

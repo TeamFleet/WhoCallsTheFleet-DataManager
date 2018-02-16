@@ -44,7 +44,8 @@
         "angular": false,
         "node": false,
         "jf": false,
-        "Q": false
+        "Q": false,
+        "Equipment": false
     },
     "settings": {
         "import/ignore": [

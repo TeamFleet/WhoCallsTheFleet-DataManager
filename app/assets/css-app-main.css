@@ -944,6 +944,7 @@ html body #layout.ready.hidecontent > main {
 .modal > div > section h5,
 .modal > div > section h6 {
   color: #2cace8;
+  margin-top: 0.6em;
 }
 .modal.hastitle > div {
   border-radius: 0;
@@ -1966,6 +1967,18 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
   padding: 0.25rem 0.5rem;
   background: rgba(0, 0, 0, 0.125);
   width: 100%;
+}
+[ng-controller="form-ship-class"] {
+  display: flex;
+  flex-flow: column nowrap;
+  height: 100%;
+}
+[ng-controller="form-ship-class"] > .wrapper {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+[ng-controller="form-ship-class"] > .actions {
+  flex: 0 0 auto;
 }
 .item_types > .unit input {
   display: none;
