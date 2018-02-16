@@ -7,21 +7,22 @@ app.component('formElementCapabilities', {
         'data': '=',
     },
     controller: function () {
-        const capabilities = [
-            {
-                key: 'count_as_landing_craft',
-                name: '算作：登陆艇',
-            },
-            {
-                key: 'count_as_night_operation_aviation_personnel',
-                name: '算作：夜间航空要员',
-            },
-            {
-                key: 'participate_night_battle_when_equip_swordfish',
-                name: '当装备剑鱼时可参与夜战',
-            },
-        ]
         console.log(this)
         // this.test = 'test'
+        _g.shipCapabilities.forEach(obj => {
+            let value = undefined
+            switch (obj.type) {
+                case 'select': {
+                    value = obj.values || []
+                    break
+                }
+            }
+            _frame.app_main.page['ships'].gen_form_line(
+                obj.type || 'checkbox',
+                `capabilities.${obj.key}`,
+                obj.name,
+                value
+            ).appendTo($('<p/>'))
+        })
     }
 })

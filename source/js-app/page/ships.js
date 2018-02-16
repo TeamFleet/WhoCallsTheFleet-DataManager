@@ -1042,27 +1042,26 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
     })();
 
     // 额外
-    // 基础
-    (() => {
+    { // 特殊能力
         $('<h4/>').html('额外属性').appendTo(details_extra)
-        _frame.app_main.page['ships'].gen_form_line(
-            'number',
-            'capabilities.count_as_landing_craft',
-            '算作：登陆艇',
-            d.capabilities ? d.capabilities.count_as_landing_craft : undefined
-        ).appendTo($('<p/>').appendTo(details_extra))
-        _frame.app_main.page['ships'].gen_form_line(
-            'number',
-            'capabilities.count_as_night_operation_aviation_personnel',
-            '算作：夜间航空要员',
-            d.capabilities ? d.capabilities.count_as_night_operation_aviation_personnel : undefined
-        ).appendTo($('<p/>').appendTo(details_extra))
-        _frame.app_main.page['ships'].gen_form_line(
-            'checkbox',
-            'capabilities.participate_night_battle_when_equip_swordfish',
-            '当装备剑鱼时可参与夜战',
-            d.capabilities ? d.capabilities.participate_night_battle_when_equip_swordfish : undefined
-        ).appendTo($('<p/>').appendTo(details_extra))
+        const {
+            capabilities = {}
+        } = d
+        _g.shipCapabilities.forEach(obj => {
+            let value = capabilities[obj.key]
+            switch (obj.type) {
+                case 'select': {
+                    value = obj.values || []
+                    break
+                }
+            }
+            _frame.app_main.page['ships'].gen_form_line(
+                obj.type || 'checkbox',
+                `capabilities.${obj.key}`,
+                obj.name,
+                value
+            ).appendTo($('<p/>').appendTo(details_extra))
+        })
         // let line_additional_night_shelling = $('<p/>').appendTo(details_extra)
         //     , id_additional_night_shelling = '_input_g' + _g.inputIndex
         // _g.inputIndex++
@@ -1074,7 +1073,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         // ).appendTo(line_additional_night_shelling)
         // $('<label for="' + id_additional_night_shelling + '"/>').html('[CV] 夜战炮击能力').appendTo(line_additional_night_shelling)
         // _input('tp', 'TP').appendTo($('<p/>').appendTo(details_extra))
-    })();
+    }
 
     // 修改舰级航速规则
     (() => {
@@ -2083,9 +2082,9 @@ _frame.app_main.page['ships'].section['未入库'] = {
                 }
                 $('<th/>')
                     .html(
-                    '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
-                    + '<strong>' + ship_data['name'] + '</strong>'
-                    //+ '<small>' + ship_data['pron'] + '</small>'
+                        '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
+                        + '<strong>' + ship_data['name'] + '</strong>'
+                        //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)
 
                 //$('<td/>').html(ship_data['id'] + ' / ' + ship_data['no']).appendTo(tr)
@@ -2500,18 +2499,18 @@ _frame.app_main.page['ships'].section['新建'] = {
         _g.inputIndex++
         $('<p/>')
             .append(
-            $('<label for="' + id + '"/>').html('ID')
+                $('<label for="' + id + '"/>').html('ID')
             )
             .append(
-            $('<input id="' + id + '" type="number" name="id"/>')
+                $('<input id="' + id + '" type="number" name="id"/>')
             )
             .appendTo(self.dom.form)
         $('<p/>')
             .append(
-            $('<label for="' + id + '"/>').html('图鉴ID')
+                $('<label for="' + id + '"/>').html('图鉴ID')
             )
             .append(
-            $('<input id="' + id + '" type="number" name="no"/>')
+                $('<input id="' + id + '" type="number" name="no"/>')
             )
             .appendTo(self.dom.form)
 
@@ -2519,7 +2518,7 @@ _frame.app_main.page['ships'].section['新建'] = {
         _g.inputIndex++
         var remodelFrom = $('<p/>')
             .append(
-            $('<label for="' + id + '"/>').html('改造自')
+                $('<label for="' + id + '"/>').html('改造自')
             )
             .appendTo(self.dom.form)
         _comp.selector_ship('remodel_from', id).appendTo(remodelFrom)
@@ -2548,7 +2547,7 @@ _frame.app_main.page['ships'].section['新建'] = {
 
         $('<p class="actions"/>')
             .append(
-            $('<button type="submit"/>').html('新建')
+                $('<button type="submit"/>').html('新建')
             )
             .appendTo(self.dom.form)
 
