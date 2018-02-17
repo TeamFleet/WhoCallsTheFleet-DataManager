@@ -7,7 +7,7 @@
             <input type="text" ng-value="data.id" disabled="disabled" />
         </form-line>
         <form-line title="'舰种ID'">
-            <input type="text" ng-value="data.ship_tye_id" disabled="disabled" />
+            <input type="text" ng-value="data.ship_type_id" disabled="disabled" />
         </form-line>
 
         <h4>名称</h4>
@@ -49,7 +49,7 @@
         </form-line>
 
         <h4>能力</h4>
-        <form-element-capabilities>
+        <form-element-capabilities data="data.capabilities">
         </form-element-capabilities>
 
         <h4>补强增设栏位可额外装备</h4>

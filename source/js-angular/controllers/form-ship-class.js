@@ -55,11 +55,35 @@ app.controller('form-ship-class', function ($scope) {
         },
         submit: function ($event) {
             let newData = Object.assign({}, $scope.data)
+            const unset = {}
 
             if (newData.extraSlotExtra && newData.extraSlotExtra.length)
                 newData.extraSlotExtra = newData.extraSlotExtra.filter(item => item ? true : false).map(item => parseInt(item))
             if (newData.extraSlotExtra && !newData.extraSlotExtra.length)
                 delete newData.extraSlotExtra
+
+            { // 能力
+                let count = 0
+                for (const key in newData.capabilities) {
+                    const value = newData.capabilities[key]
+                    if (value === 'on')
+                        newData.capabilities[key] = true
+                    if (value !== undefined && value !== null && value !== '') {
+                        count++
+                    } else {
+                        delete newData.capabilities[key]
+                        unset[`capabilities.${key}`] = true
+                    }
+                    if (value === false)
+                        delete newData.capabilities[key]
+                    else
+                        count++
+                }
+                if (!count) {
+                    delete newData.capabilities
+                    unset.capabilities = true
+                }
+            }
 
             console.log('form-ship-class submitting', $scope._id, newData, $event)
             // return;
@@ -68,7 +92,8 @@ app.controller('form-ship-class', function ($scope) {
                     '_id': $scope._id
                 },
                 {
-                    $set: newData
+                    $set: newData,
+                    $unset: unset,
                 }, {}, function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
                     _frame.modal.hide()

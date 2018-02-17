@@ -411,30 +411,47 @@ app.component('formLine', {
 
 app.component('formElementCapabilities', {
     template: `<div class="form-element-capabilities">
-    {{ $ctrl.data }}
-    {{ $ctrl.test }}
+    <fieldset class="set" ng-switch="set.type" ng-repeat="set in $ctrl.capabilities track by $index">
+        <legend>{{ set.name }}</legend>
+        <label ng-switch-when="checkbox">
+            <input type="checkbox" ng-model="$ctrl.data[set.key]" />
+        </label>
+        <label ng-switch-when="select">
+            <select ng-model="$ctrl.data[set.key]">
+                <option ng-repeat="value in set.values" value="{{ value.value }}">{{value.name}}</option>
+            </select>
+        </label>
+        <label ng-switch-default>
+            <input type="{{ set.type }}" ng-model="$ctrl.data[set.key]" />
+        </label>
+    </fieldset>
 </div>`,
     bindings: {
         'data': '=',
     },
     controller: function () {
-        console.log(this)
+        if (typeof this.data !== 'object')
+            this.data = {}
         // this.test = 'test'
-        _g.shipCapabilities.forEach(obj => {
-            let value = undefined
-            switch (obj.type) {
-                case 'select': {
-                    value = obj.values || []
-                    break
-                }
-            }
-            _frame.app_main.page['ships'].gen_form_line(
-                obj.type || 'checkbox',
-                `capabilities.${obj.key}`,
-                obj.name,
-                value
-            ).appendTo($('<p/>'))
-        })
+        this.capabilities = _g.shipCapabilities
+        // setTimeout(() => {
+        //     _g.shipCapabilities.forEach(obj => {
+        //         let value = undefined
+        //         switch (obj.type) {
+        //             case 'select': {
+        //                 value = obj.values || []
+        //                 break
+        //             }
+        //         }
+        //         _frame.app_main.page['ships'].gen_form_line(
+        //             obj.type || 'checkbox',
+        //             `capabilities.${obj.key}`,
+        //             obj.name,
+        //             value
+        //         ).appendTo($('<p/>'))
+        //     })
+        // })
+        // console.log(this)
     }
 })
 
@@ -495,11 +512,35 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
         },
         submit: function ($event) {
             let newData = Object.assign({}, $scope.data)
+            const unset = {}
 
             if (newData.extraSlotExtra && newData.extraSlotExtra.length)
                 newData.extraSlotExtra = newData.extraSlotExtra.filter(item => item ? true : false).map(item => parseInt(item))
             if (newData.extraSlotExtra && !newData.extraSlotExtra.length)
                 delete newData.extraSlotExtra
+
+            { // 能力
+                let count = 0
+                for (const key in newData.capabilities) {
+                    const value = newData.capabilities[key]
+                    if (value === 'on')
+                        newData.capabilities[key] = true
+                    if (value !== undefined && value !== null && value !== '') {
+                        count++
+                    } else {
+                        delete newData.capabilities[key]
+                        unset[`capabilities.${key}`] = true
+                    }
+                    if (value === false)
+                        delete newData.capabilities[key]
+                    else
+                        count++
+                }
+                if (!count) {
+                    delete newData.capabilities
+                    unset.capabilities = true
+                }
+            }
 
             console.log('form-ship-class submitting', $scope._id, newData, $event)
             // return;
@@ -508,7 +549,8 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
                     '_id': $scope._id
                 },
                 {
-                    $set: newData
+                    $set: newData,
+                    $unset: unset,
                 }, {}, function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
                     _frame.modal.hide()
@@ -563,18 +605,7 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
     }
 }])
 
-if (!_g) var _g = window._g
-if (!_p) var _p = window._p
-if (!_db) var _db = window._db
-if (!_frame) var _frame = window._frame
-if (!app) var app = window.app
-if (!angular) var angular = window.angular
-
-
-
-
 app.controller('form-ship-type', ["$scope", function ($scope) {
-    /*
     $scope.data = {}
     $scope.ready = true
 
@@ -588,27 +619,30 @@ app.controller('form-ship-type', ["$scope", function ($scope) {
         } else {
             $scope.ready = false
             new Promise((resolve, reject) => {
-                _db.ship_classes.find({
+                _db.ship_types.find({
                     '_id': $scope._id
                 }, function (err, docs) {
+                    if (err) return reject(err)
                     $scope.data = docs[0]
-                    if (!$scope.data.extraSlotExtra) $scope.data.extraSlotExtra = []
-                    else $scope.data.extraSlotExtra = $scope.data.extraSlotExtra.map(item => ''+item)
                     resolve()
                 })
             }).then(() => new Promise((resolve, reject) => {
-                _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec((err, docs) => {
-                    docs.forEach((doc) => {
-                        const equipment = new Equipment(doc)
-                        const typeId = equipment.type
-                        const type = _g.data.item_types[typeId].name.zh_cn
+                _db.items
+                    .find({})
+                    .sort({ 'type': 1, 'rarity': 1, 'id': 1 })
+                    .exec((err, docs) => {
+                        if (err) return reject(err)
+                        docs.forEach((doc) => {
+                            const equipment = new Equipment(doc)
+                            const typeId = equipment.type
+                            const type = _g.data.item_types[typeId].name.zh_cn
 
-                        if(!this.items[typeId]) this.items[typeId] = [type, []]
+                            if (!this.items[typeId]) this.items[typeId] = [type, []]
 
-                        this.items[typeId][1].push(equipment)
+                            this.items[typeId][1].push(equipment)
+                        })
+                        resolve()
                     })
-                    resolve()
-                })
             })).then(() => {
                 console.log($scope.data)
                 $scope.ready = true
@@ -618,37 +652,51 @@ app.controller('form-ship-type', ["$scope", function ($scope) {
     }
 
     $scope.actions = {
-        addExtraSlotExtra: () => {
-            $scope.data.extraSlotExtra.push(null)
-        },
-        removeExtraSlotExtra: (index) => {
-            $scope.data.extraSlotExtra.splice( index, 1 )
-        },
         submit: function ($event) {
             let newData = Object.assign({}, $scope.data)
+            const unset = {}
 
-            if (newData.extraSlotExtra && newData.extraSlotExtra.length)
-                newData.extraSlotExtra = newData.extraSlotExtra.filter(item => item ? true : false).map(item => parseInt(item))
-            if (newData.extraSlotExtra && !newData.extraSlotExtra.length)
-                delete newData.extraSlotExtra
+            { // 能力
+                let count = 0
+                for (const key in newData.capabilities) {
+                    const value = newData.capabilities[key]
+                    if (value === 'on')
+                        newData.capabilities[key] = true
+                    if (value !== undefined && value !== null && value !== '') {
+                        count++
+                    } else {
+                        delete newData.capabilities[key]
+                        unset[`capabilities.${key}`] = true
+                    }
+                    if (value === false)
+                        delete newData.capabilities[key]
+                    else
+                        count++
+                }
+                if (!count) {
+                    delete newData.capabilities
+                    unset.capabilities = true
+                }
+            }
 
-            console.log('form-ship-class submitting', $scope._id, newData, $event)
+            console.log('form-ship-type submitting', $scope._id, newData, $event)
             // return;
-            _db.ship_classes.update(
+            _db.ship_types.update(
                 {
                     '_id': $scope._id
                 },
                 {
-                    $set: newData
-                }, {}, function (err, numReplaced) {
+                    $set: newData,
+                    $unset: unset,
+                }, {}, function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
                     _frame.modal.hide()
                 }
             );
         }
     }
-    */
 }])
+
 app.factory('dbExillustTypesUpdate', () => {
     return {
         update: function () {

@@ -2008,6 +2008,17 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
 .item_types > .unit input:checked ~ label span {
   background-color: rgba(0, 0, 0, 0.5);
 }
+.form-element-capabilities {
+  display: flex;
+  flex-flow: row wrap;
+}
+.form-element-capabilities .set {
+  flex: 1;
+  margin: 0 10px 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 5px;
+}
 .new_container,
 .toolbar {
   width: 100%;
