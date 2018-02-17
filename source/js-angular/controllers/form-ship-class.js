@@ -66,7 +66,7 @@ app.controller('form-ship-class', function ($scope) {
                 let count = 0
                 for (const key in newData.capabilities) {
                     const value = newData.capabilities[key]
-                    if (value === 'on')
+                    if (value === 'on' || value === 'true')
                         newData.capabilities[key] = true
                     if (value !== undefined && value !== null && value !== '') {
                         count++
