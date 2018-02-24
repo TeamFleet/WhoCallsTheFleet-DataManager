@@ -13,7 +13,12 @@ _g.shipCapabilities = [
     },
     {
         key: 'participate_night_battle_when_equip_swordfish',
-        name: '当装备剑鱼时可参与夜战',
+        name: '[CV] 当装备剑鱼时可参与夜战',
+        type: 'checkbox',
+    },
+    {
+        key: 'attack_surface_ship_prioritised',
+        name: '[CV] 优先攻击水面舰',
         type: 'checkbox',
     },
     {
