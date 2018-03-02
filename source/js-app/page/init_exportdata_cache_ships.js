@@ -43,8 +43,8 @@ _g.fleetLeyte = {
 
         '能代', '矢矧',
 
-        '島風', '早霜', '藤波', '沖波', '長波', '朝霜',
-        '浦風', '磯風', '雪風', '野分',
+        '島風', '早霜', '藤波', '沖波', '長波',
+        '浦風', '磯風', '浜風', '雪風', '野分', '清霜',
     ],
     // 小泽
     ozawa: [
@@ -59,15 +59,17 @@ _g.fleetLeyte = {
     ],
     // 志摩
     shima: [
-        '那智', '足柄', '阿武隈', '曙', '潮', '霞', '不知火',
+        '那智', '足柄', '青葉',
+        '鬼怒',
+        '曙', '潮', '霞', '不知火', '初春', '若葉', '初霜', '浦波',
     ],
-    // 志摩 (运输)
-    shima_transport: [
-        '若葉', '初霜', '初春',
-    ],
-    // 第16战队 (运兵)
-    squadron16: [
-        '青葉', '鬼怒', '浦波',
+    // 多号作战
+    ta_go: [
+        '青葉',
+        '鬼怒',
+        '卯月', '曙', '潮', '霞', '島風', '初春', '初霜', '長波', '沖波', '朝霜', '浦波', '若葉',
+        'まるゆ',
+        '占守',
     ],
 }
 
@@ -473,15 +475,18 @@ class TablelistShips_v2 extends Tablelist {
         }
 
         // 检查莱特湾海战所属部队
+        const fleets = []
         for (const fleet in _g.fleetLeyte) {
             _g.fleetLeyte[fleet].some(name_ja => {
                 if (ship_data.name.ja_jp == name_ja) {
-                    tr.attr('data-leyte-fleet', fleet)
+                    fleets.push('|' + fleet + '|')
                     return true
                 }
                 return false
             })
         }
+        if (fleets.length)
+            tr.attr('data-leyte-fleet', fleets.join(''))
 
         this.last_type_items = this.last_type_items.add(tr)
 
