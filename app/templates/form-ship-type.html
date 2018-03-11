@@ -31,6 +31,9 @@
         <form-line suffix="'不参与属性表对比'">
             <input type="checkbox" ng-model="data.donotcompare" />
         </form-line>
+        <form-line title="'TP'">
+            <input type="number" step="0.1" ng-model="data.tp" />
+        </form-line>
 
         <h4>能力</h4>
         <form-element-capabilities data="data.capabilities">
