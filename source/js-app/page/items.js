@@ -1095,6 +1095,10 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
     }
     self.field_input_text('id_ingame', 'ID (in-game)', is_edit ? data_edit.id_ingame : null).appendTo(input_container)
 
+    $('<br/>').appendTo(input_container)
+
+    self.field_input_text('tp', 'TP', is_edit ? data_edit.tp : null).appendTo(input_container)
+
     $('<h4/>').html('图标').appendTo(input_container)
     // icon
     // 扫描图标目录，生成选择项
