@@ -8862,7 +8862,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         // 固定资源
         line = $('<p class="resource resource-all"/>')
             .append(
-            $('<h5/>').html('资源消费')
+                $('<h5/>').html('资源消费')
             ).appendTo(block)
 
         id = _g.newInputIndex()
@@ -8910,7 +8910,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             }
             line = $('<p class="resource resource-mat"/>')
                 .append(
-                $('<h5/>').html(title)
+                    $('<h5/>').html(title)
                 ).appendTo(block)
 
             id = _g.newInputIndex()
@@ -9251,12 +9251,12 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     d['default_equipped_on'].push(ships_equipped[i][j]['id'])
                     $('<div/>')
                         .html(
-                        '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
-                        + '[' + ships_equipped[i][j]['id'] + '] '
-                        + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
-                        + (ships_equipped[i][j]['name']['suffix']
-                            ? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
-                            : '')
+                            '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
+                            + '[' + ships_equipped[i][j]['id'] + '] '
+                            + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
+                            + (ships_equipped[i][j]['name']['suffix']
+                                ? '・' + _g.data.ship_namesuffix[ships_equipped[i][j]['name']['suffix']]['zh_cn']
+                                : '')
                         )
                         .appendTo(details_equipped)
                 }
@@ -9695,7 +9695,8 @@ _frame.app_main.page['items'].gen_form_new_item_type = function (callback, data_
 
     $('<br/>').appendTo(input_container)
 
-    self.field_input_text('tp', 'TP', is_edit ? data_edit.tp : null).appendTo(input_container)
+    const fieldTP = self.field_input_text('tp', 'TP', is_edit ? data_edit.tp : null).appendTo(input_container)
+    fieldTP.find('input').prop('required', false)
 
     $('<h4/>').html('图标').appendTo(input_container)
     // icon
@@ -10009,7 +10010,7 @@ _frame.app_main.page['items'].section['未入库'] = {
         self.dom.list.appendDOM(
             $('<button class="unit newitem" data-itemid="' + id + '" data-itemmodal="false"/>')
                 .append(
-                $('<span><img src="../pics/items/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
+                    $('<span><img src="../pics/items/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
                 )
                 .on('click', function (e, data_modified) {
                     //console.log( data )
@@ -10259,16 +10260,16 @@ _frame.app_main.page['items'].section['新建'] = {
         _g.inputIndex++
         $('<p/>')
             .append(
-            $('<label for="' + id + '"/>').html('ID')
+                $('<label for="' + id + '"/>').html('ID')
             )
             .append(
-            $('<input id="' + id + '" type="number" name="id"/>')
+                $('<input id="' + id + '" type="number" name="id"/>')
             )
             .appendTo(self.dom.form)
 
         $('<p class="actions"/>')
             .append(
-            $('<button type="submit"/>').html('新建')
+                $('<button type="submit"/>').html('新建')
             )
             .appendTo(self.dom.form)
 
