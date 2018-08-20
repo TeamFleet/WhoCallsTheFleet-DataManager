@@ -656,6 +656,7 @@ _frame.app_main.page['gamedata'].init_slotitem = function (data) {
                             }
 
                             // base
+                            getApiData('name.ja_jp', 'name')
                             getApiData('rarity', 'rare')
                             // stat
                             getApiData('stat.fire', 'houg')

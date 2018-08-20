@@ -27,7 +27,7 @@
   z-index: 101;
   text-align: center;
   color: #aaa;
-  letter-spacing: .15em;
+  letter-spacing: 0.15em;
   text-shadow: 0.1rem 0.1rem 0 transparent;
   font-size: 3.2rem;
   opacity: 1;
@@ -52,7 +52,7 @@
     transform: scale(1);
   }
   40% {
-    opacity: .25;
+    opacity: 0.25;
     transform: scale(0.75);
   }
   100% {
@@ -66,7 +66,7 @@
     -webkit-transform: scale(1);
   }
   40% {
-    opacity: .25;
+    opacity: 0.25;
     -webkit-transform: scale(0.75);
   }
   100% {
@@ -798,7 +798,7 @@ html body #layout > main:before {
   z-index: -1;
   width: 100%;
   background: url(../../app/assets/images/parchment-1.jpg);
-  opacity: .95;
+  opacity: 0.95;
   border: 0.05rem solid #cfa20a;
   border-right-width: 0;
   mask-repeat: no-repeat;
@@ -1345,7 +1345,7 @@ html body #layout.ready.hidecontent > main {
   z-index: 2;
   display: inline-block;
   margin-right: 1em;
-  padding: 0 .4em;
+  padding: 0 0.4em;
   line-height: 1.2000000000000002rem;
   transition-property: text-shadow;
   text-shadow: -0.1rem -0.1rem 0.025rem #333, -0.1rem 0rem 0.05rem #333, -0.1rem 0.1rem 0.025rem #333, 0rem -0.1rem 0.05rem #333, 0rem 0rem 0.075rem #333, 0rem 0.1rem 0.05rem #333, 0.1rem -0.1rem 0.025rem #333, 0.1rem 0rem 0.05rem #333, 0.1rem 0.1rem 0.025rem #333;
@@ -1367,7 +1367,7 @@ html body #layout.ready.hidecontent > main {
 .tabview > header > label:before {
   width: 0.15000000000000002rem;
   height: 100%;
-  left: .15em;
+  left: 0.15em;
   top: 0;
 }
 .tabview > section {
@@ -1444,12 +1444,12 @@ table tbody th {
   vertical-align: middle;
 }
 table tbody th {
-  padding: .25em 0;
+  padding: 0.25em 0;
   text-align: left;
 }
 table tbody td {
   text-align: right;
-  padding: .25em .5em .25em .25em;
+  padding: 0.25em 0.5em 0.25em 0.25em;
 }
 table.hashover tbody tr[data-shipid]:hover,
 table.hashover tbody tr[data-itemid]:hover {
@@ -1474,9 +1474,9 @@ table.items tbody tr.typetitle th {
 }
 table.ships tbody tr.typetitle th small,
 table.items tbody tr.typetitle th small {
-  padding-left: .5em;
+  padding-left: 0.5em;
   font-size: 75%;
-  opacity: .75;
+  opacity: 0.75;
 }
 table.ships tbody tr[data-shipid] th,
 table.items tbody tr[data-shipid] th {
@@ -1510,24 +1510,24 @@ table.items tbody tr[data-shipid] th strong {
 table.ships tbody tr[data-shipid] th strong small,
 table.items tbody tr[data-shipid] th strong small {
   font-weight: normal;
-  opacity: .75;
+  opacity: 0.75;
   font-size: 0.6000000000000001rem;
   display: block;
   line-height: 1em;
-  padding: 0 0 0 .25em;
+  padding: 0 0 0 0.25em;
 }
 table.ships tbody tr[data-shipid] td sup,
 table.items tbody tr[data-shipid] td sup {
-  opacity: .75;
+  opacity: 0.75;
   font-size: 0.55rem;
   line-height: 1em;
-  padding: 0 0 0 .25em;
+  padding: 0 0 0 0.25em;
   vertical-align: super;
 }
 table.ships tbody tr[data-shipid] td small.zero,
 table.items tbody tr[data-shipid] td small.zero {
   font-size: 0.55rem;
-  opacity: .5;
+  opacity: 0.5;
 }
 table.ships tbody tr[data-itemid] th,
 table.items tbody tr[data-itemid] th {
@@ -1579,8 +1579,8 @@ table.items tbody tr[data-itemid] th span {
 			}*/
   }
   table.ships tbody td {
-    padding-right: .25em;
-    padding-left: .15em;
+    padding-right: 0.25em;
+    padding-left: 0.15em;
   }
 }
 @media all and (max-width: 660px) {
@@ -1623,7 +1623,7 @@ input[type="submit"] {
   box-shadow: inset 0 0 3px #fff;
   border-radius: 5px;
   line-height: 1rem;
-  padding: 0 .5em;
+  padding: 0 0.5em;
   text-align: center;
   transition-property: background;
 }
@@ -1687,7 +1687,7 @@ form section.form_section .line-sortable > span.btns button[type="button"]:last-
 }
 form section.form_section .line-sortable.first > span.btns > button[type="button"].up,
 form section.form_section .line-sortable.last > span.btns > button[type="button"].down {
-  opacity: .5;
+  opacity: 0.5;
   background-color: inherit !important;
 }
 .tabview > section.shiplist,
@@ -1913,7 +1913,7 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
 .modal form.itemform > div p > label > span {
   display: inline-block;
   width: 3.5em;
-  padding-right: .5em;
+  padding-right: 0.5em;
   text-align: right;
 }
 .modal form.itemform > div h4 {
@@ -2028,14 +2028,14 @@ form section.form_section .line-sortable.last > span.btns > button[type="button"
   background: rgba(0, 0, 0, 0.5);
   border-top: 0.05rem solid #997904;
   border-bottom: 0.05rem solid #f0eaab;
-  padding: 0 .85em;
+  padding: 0 0.85em;
   flex: 0 0 30px;
 }
 .new_container button,
 .toolbar button {
   color: #fff;
-  margin-right: .7em;
-  padding: 0 .25em;
+  margin-right: 0.7em;
+  padding: 0 0.25em;
   transition-property: text-shadow;
 }
 .new_container button:hover,
@@ -2079,19 +2079,19 @@ form.new_entity .avatar div:before {
   left: 0;
   z-index: 2;
   line-height: 1.5;
-  padding: 0 .35em;
+  padding: 0 0.35em;
   font-size: 14px;
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
 }
 form.new_entity .avatar div.new {
-  background-color: rgba(32, 223, 128, 0.5);
+  background-color: hsla(150, 75%, 50%, 0.5);
 }
 form.new_entity .avatar div.new:before {
   content: '新';
 }
 form.new_entity .avatar div.old {
-  background-color: rgba(223, 32, 32, 0.5);
+  background-color: hsla(0, 75%, 50%, 0.5);
 }
 form.new_entity .avatar div.old:before {
   content: '旧';
@@ -2336,7 +2336,7 @@ form.shipinfo > .base p input[type="number"],
 form.iteminfo > .base p input[type="number"],
 form.shipinfo > .base p select,
 form.iteminfo > .base p select {
-  width: calc(66%);
+  width: calc(70% - 4px);
   float: right;
 }
 form.shipinfo > .base label.name_suffix,
@@ -2586,7 +2586,7 @@ form.iteminfo > p.actions {
   margin: 0.75rem 0.75rem 0rem 0rem;
   flex-basis: 8.75rem;
   transition-property: opacity;
-  opacity: .75;
+  opacity: 0.75;
 }
 #layout > main > .page[page="items"] > .tabview > section[data-tabname="未入库"] .main .newitems > .unit.newitem > span,
 #layout > main > .page[page="items"] > .tabview > section[data-tabname="类型"] .main .newitems > .unit.newitem > span,
@@ -2913,14 +2913,14 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"].updating,
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"].updating {
-  opacity: .25;
+  opacity: 0.25;
   pointer-events: none;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item {
   display: flex;
   flex-flow: row nowrap;
-  padding: .5em .25em .5em 0;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+  padding: 0.5em 0.25em 0.5em 0;
+  border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .name,
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .time {
@@ -2942,8 +2942,8 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   margin-left: -1px;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button.edit {
-  padding-left: .5em;
-  padding-right: .5em;
+  padding-left: 0.5em;
+  padding-right: 0.5em;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button:first-of-type {
   border-top-left-radius: 5px;
@@ -2954,7 +2954,7 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   border-bottom-right-radius: 5px;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-types"] .list .item .btns button[disabled] {
-  opacity: .5;
+  opacity: 0.5;
   background-color: rgba(0, 0, 0, 0.5);
   pointer-events: none;
 }
@@ -2996,8 +2996,8 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   overflow-y: auto;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item {
-  border-left: 1px solid rgba(128, 128, 128, 0.5);
-  border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+  border-left: 1px solid hsla(0, 0%, 50%, 0.5);
+  border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   padding: 1em 0;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .item img {
@@ -3017,7 +3017,7 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body[data-type="unassigned"] .item {
   display: block;
   flex: 1 0 100px;
-  padding: .5em;
+  padding: 0.5em;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body:not([data-type="unassigned"]) {
   display: flex;
@@ -3027,7 +3027,7 @@ form.iteminfo > .tabview > section[data-tabname="开发&改修"] p select[name="
   display: flex;
   flex-flow: row nowrap;
   flex: 1 0 100px;
-  padding: .5em;
+  padding: 0.5em;
 }
 #layout > main > .page[page="exillust"] [ng-controller="page-exillust-illusts"] .body:not([data-type="unassigned"]) .item img {
   flex: 1;

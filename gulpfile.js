@@ -47,7 +47,7 @@ function parseKoalaJS() {
         })
         .map(function (value) {
             if (value)
-                return path.join(dir, value.replace(/^\"(.+)\"$/g, '$1'))
+                return path.join(dir, value.replace(/^"(.+)"$/g, '$1'))
         });
 }
 
@@ -95,7 +95,7 @@ gulp.task('js-base', function () {
             'ast':				false
         }))
         */
-        .pipe(uglify())
+        // .pipe(uglify())
         .pipe(gulp.dest(dirOutput))
     //.pipe( notify("[COMPLETE] <%= file.relative %>!") );
     /*

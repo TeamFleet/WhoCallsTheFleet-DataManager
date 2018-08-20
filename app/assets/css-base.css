@@ -150,7 +150,7 @@ img {
   z-index: 101;
   text-align: center;
   color: #aaa;
-  letter-spacing: .15em;
+  letter-spacing: 0.15em;
   text-shadow: 0.1rem 0.1rem 0 transparent;
   font-size: 3.2rem;
   opacity: 1;
@@ -175,7 +175,7 @@ img {
     transform: scale(1);
   }
   40% {
-    opacity: .25;
+    opacity: 0.25;
     transform: scale(0.75);
   }
   100% {
@@ -189,7 +189,7 @@ img {
     -webkit-transform: scale(1);
   }
   40% {
-    opacity: .25;
+    opacity: 0.25;
     -webkit-transform: scale(0.75);
   }
   100% {
@@ -805,7 +805,7 @@ body > .menus > .menu > .body .group {
 body > .menus > .menu > .body .group menuitem,
 body > .menus > .menu > .body .group .menuitem {
   display: inline-block;
-  padding: 0 .5em;
+  padding: 0 0.5em;
 }
 body > .menus > .menu > .body hr {
   display: block;
@@ -1199,7 +1199,7 @@ body #titlebar .buttons button.close:before {
   top: calc(50% - 5px + 1px);
 }
 body #titlebar .buttons button.close:hover {
-  background: rgba(218, 11, 11, 0.65);
+  background: hsla(0, 90%, 45%, 0.65);
 }
 body #window_border {
   position: absolute;
@@ -1317,8 +1317,8 @@ ul li {
 }
 .debugbtns button {
   line-height: 1.25em;
-  padding: .25em .5em;
-  margin-left: .5em;
+  padding: 0.25em 0.5em;
+  margin-left: 0.5em;
   color: #fff;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.25) 100%);
   transition-property: background;
