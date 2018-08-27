@@ -1,3 +1,16 @@
+const getFolderGroup = (folder, id) => {
+    folder = folder.substr(folder.length - 1) == '/'
+        ? folder.substr(0, folder - 1)
+        : folder
+    id = parseInt(id)
+    let index = 100
+    let multiplier = 1
+    while (index * multiplier < id) {
+        multiplier++
+    }
+    return folder + '-' + multiplier + '/'
+}
+
 _frame.app_main.page['init'].exportdata_cache_ships = function (dest, _ship) {
     let deferred = Q.defer()
         , dest_path = node.path.join(dest, 'app/page')
@@ -357,7 +370,7 @@ class TablelistShips_v2 extends Tablelist {
                             + (has_extra_illust ? ' icon="hanger"' : '')
                             + '>'
                             //+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp" contextmenu="disabled"/>'
-                            + '<img src="../pics-ships/' + ship_data['id'] + '/0.webp"/>'
+                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp"/>`
                             + '<strong>' + name + '</strong>'
                             + '</a>'
                             + '<em></em>'
@@ -1055,7 +1068,7 @@ class TablelistShips extends Tablelist {
                             '<a href="?infos=ship&id=' + ship_data['id'] + '"'
                             + (has_extra_illust ? ' icon="hanger"' : '')
                             + '>'
-                            + '<img src="../pics-ships/' + ship_data['id'] + '/0.webp" contextmenu="disabled"/>'
+                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp" contextmenu="disabled"/>`
                             + '<strong>' + name + '</strong>'
                             + '</a>'
                             + '<em></em>'
