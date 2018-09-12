@@ -899,6 +899,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 {
                     'value': 'vmf',
                     'title': '苏联海军 (Военно-морской флот СССР)'
+                },
+                {
+                    'value': 'sm',
+                    'title': '瑞典海军 (Svenska marinen)'
                 }
             ],
             {
