@@ -1947,37 +1947,37 @@ _frame.app_main.page['init'].exportdata = function (form) {
 
         // 2015/05/26 - 取消装备类型的 equipable_on_stat 属性
         /*
-            .then(function(){
-                var deferred = Q.defer()
-                    ,count = 0
-                    ,length = 0
-    
-                __log( '&nbsp;' )
-                __log('========== 取消装备类型的 equipable_on_stat 属性 ==========')
-                __log( '= 批处理开始' )
-    
-                _db.item_types.find({}, function(err, docs){
-                    length = docs.length
-                    for(var i in docs){
-                        _db.item_types.update({
-                            '_id': 		docs[i]['_id']
-                        },{
-                            $unset: {
-                                'equipable_on_stat': true
-                            }
-                        },{}, function(err, numReplaced){
-                            count++
-                            if( count >= length ){
-                                __log('= 批处理完毕')
-                                deferred.resolve()
-                            }
-                        })
-                    }
+                .then(function(){
+                    var deferred = Q.defer()
+                        ,count = 0
+                        ,length = 0
+        
+                    __log( '&nbsp;' )
+                    __log('========== 取消装备类型的 equipable_on_stat 属性 ==========')
+                    __log( '= 批处理开始' )
+        
+                    _db.item_types.find({}, function(err, docs){
+                        length = docs.length
+                        for(var i in docs){
+                            _db.item_types.update({
+                                '_id': 		docs[i]['_id']
+                            },{
+                                $unset: {
+                                    'equipable_on_stat': true
+                                }
+                            },{}, function(err, numReplaced){
+                                count++
+                                if( count >= length ){
+                                    __log('= 批处理完毕')
+                                    deferred.resolve()
+                                }
+                            })
+                        }
+                    })
+        
+                    return deferred.promise
                 })
-    
-                return deferred.promise
-            })
-        */
+            */
 
         // 舰娘 - 改造前后关系
         .then(function () {
@@ -2046,6 +2046,49 @@ _frame.app_main.page['init'].exportdata = function (form) {
             }
 
             _db_do_all()
+
+            return deferred.promise
+        })
+
+        // 舰娘 - 清理数据
+        .then(async function () {
+            var deferred = Q.defer()
+                , mod = {}
+
+            __log('&nbsp;')
+            __log('========== 舰娘 - 清理数据 ==========')
+            __log('= 批处理开始')
+
+            const ships = await new Promise(resolve => {
+                _db.ships.find({}, (err, docs) => {
+                    resolve(docs)
+                })
+            })
+
+            for (const ship of ships) {
+                const query = { id: parseInt(ship.id) }
+                const modify = {
+                    $set: {},
+                    $unset: {
+                        lines: true
+                    }
+                }
+                if (typeof ship.name === 'object' &&
+                    ship.name.ja_romaji &&
+                    ship.name.en_us &&
+                    ship.name.ja_romaji.toLowerCase() === ship.name.en_us.toLowerCase()
+                ) {
+                    modify.$set['name.en_us'] = ''
+                }
+                await new Promise(resolve => {
+                    _db.ships.update(query, modify, {}, function (err, numReplaced) {
+                        resolve()
+                    })
+                })
+            }
+
+            __log('= 批处理完毕')
+            deferred.resolve()
 
             return deferred.promise
         })
@@ -2555,23 +2598,23 @@ _frame.app_main.page['init'].init = function (page) {
 
             header
             Accept:*//*
-        Accept-Encoding:gzip, deflate
-        Accept-Language:zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,ja;q=0.2
-        Cache-Control:no-cache
-        Connection:keep-alive
-        Content-Length:66
-        Content-Type:application/x-www-form-urlencoded
-        Host:203.104.209.23
-        Origin:http://203.104.209.23
-        Pragma:no-cache
-        Referer:http://203.104.209.23/kcs/mainD2.swf?api_token=1d28ef72b4669737e86d6af05ed53652dde0d744&api_starttime=1431008607402/[[DYNAMIC]]/1
-        User-Agent:Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36
-        X-Requested-With:ShockwaveFlash/17.0.0.169
+Accept-Encoding:gzip, deflate
+Accept-Language:zh-CN,zh;q=0.8,en-US;q=0.6,en;q=0.4,ja;q=0.2
+Cache-Control:no-cache
+Connection:keep-alive
+Content-Length:66
+Content-Type:application/x-www-form-urlencoded
+Host:203.104.209.23
+Origin:http://203.104.209.23
+Pragma:no-cache
+Referer:http://203.104.209.23/kcs/mainD2.swf?api_token=1d28ef72b4669737e86d6af05ed53652dde0d744&api_starttime=1431008607402/[[DYNAMIC]]/1
+User-Agent:Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36
+X-Requested-With:ShockwaveFlash/17.0.0.169
 
-        form
-        api_token:1d28ef72b4669737e86d6af05ed53652dde0d744
-        api_verno:1
-    */
+form
+api_token:1d28ef72b4669737e86d6af05ed53652dde0d744
+api_verno:1
+*/
 
         var ip = form.find('[name="server_ip"]').val()
             , api_token = form.find('[name="api_token"]').val()
