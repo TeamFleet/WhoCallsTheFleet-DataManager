@@ -1,5 +1,6 @@
 // @koala-prepend "js-app/!.js"
 // @koala-prepend "js-app/main.js"
+// @koala-prepend "js-app/events.js"
 
 // @koala-prepend "KanColle-JS-Kit-3/js/class-item/!.js"
 // @koala-prepend "KanColle-JS-Kit-3/js/class-item/entity.js"

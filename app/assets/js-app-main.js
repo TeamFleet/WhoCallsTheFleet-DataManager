@@ -828,6 +828,40 @@ _g.searchTest = function (q, t) {
     return r
 };
 
+// 2019.05.21 - 発動！友軍救援「第二次ハワイ作戦」
+const event2019Summer = {
+    title: '発動！友軍救援「第二次ハワイ作戦」',
+    shipListDataName: 'hawaii2nd',
+    historicalFleets: [
+        ['第百四戦隊', [
+            '占守', '国後', '八丈',
+            '択捉', '福江'
+        ]],
+        ['第二艦隊', [
+            '大和',
+            '矢矧',
+            '潮', '響', 'Верный', '初霜', '霞', '雪風', '磯風', '浜風', '朝霜', '涼月'
+        ]],
+        ['AL作戦組', [
+            '龍驤', '隼鷹',
+            '那智', '高雄', '摩耶',
+            '多摩', '木曾', '阿武隈',
+            '曙', '漣', '潮', '暁', '響', '雷', '電', '初春', '若葉', '初霜'
+        ]],
+        ['真珠湾攻撃組', [
+            '赤城', '加賀', '蒼龍', '飛龍', '翔鶴', '瑞鶴',
+            '比叡', '霧島',
+            '利根', '筑摩',
+            '阿武隈',
+            '霞', '霰', '陽炎', '不知火', '浦風', '磯風', '浜風', '谷風', '秋雲',
+            '伊19'
+        ]]
+    ]
+}
+
+// 当前活动
+_g.currentEvent = event2019Summer
+
 class ItemBase {
 	constructor(data) {
 		$.extend(true, this, data)
@@ -4383,6 +4417,7 @@ class TablelistShips_v2 extends Tablelist {
         }
 
         // 检查莱特湾海战所属部队
+        /*
         const fleets = []
         for (const fleet in _g.fleetLeyte) {
             _g.fleetLeyte[fleet].some(name_ja => {
@@ -4395,6 +4430,18 @@ class TablelistShips_v2 extends Tablelist {
         }
         if (fleets.length)
             tr.attr('data-leyte-fleet', fleets.join(''))
+        */
+        // 添加当前活动影响
+        if (typeof _g.currentEvent === 'object' && _g.currentEvent.shipListDataName) {
+            const { historicalFleets = [] } = _g.currentEvent
+            const fleets = historicalFleets
+                .filter(([_, fleet = []]) => fleet.some(
+                    name_ja => (ship_data.name.ja_jp === name_ja)
+                ))
+                .map((_, index) => `|${index}|`)
+            if (fleets.length)
+                tr.attr(`data-${_g.currentEvent.shipListDataName}-fleet`, fleets.join(''))
+        }
 
         this.last_type_items = this.last_type_items.add(tr)
 

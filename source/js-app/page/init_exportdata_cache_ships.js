@@ -488,6 +488,7 @@ class TablelistShips_v2 extends Tablelist {
         }
 
         // 检查莱特湾海战所属部队
+        /*
         const fleets = []
         for (const fleet in _g.fleetLeyte) {
             _g.fleetLeyte[fleet].some(name_ja => {
@@ -500,6 +501,18 @@ class TablelistShips_v2 extends Tablelist {
         }
         if (fleets.length)
             tr.attr('data-leyte-fleet', fleets.join(''))
+        */
+        // 添加当前活动影响
+        if (typeof _g.currentEvent === 'object' && _g.currentEvent.shipListDataName) {
+            const { historicalFleets = [] } = _g.currentEvent
+            const fleets = historicalFleets
+                .filter(([_, fleet = []]) => fleet.some(
+                    name_ja => (ship_data.name.ja_jp === name_ja)
+                ))
+                .map((_, index) => `|${index}|`)
+            if (fleets.length)
+                tr.attr(`data-${_g.currentEvent.shipListDataName}-fleet`, fleets.join(''))
+        }
 
         this.last_type_items = this.last_type_items.add(tr)
 
