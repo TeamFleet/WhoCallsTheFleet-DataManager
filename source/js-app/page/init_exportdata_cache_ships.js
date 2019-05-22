@@ -505,13 +505,14 @@ class TablelistShips_v2 extends Tablelist {
         // 添加当前活动影响
         if (typeof _g.currentEvent === 'object' && _g.currentEvent.shipListDataName) {
             const { historicalFleets = [] } = _g.currentEvent
-            const fleets = historicalFleets
-                .filter(([_, fleet = []]) => fleet.some(
-                    name_ja => (ship_data.name.ja_jp === name_ja)
-                ))
-                .map((_, index) => `|${index}|`)
-            if (fleets.length)
-                tr.attr(`data-${_g.currentEvent.shipListDataName}-fleet`, fleets.join(''))
+            let indexes = ``
+            historicalFleets
+                .forEach((ships, index) => {
+                    if (ships.includes(ship_data.name.ja_jp))
+                        indexes += `|${index}|`
+                })
+            if (indexes)
+                tr.attr(`data-${_g.currentEvent.shipListDataName}-fleet`, indexes)
         }
 
         this.last_type_items = this.last_type_items.add(tr)
