@@ -1378,7 +1378,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
 
         // 处理所有数据，将带有 . 的数据变为 object 元素
         data = $(this).serializeObject()
-        data['class_no'] = parseInt(data['class_no'])
+        data['class_no'] = parseInt(data['class_no']) || (data['class_no'] ? data['class_no'] : null)
 
         const delete_illust = data['series']['illust_delete'] || false
         if (!data['series']['illust_extra'].push)
