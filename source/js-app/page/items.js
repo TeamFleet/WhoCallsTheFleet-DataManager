@@ -598,6 +598,21 @@ _frame.app_main.page['items'].show_item_form = function (d) {
 
         // 改修
         // $('<h4/>').html('改修').appendTo(details_craft)
+        {
+            const line = $('<p/>').appendTo( details_craft )
+                ,id = '_input_g' + _g.inputIndex
+            _g.inputIndex++
+            _frame.app_main.page['ships'].gen_input(
+                'checkbox',
+                'has_improved_reward',
+                id,
+                d.has_improved_reward || false
+            ).appendTo(line)
+            $('<label for="'+id+'"/>').html( '存在已改修的奖励' ).appendTo(line)
+
+            $('<hr/>').appendTo(details_craft)
+        }
+
         for (var i = 0; i < (d['improvement'] ? d['improvement'].length : 0); i++) {
             _improvement(d['improvement'] ? d['improvement'][i] : null).appendTo(details_craft)
         }
@@ -605,16 +620,6 @@ _frame.app_main.page['items'].show_item_form = function (d) {
             _improvement().insertBefore(btn_add_improvement)
         }).html('+ 改修项目').appendTo(details_craft)
         /*
-        var line = $('<p/>').appendTo( details_craft )
-            ,id = '_input_g' + _g.inputIndex
-        _g.inputIndex++
-        _frame.app_main.page['ships'].gen_input(
-                'checkbox',
-                'improvable',
-                id,
-                d.improvable || false
-            ).appendTo(line)
-        $('<label for="'+id+'"/>').html( '可改修' ).appendTo(line)
         for(var i=0; i<(d['upgrade_to'] ? d['upgrade_to'].length : 0); i++ ){
             _upgrade_to(
                 (i+1),
@@ -753,7 +758,8 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         });
         // 以下数据如果为'on'，改为true
         [
-            'equipable_exslot'
+            'equipable_exslot',
+            'has_improved_reward'
         ].forEach(key => {
             if (data[key] === 'on') data[key] = true
         });
