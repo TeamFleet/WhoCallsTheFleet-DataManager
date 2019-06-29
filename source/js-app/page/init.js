@@ -712,8 +712,8 @@ _frame.app_main.page['init'].exportdata = function (form) {
             return deferred.promise
         })
 
-        // 2015/05/26 - 取消装备类型的 equipable_on_stat 属性
-        /*
+    // 2015/05/26 - 取消装备类型的 equipable_on_stat 属性
+    /*
                 .then(function(){
                     var deferred = Q.defer()
                         ,count = 0
@@ -1080,6 +1080,67 @@ _frame.app_main.page['init'].exportdata = function (form) {
 
                 _db_do_all()
             })
+
+            return deferred.promise
+        })
+
+        // 装备 - 可额外配置该装备的舰娘
+        .then(() => {
+            // ship.additional_items -> item.equipable_extra_ship
+
+            let deferred = Q.defer()
+                , equipable_extra_ship = {}
+
+            __log('&nbsp;')
+            __log('========== 装备 - 可额外配置该装备的舰娘 ==========')
+            __log('= 批处理开始')
+
+            for (let i in _ship) {
+                let ship = _ship[i]
+                    , ship_id = i
+                    , additional_items = ship.additional_items || []
+                additional_items.forEach(function (item_id) {
+                    if (!equipable_extra_ship[item_id])
+                        equipable_extra_ship[item_id] = []
+                    equipable_extra_ship[item_id].push(parseInt(ship_id))
+                })
+            }
+
+            console.log(equipable_extra_ship)
+
+            function _db_do_all() {
+                let index = 0
+                    , length = equipable_extra_ship._size
+                function _db_do(find, set_data, _index) {
+                    _db.items.update(find, set_data, {}, function (err, numReplaced) {
+                        if (_index >= length - 1) {
+                            __log('= 批处理完毕')
+                            deferred.resolve()
+                        }
+                    })
+                }
+                for (let i in equipable_extra_ship) {
+                    let unset = {}
+                    if (!equipable_extra_ship[i].length) {
+                        unset.equipable_extra_ship = true
+                    }
+                    _db_do(
+                        {
+                            'id': parseInt(i)
+                        },
+                        {
+                            $set: {
+                                'equipable_extra_ship': equipable_extra_ship[i]
+                            },
+                            $unset: unset
+                        },
+                        index
+                    )
+                    index++
+                }
+            }
+
+            _db_do_all()
 
             return deferred.promise
         })

@@ -2529,6 +2529,12 @@ form.shipinfo > .tabview > section[data-tabname="系列"] p input[type="checkbox
 form.iteminfo > .tabview > section[data-tabname="系列"] p input[type="checkbox"] {
   flex: 0 0 13px;
 }
+form.shipinfo > .tabview > section[data-tabname="额外"] .additional_items .empty .delete,
+form.iteminfo > .tabview > section[data-tabname="额外"] .additional_items .empty .delete {
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+}
 form.shipinfo > p.actions,
 form.iteminfo > p.actions {
   position: absolute;

@@ -1114,6 +1114,50 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         _form.create_item_types('additional_disable_item_types', d['additional_disable_item_types'] || []).appendTo(details_extra)
     })();
 
+    // 额外装备
+    {
+        // additional_items
+        const 额外装备 = $('<div class="additional_items" />').appendTo(details_extra)
+        $('<h4/>').html('额外装备').appendTo(额外装备)
+
+        const createNewLine = (id) => {
+            id = id ? parseInt(id) : undefined
+
+            const inputName = 'additional_items'
+            const line = $('<div class="line" />').appendTo(额外装备)
+
+            _comp.selector_equipment(
+                inputName,
+                '',
+                id
+            ).appendTo(line)
+
+            $('<button type="button" class="delete"/>').html('&times;').on('click', function () {
+                line.remove()
+            }).appendTo(line)
+
+            if (!id) {
+                line.addClass('empty')
+                setTimeout(() => {
+                    line.on('change.new', evt => {
+                        const id = evt.target.value
+                        if (id) {
+                            line.removeClass('empty').off('change.new')
+                            createNewLine()
+                        }
+                    })
+                })
+            }
+
+            return line
+        }
+        
+        if (Array.isArray(d.additional_items)) {
+            d.additional_items.forEach(createNewLine)
+        }
+        createNewLine()
+    }
+
     // 提交等按钮
     var line = $('<p class="actions"/>').appendTo(form)
     $('<button type="submit"/>').html(d._id ? '编辑' : '入库').appendTo(line)
@@ -1521,6 +1565,18 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
             if (!capabilities_count) {
                 delete data.capabilities
                 unset.capabilities = true
+            }
+            if (Array.isArray(data.additional_items)) {
+                data.additional_items = [...new Set(
+                    data.additional_items
+                        .filter(id => !!id)
+                        .map(id => parseInt(id))
+                )]
+
+                if (!data.additional_items.length) 
+                    delete data.additional_items
+            } else {
+                delete data.additional_items
             }
         }
 
