@@ -44,7 +44,7 @@
     "less": "^3.8.1"
   },
   "dependencies": {
-    "angular": "1.7.3",
+    "angular": "1.7.9",
     "gulp-ng-annotate": "^2.1.0",
     "cwebp": "^2.0.3",
     "gm": "^1.23.1",
