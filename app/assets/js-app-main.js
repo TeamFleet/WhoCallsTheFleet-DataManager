@@ -6921,6 +6921,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 {
                     'value': 'sm',
                     'title': '瑞典海军 (Svenska marinen)'
+                },
+                {
+                    'value': 'ran',
+                    'title': '澳大利亚皇家海军 (Royal Australian Navy)'
                 }
             ],
             {
