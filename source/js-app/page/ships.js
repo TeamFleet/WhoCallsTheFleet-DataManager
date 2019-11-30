@@ -907,6 +907,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 {
                     'value': 'ran',
                     'title': '澳大利亚皇家海军 (Royal Australian Navy)'
+                },
+                {
+                    'value': 'rnln',
+                    'title': '荷兰皇家海军 (Royal Netherlands Navy)'
                 }
             ],
             {
