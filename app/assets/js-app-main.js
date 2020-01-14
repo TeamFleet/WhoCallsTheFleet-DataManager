@@ -3548,6 +3548,7 @@ class TablelistEquipments_v2 extends Tablelist{
 		}
 	
 		this.columns.forEach(function(currentValue){
+				console.log(equipment_data)
 			switch( currentValue[1] ){
 				case ' ':
 					$('<dt/>').html(
