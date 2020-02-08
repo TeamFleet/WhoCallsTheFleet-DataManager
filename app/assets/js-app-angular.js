@@ -981,13 +981,16 @@ app.controller('page-exillust-illusts', ($scope, dbExillustTypesUpdate) => {
             });
         }).then(() => new Promise((resolve, reject) => {
             // 获得文件夹列表
-            fs.readdir(_g.path.pics.ships, (err, files) => {
+            fs.readdir(_g.path.pics.shipsExtra, (err, files) => {
                 if (err) reject(new Error(err))
                 else {
                     folders = files
-                        .filter(file => /^extra_/.test(file))
+                        // .filter(file => /^extra_/.test(file))
+                        // .sort((a, b) =>
+                        //     parseInt(a.substr('extra_'.length)) - parseInt(b.substr('extra_'.length))
+                        // )
                         .sort((a, b) =>
-                            parseInt(a.substr('extra_'.length)) - parseInt(b.substr('extra_'.length))
+                            parseInt(a) - parseInt(b)
                         )
                     resolve()
                 }
@@ -996,7 +999,8 @@ app.controller('page-exillust-illusts', ($scope, dbExillustTypesUpdate) => {
             // 读取DB
             _db.exillusts.find({}, (err, docs) => {
                 if (err) reject(new Error(err))
-                else resolve(docs.map(doc => 'extra_' + doc.id))
+                // else resolve(docs.map(doc => 'extra_' + doc.id))
+                else resolve(docs.map(doc => '' + doc.id))
             });
         })).then(items => new Promise((resolve/*, reject*/) => {
             // 比对DB数据和文件夹列表，将DB中缺失的数据写入
@@ -1006,9 +1010,10 @@ app.controller('page-exillust-illusts', ($scope, dbExillustTypesUpdate) => {
             itemsToInsert.forEach(item => {
                 chainInserting = chainInserting.then(() => new Promise((resolve, reject) => {
                     let doc = Object.assign({}, dbItemDefaults, {
-                        id: parseInt(item.substr('extra_'.length))
+                        // id: parseInt(item.substr('extra_'.length))
+                        id: parseInt(item)
                     })
-                    const files = fs.readdirSync(path.join(_g.path.pics.ships, item))
+                    const files = fs.readdirSync(path.join(_g.path.pics.shipsExtra, item))
                     const exclude = filesToCheck
                         .filter(file => !files.includes(file))
                         .map(file => parseInt(file.replace(/\.png$/, '')))
@@ -1060,7 +1065,7 @@ app.controller('page-exillust-illusts', ($scope, dbExillustTypesUpdate) => {
     $scope.getPic = (item, picId) => {
         if (Array.isArray(item.exclude) && item.exclude.includes(picId))
             return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-        return path.join(_g.path.pics.ships, `extra_${item.id}`, `${picId}.png`)
+        return path.join(_g.path.pics.shipsExtra, `${item.id}`, `${picId}.png`)
     }
 
     $scope.actions = {

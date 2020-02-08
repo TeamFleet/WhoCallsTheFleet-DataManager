@@ -1,0 +1,3 @@
+[submodule "pics"]
+	path = pics
+	url = https://github.com/TeamFleet/WhoCallsTheFleet-Pics

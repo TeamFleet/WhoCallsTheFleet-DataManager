@@ -106,8 +106,8 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     // entities: node.path.join(dest, 'web', '!', 'pics', 'entities')
                 }
             }
-            , ship_ids = node.fs.readdirSync('./pics/ships/')
-            , item_ids = node.fs.readdirSync('./pics/items/')
+            , ship_ids = node.fs.readdirSync('./pics/dist/ships/')
+            , item_ids = node.fs.readdirSync('./pics/dist/equipments/')
             , entities = {}
             , files = []
             , picid_by_shipid = {}
@@ -411,17 +411,17 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     }
                     for (var j in arr) {
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.client[type], pathId, arr[j][1]),
                             arr[j][2]
                         )
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.web[type], pathId, arr[j][1]),
                             arr[j][2]
                         )
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.web[type], pathId, arr[j][0]),
                             'copy'
                         )
@@ -429,28 +429,28 @@ _frame.app_main.page['init'].exportpicInit = form => {
 
                     // apply mask for web version
                     check_do(
-                        './pics/ships/' + id + '/' + '0.png',
+                        './pics/dist/ships/' + id + '/' + '0.png',
                         node.path.join(paths.web[type], pathId, '0.png'),
                         'mask',
                         1
                     )
                     check_do(
-                        './pics/ships/' + id + '/' + '0.png',
+                        './pics/dist/ships/' + id + '/' + '0.png',
                         node.path.join(paths.web[type], pathId, '0.png'),
                         'mask',
                         2
                     )
 
                     // ship card
-                    if (is_exists('./pics/ships/' + id + '/2.jpg')) {
+                    if (is_exists('./pics/dist/ships/' + id + '/2.jpg')) {
                         check_do(
-                            './pics/ships/' + id + '/2.jpg',
+                            './pics/dist/ships/' + id + '/2.jpg',
                             node.path.join(paths.web[type], pathId, '2.jpg'),
                             'copy'
                         )
                     } else {
                         check_do(
-                            './pics/ships/' + id + '/2.png',
+                            './pics/dist/ships/' + id + '/2.png',
                             node.path.join(paths.web[type], pathId, '2.jpg'),
                             'jpeg',
                             81
@@ -485,12 +485,12 @@ _frame.app_main.page['init'].exportpicInit = form => {
                             node.mkdirp.sync(node.path.join(paths[_i].equipments, `/${item_ids[i]}`))
                         }
                         check_do(
-                            './pics/items/' + item_ids[i] + '/card.png',
+                            './pics/dist/equipments/' + item_ids[i] + '/card.png',
                             node.path.join(paths.client.equipments, `/${item_ids[i]}`, 'card.webp'),
                             80
                         )
                         check_do(
-                            './pics/items/' + item_ids[i] + '/card.png',
+                            './pics/dist/equipments/' + item_ids[i] + '/card.png',
                             node.path.join(paths.web.equipments, `/${item_ids[i]}`, 'card.png'),
                             'copy'
                         )
@@ -509,24 +509,24 @@ _frame.app_main.page['init'].exportpicInit = form => {
                         entities[d.id] = new Entity(d)
                         node.mkdirp.sync(node.path.join(paths.web.entities, `/${d.id}`))
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize'
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize-mask',
                             1
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize-mask',
                             2
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '2.jpg'),
                             'copy'
                         )

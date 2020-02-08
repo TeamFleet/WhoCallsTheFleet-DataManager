@@ -410,7 +410,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         const base = $('<div class="base"/>').appendTo(form)
 
         // 标准图鉴
-        const base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
+        const base_image = $('<div class="image"/>').css('background-image', 'url(../pics/dist/equipments/' + d['id'] + '/card.png)').appendTo(base)
 
         _input('id', 'ID', null, { 'required': true }).appendTo(base)
         _input('rarity', '稀有度', null, { 'required': true }).appendTo(base)
@@ -658,7 +658,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     d['default_equipped_on'].push(ships_equipped[i][j]['id'])
                     $('<div/>')
                         .html(
-                            '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
+                            '<img src="../pics/dist/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
                             + '[' + ships_equipped[i][j]['id'] + '] '
                             + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
                             + (ships_equipped[i][j]['name']['suffix']
@@ -1418,7 +1418,7 @@ _frame.app_main.page['items'].section['未入库'] = {
         self.dom.list.appendDOM(
             $('<button class="unit newitem" data-itemid="' + id + '" data-itemmodal="false"/>')
                 .append(
-                    $('<span><img src="../pics/items/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
+                    $('<span><img src="../pics/dist/equipments/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
                 )
                 .on('click', function (e, data_modified) {
                     //console.log( data )

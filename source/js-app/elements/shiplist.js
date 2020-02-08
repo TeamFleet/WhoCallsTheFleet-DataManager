@@ -88,7 +88,7 @@ _shiplist.prototype.append_ship = function (ship_data) {
             case ' ':
                 $('<th/>')
                     .html(
-                    '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
+                    '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
                     + '<strong>' + name + '</strong>'
                     //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)

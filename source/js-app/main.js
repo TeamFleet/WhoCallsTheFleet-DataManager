@@ -36,8 +36,9 @@ _g.path = {
         'items': process.cwd() + '/fetched_data/items/'
     },
     'pics': {
-        'ships': process.cwd() + '/pics/ships/',
-        'items': process.cwd() + '/pics/items/'
+        'ships': process.cwd() + '/pics/dist/ships/',
+        'shipsExtra': process.cwd() + '/pics/dist/ships-extra/',
+        'items': process.cwd() + '/pics/dist/equipments/'
     }
 }
 

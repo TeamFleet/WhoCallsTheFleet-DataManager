@@ -593,7 +593,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         d_series_true_index;
 
     // 标准图鉴
-    $('<div class="image"/>').css('background-image', 'url(../pics/ships/' + d['id'] + '/2.png)').appendTo(base);
+    $('<div class="image"/>').css('background-image', 'url(../pics/dist/ships/' + d['id'] + '/2.png)').appendTo(base);
 
     // 基础信息
     (() => {
@@ -2151,7 +2151,7 @@ _frame.app_main.page['ships'].section['未入库'] = {
                 }
                 $('<th/>')
                     .html(
-                        '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
+                        '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png"/>'
                         + '<strong>' + ship_data['name'] + '</strong>'
                         //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)

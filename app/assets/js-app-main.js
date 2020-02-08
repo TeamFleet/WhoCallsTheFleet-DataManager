@@ -80,8 +80,9 @@ _g.path = {
         'items': process.cwd() + '/fetched_data/items/'
     },
     'pics': {
-        'ships': process.cwd() + '/pics/ships/',
-        'items': process.cwd() + '/pics/items/'
+        'ships': process.cwd() + '/pics/dist/ships/',
+        'shipsExtra': process.cwd() + '/pics/dist/ships-extra/',
+        'items': process.cwd() + '/pics/dist/equipments/'
     }
 }
 
@@ -3548,7 +3549,6 @@ class TablelistEquipments_v2 extends Tablelist{
 		}
 	
 		this.columns.forEach(function(currentValue){
-				console.log(equipment_data)
 			switch( currentValue[1] ){
 				case ' ':
 					$('<dt/>').html(
@@ -4366,7 +4366,7 @@ class TablelistShips_v2 extends Tablelist {
                             + (has_extra_illust ? ' icon="hanger"' : '')
                             + '>'
                             //+ '<img src="../pics/ships/'+ship_data['id']+'/0.webp" contextmenu="disabled"/>'
-                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp"/>`
+                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp" loading="lazy" />`
                             + '<strong>' + name + '</strong>'
                             + '</a>'
                             + '<em></em>'
@@ -5078,7 +5078,7 @@ class TablelistShips extends Tablelist {
                             '<a href="?infos=ship&id=' + ship_data['id'] + '"'
                             + (has_extra_illust ? ' icon="hanger"' : '')
                             + '>'
-                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp" contextmenu="disabled"/>`
+                            + `<img src="../${getFolderGroup('pics-ships', ship_data['id'])}${ship_data['id']}/0.webp" contextmenu="disabled" loading="lazy" />`
                             + '<strong>' + name + '</strong>'
                             + '</a>'
                             + '<em></em>'
@@ -5574,8 +5574,8 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     // entities: node.path.join(dest, 'web', '!', 'pics', 'entities')
                 }
             }
-            , ship_ids = node.fs.readdirSync('./pics/ships/')
-            , item_ids = node.fs.readdirSync('./pics/items/')
+            , ship_ids = node.fs.readdirSync('./pics/dist/ships/')
+            , item_ids = node.fs.readdirSync('./pics/dist/equipments/')
             , entities = {}
             , files = []
             , picid_by_shipid = {}
@@ -5879,17 +5879,17 @@ _frame.app_main.page['init'].exportpicInit = form => {
                     }
                     for (var j in arr) {
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.client[type], pathId, arr[j][1]),
                             arr[j][2]
                         )
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.web[type], pathId, arr[j][1]),
                             arr[j][2]
                         )
                         check_do(
-                            './pics/ships/' + id + '/' + arr[j][0],
+                            './pics/dist/ships/' + id + '/' + arr[j][0],
                             node.path.join(paths.web[type], pathId, arr[j][0]),
                             'copy'
                         )
@@ -5897,28 +5897,28 @@ _frame.app_main.page['init'].exportpicInit = form => {
 
                     // apply mask for web version
                     check_do(
-                        './pics/ships/' + id + '/' + '0.png',
+                        './pics/dist/ships/' + id + '/' + '0.png',
                         node.path.join(paths.web[type], pathId, '0.png'),
                         'mask',
                         1
                     )
                     check_do(
-                        './pics/ships/' + id + '/' + '0.png',
+                        './pics/dist/ships/' + id + '/' + '0.png',
                         node.path.join(paths.web[type], pathId, '0.png'),
                         'mask',
                         2
                     )
 
                     // ship card
-                    if (is_exists('./pics/ships/' + id + '/2.jpg')) {
+                    if (is_exists('./pics/dist/ships/' + id + '/2.jpg')) {
                         check_do(
-                            './pics/ships/' + id + '/2.jpg',
+                            './pics/dist/ships/' + id + '/2.jpg',
                             node.path.join(paths.web[type], pathId, '2.jpg'),
                             'copy'
                         )
                     } else {
                         check_do(
-                            './pics/ships/' + id + '/2.png',
+                            './pics/dist/ships/' + id + '/2.png',
                             node.path.join(paths.web[type], pathId, '2.jpg'),
                             'jpeg',
                             81
@@ -5953,12 +5953,12 @@ _frame.app_main.page['init'].exportpicInit = form => {
                             node.mkdirp.sync(node.path.join(paths[_i].equipments, `/${item_ids[i]}`))
                         }
                         check_do(
-                            './pics/items/' + item_ids[i] + '/card.png',
+                            './pics/dist/equipments/' + item_ids[i] + '/card.png',
                             node.path.join(paths.client.equipments, `/${item_ids[i]}`, 'card.webp'),
                             80
                         )
                         check_do(
-                            './pics/items/' + item_ids[i] + '/card.png',
+                            './pics/dist/equipments/' + item_ids[i] + '/card.png',
                             node.path.join(paths.web.equipments, `/${item_ids[i]}`, 'card.png'),
                             'copy'
                         )
@@ -5977,24 +5977,24 @@ _frame.app_main.page['init'].exportpicInit = form => {
                         entities[d.id] = new Entity(d)
                         node.mkdirp.sync(node.path.join(paths.web.entities, `/${d.id}`))
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize'
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize-mask',
                             1
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '0.png'),
                             'entity-resize-mask',
                             2
                         )
                         check_do(
-                            './pics/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
+                            './pics/dist/entities/' + entities[d.id].getName('ja_jp') + '.jpg',
                             node.path.join(paths.web.entities, `/${d.id}`, '2.jpg'),
                             'copy'
                         )
@@ -6612,7 +6612,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         d_series_true_index;
 
     // 标准图鉴
-    $('<div class="image"/>').css('background-image', 'url(../pics/ships/' + d['id'] + '/2.png)').appendTo(base);
+    $('<div class="image"/>').css('background-image', 'url(../pics/dist/ships/' + d['id'] + '/2.png)').appendTo(base);
 
     // 基础信息
     (() => {
@@ -8170,7 +8170,7 @@ _frame.app_main.page['ships'].section['未入库'] = {
                 }
                 $('<th/>')
                     .html(
-                        '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
+                        '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png"/>'
                         + '<strong>' + ship_data['name'] + '</strong>'
                         //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)
@@ -9252,7 +9252,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
         const base = $('<div class="base"/>').appendTo(form)
 
         // 标准图鉴
-        const base_image = $('<div class="image"/>').css('background-image', 'url(../pics/items/' + d['id'] + '/card.png)').appendTo(base)
+        const base_image = $('<div class="image"/>').css('background-image', 'url(../pics/dist/equipments/' + d['id'] + '/card.png)').appendTo(base)
 
         _input('id', 'ID', null, { 'required': true }).appendTo(base)
         _input('rarity', '稀有度', null, { 'required': true }).appendTo(base)
@@ -9500,7 +9500,7 @@ _frame.app_main.page['items'].show_item_form = function (d) {
                     d['default_equipped_on'].push(ships_equipped[i][j]['id'])
                     $('<div/>')
                         .html(
-                            '<img src="../pics/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
+                            '<img src="../pics/dist/ships/' + ships_equipped[i][j]['id'] + '/0.png"/>'
                             + '[' + ships_equipped[i][j]['id'] + '] '
                             + (ships_equipped[i][j]['name']['zh_cn'] || ships_equipped[i][j]['name']['ja_jp'])
                             + (ships_equipped[i][j]['name']['suffix']
@@ -10260,7 +10260,7 @@ _frame.app_main.page['items'].section['未入库'] = {
         self.dom.list.appendDOM(
             $('<button class="unit newitem" data-itemid="' + id + '" data-itemmodal="false"/>')
                 .append(
-                    $('<span><img src="../pics/items/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
+                    $('<span><img src="../pics/dist/equipments/' + id + '/card.png" alt="' + data['name'] + '"/></span>')
                 )
                 .on('click', function (e, data_modified) {
                     //console.log( data )
@@ -13371,7 +13371,7 @@ _shiplist.prototype.append_ship = function (ship_data) {
             case ' ':
                 $('<th/>')
                     .html(
-                    '<img src="../pics/ships/' + ship_data['id'] + '/0.png"/>'
+                    '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
                     + '<strong>' + name + '</strong>'
                     //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)
