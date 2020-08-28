@@ -674,6 +674,77 @@ _frame.app_main = {
                 return deferred.promise
             })
 
+            // 添加子舰种
+            .then(() => {
+                function addSubType(searchForTypeName, subTypeName, cbFilterShip) {
+                    _g.ship_type_order_name.some(({zh_cn: name}, index) => {
+                        if (name === searchForTypeName) {
+                            const list = _g.data.ship_id_by_type[index]
+                                .map(id => _g.data.ships[id])
+                                .filter(cbFilterShip)
+                                .map(ship => ship.id)
+                            list.forEach(id => {
+                                _g.data.ship_id_by_type[index].splice(
+                                    _g.data.ship_id_by_type[index].indexOf(id),
+                                    1
+                                )
+                            })
+                            _g.ship_type_order_name.splice(index, 0, {
+                                zh_cn: subTypeName
+                            })
+                            _g.data.ship_id_by_type.splice(index, 0, list)
+                            _g.ship_type_order.splice(index, 0, _g.ship_type_order[index])
+
+                            const typeOrder = []
+                            Object.entries(_g.data.ship_type_order)
+                                .forEach(([key, value]) => {
+                                    typeOrder[key] = value
+                                })
+                            typeOrder.splice(index, 0, Object.assign({}, _g.data.ship_type_order[index]))
+                            typeOrder[index].name = Object.assign({}, typeOrder[index].name)
+                            typeOrder[index].name.zh_cn = subTypeName
+                            _g.data.ship_type_order = typeOrder.reduce((obj, cur, index) => {
+                                obj[index] = cur
+                                return obj
+                            }, {})
+
+                            return true
+                        }
+                        return false
+                    })
+                }
+                addSubType(
+                    '正规航母',
+                    '正规航母 / 夜间作战航母',
+                    function(ship) {
+                        if (!ship.capabilities) return false
+                        return !!ship.capabilities.count_as_night_operation_aviation_personnel
+                    }
+                )
+                addSubType(
+                    '正规航母',
+                    '正规航母 / 近代化航母',
+                    function(ship) {
+                        return ship.stat.asw > 0
+                    }
+                )
+                addSubType(
+                    '轻型航母',
+                    '轻型航母 / 护航航母',
+                    function(ship) {
+                        return ship.stat.asw > 0
+                    }
+                )
+                addSubType(
+                    '轻型航母',
+                    '轻型航母 / 攻击型轻航母',
+                    function(ship) {
+                        if (!ship.capabilities) return false
+                        return !!ship.capabilities.attack_surface_ship_prioritised
+                    }
+                )
+            })
+
             // 读取db
             /*
                 var _db_size = 0
