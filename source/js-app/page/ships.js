@@ -911,6 +911,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 {
                     'value': 'rnln',
                     'title': '荷兰皇家海军 (Royal Netherlands Navy)'
+                },
+                {
+                    'value': 'rocn',
+                    'title': '中华民国海军'
                 }
             ],
             {

@@ -395,7 +395,7 @@ _frame.app_main = {
         // 开始异步函数链
         promise_chain
 
-            // 检查 aap-db 目录，预加载全部数据库
+            // 检查 aap-db 目录，清理不必要的文件，预加载全部数据库
             .then(function () {
                 var deferred = Q.defer()
                 node.fs.readdir(_g.path.db, function (err, files) {
@@ -403,9 +403,16 @@ _frame.app_main = {
                         deferred.reject(new Error(err))
                     } else {
                         for (var i in files) {
-                            _db[node.path.parse(files[i])['name']]
+                            const file = files[i]
+                            const fullpath = node.path.resolve(_g.path.db, file)
+                            const ext = node.path.extname(file)
+                            if (ext !== '.nedb') {
+                                node.fs.unlinkSync(fullpath)
+                                continue
+                            }
+                            _db[node.path.parse(file)['name']]
                                 = new node.nedb({
-                                    filename: node.path.join(_g.path.db, '/' + files[i])
+                                    filename: fullpath
                                 })
                         }
                         deferred.resolve(files)
@@ -7001,6 +7008,10 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 {
                     'value': 'rnln',
                     'title': '荷兰皇家海军 (Royal Netherlands Navy)'
+                },
+                {
+                    'value': 'rocn',
+                    'title': '中华民国海军'
                 }
             ],
             {
