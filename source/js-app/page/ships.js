@@ -1638,7 +1638,8 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                         }
                     })
                 }
-                _delete()
+                resolve()
+                // _delete()
             } else {
                 resolve()
             }
