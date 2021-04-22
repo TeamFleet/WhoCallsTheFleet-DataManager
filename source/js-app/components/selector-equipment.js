@@ -1,10 +1,10 @@
 _comp.selector_equipment = function (name, id, default_item) {
     var dom = _frame.app_main.page['ships'].gen_input(
-        'select',
-        name || null,
-        id || null,
-        []
-    )
+            'select',
+            name || null,
+            id || null,
+            []
+        )
         , equipments = []
         , options = []
 
@@ -21,6 +21,7 @@ _comp.selector_equipment = function (name, id, default_item) {
                 _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function (err, docs) {
                     for (let i in docs) {
                         //equipments[docs[i]['type']][1].push(docs[i])
+                        // console.log(docs[i]['id'], docs[i]['name']['zh_cn'], docs[i]['type'])
                         equipments[docs[i]['type']][1].push({
                             'name': docs[i]['name']['zh_cn'],
                             'value': docs[i]['id']
@@ -28,6 +29,7 @@ _comp.selector_equipment = function (name, id, default_item) {
                     }
 
                     for (let i in equipments) {
+                        // console.log(equipments[i])
                         options.push({
                             'name': '=====' + equipments[i][0] + '=====',
                             'value': ''
@@ -39,8 +41,8 @@ _comp.selector_equipment = function (name, id, default_item) {
                             })
                         }
                     }
-                    //console.log( equipments )
-                    //console.log( options )
+                    console.log( equipments )
+                    console.log( options )
 
                     let domNew = _frame.app_main.page['ships'].gen_input(
                         'select_group',
@@ -85,7 +87,7 @@ _comp.selector_equipment = function (name, id, default_item) {
         })
 
         .catch((err) => {
-            console.log(err)
+            console.error(err)
         })
 
     return dom

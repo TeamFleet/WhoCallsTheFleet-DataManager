@@ -750,6 +750,14 @@ _frame.app_main = {
                         return !!ship.capabilities.attack_surface_ship_prioritised
                     }
                 )
+                addSubType(
+                    '轻型航母',
+                    '轻型航母 / 夜间作战航母',
+                    function(ship) {
+                        if (!ship.capabilities) return false
+                        return !!ship.capabilities.count_as_night_operation_aviation_personnel
+                    }
+                )
             })
 
             // 读取db
@@ -13110,11 +13118,11 @@ _form.create_equip_types = function(name, defaults){
 _form.create_item_types = _form.create_equip_types
 _comp.selector_equipment = function (name, id, default_item) {
     var dom = _frame.app_main.page['ships'].gen_input(
-        'select',
-        name || null,
-        id || null,
-        []
-    )
+            'select',
+            name || null,
+            id || null,
+            []
+        )
         , equipments = []
         , options = []
 
@@ -13131,6 +13139,7 @@ _comp.selector_equipment = function (name, id, default_item) {
                 _db.items.find({}).sort({ 'type': 1, 'rarity': 1, 'id': 1 }).exec(function (err, docs) {
                     for (let i in docs) {
                         //equipments[docs[i]['type']][1].push(docs[i])
+                        // console.log(docs[i]['id'], docs[i]['name']['zh_cn'], docs[i]['type'])
                         equipments[docs[i]['type']][1].push({
                             'name': docs[i]['name']['zh_cn'],
                             'value': docs[i]['id']
@@ -13138,6 +13147,7 @@ _comp.selector_equipment = function (name, id, default_item) {
                     }
 
                     for (let i in equipments) {
+                        // console.log(equipments[i])
                         options.push({
                             'name': '=====' + equipments[i][0] + '=====',
                             'value': ''
@@ -13149,8 +13159,8 @@ _comp.selector_equipment = function (name, id, default_item) {
                             })
                         }
                     }
-                    //console.log( equipments )
-                    //console.log( options )
+                    console.log( equipments )
+                    console.log( options )
 
                     let domNew = _frame.app_main.page['ships'].gen_input(
                         'select_group',
@@ -13195,7 +13205,7 @@ _comp.selector_equipment = function (name, id, default_item) {
         })
 
         .catch((err) => {
-            console.log(err)
+            console.error(err)
         })
 
     return dom
@@ -13454,7 +13464,7 @@ _shiplist.prototype.append_ship = function (ship_data) {
             case ' ':
                 $('<th/>')
                     .html(
-                    '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
+                        '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
                     + '<strong>' + name + '</strong>'
                     //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)
@@ -13521,10 +13531,11 @@ _shiplist.prototype.append_ship = function (ship_data) {
 _shiplist.prototype.append_ship_all = function () {
     var self = this
     for (var i in _g.data.ship_id_by_type) {
+        var data_shiptype
         if (typeof _g.ship_type_order[i] == 'object') {
-            var data_shiptype = _g.data.ship_types[_g.ship_type_order[i][0]]
+            data_shiptype = _g.data.ship_types[_g.ship_type_order[i][0]]
         } else {
-            var data_shiptype = _g.data.ship_types[_g.ship_type_order[i]]
+            data_shiptype = _g.data.ship_types[_g.ship_type_order[i]]
         }
         $('<tr class="typetitle"><th colspan="' + (self.columns.length + 1) + '">'
             //+ data_shiptype.name.zh_cn
@@ -13548,14 +13559,15 @@ _shiplist.prototype.append_ship_all = function () {
 _shiplist.prototype.append_option = function (type, name, label, value, suffix, options) {
     options = options || {}
     function gen_input() {
+        var input
         switch (type) {
             case 'text':
             case 'number':
             case 'hidden':
-                var input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').val(value)
+                input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').val(value)
                 break;
             case 'select':
-                var input = $('<select name="' + name + '" id="' + id + '" />')
+                input = $('<select name="' + name + '" id="' + id + '" />')
                 var option_empty = $('<option value=""/>').html('').appendTo(input)
                 for (var i in value) {
                     if (typeof value[i] == 'object') {
@@ -13588,10 +13600,10 @@ _shiplist.prototype.append_option = function (type, name, label, value, suffix, 
                 }
                 break;
             case 'checkbox':
-                var input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').prop('checked', value)
+                input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').prop('checked', value)
                 break;
             case 'radio':
-                var input = $();
+                input = $();
                 for (var i in value) {
                     var title, val
                         , checked = false

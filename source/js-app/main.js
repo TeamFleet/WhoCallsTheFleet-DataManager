@@ -706,6 +706,14 @@ _frame.app_main = {
                         return !!ship.capabilities.attack_surface_ship_prioritised
                     }
                 )
+                addSubType(
+                    '轻型航母',
+                    '轻型航母 / 夜间作战航母',
+                    function(ship) {
+                        if (!ship.capabilities) return false
+                        return !!ship.capabilities.count_as_night_operation_aviation_personnel
+                    }
+                )
             })
 
             // 读取db

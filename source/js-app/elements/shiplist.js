@@ -88,7 +88,7 @@ _shiplist.prototype.append_ship = function (ship_data) {
             case ' ':
                 $('<th/>')
                     .html(
-                    '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
+                        '<img src="../pics/dist/ships/' + ship_data['id'] + '/0.png" loading="lazy" />'
                     + '<strong>' + name + '</strong>'
                     //+ '<small>' + ship_data['pron'] + '</small>'
                     ).appendTo(tr)
@@ -155,10 +155,11 @@ _shiplist.prototype.append_ship = function (ship_data) {
 _shiplist.prototype.append_ship_all = function () {
     var self = this
     for (var i in _g.data.ship_id_by_type) {
+        var data_shiptype
         if (typeof _g.ship_type_order[i] == 'object') {
-            var data_shiptype = _g.data.ship_types[_g.ship_type_order[i][0]]
+            data_shiptype = _g.data.ship_types[_g.ship_type_order[i][0]]
         } else {
-            var data_shiptype = _g.data.ship_types[_g.ship_type_order[i]]
+            data_shiptype = _g.data.ship_types[_g.ship_type_order[i]]
         }
         $('<tr class="typetitle"><th colspan="' + (self.columns.length + 1) + '">'
             //+ data_shiptype.name.zh_cn
@@ -182,14 +183,15 @@ _shiplist.prototype.append_ship_all = function () {
 _shiplist.prototype.append_option = function (type, name, label, value, suffix, options) {
     options = options || {}
     function gen_input() {
+        var input
         switch (type) {
             case 'text':
             case 'number':
             case 'hidden':
-                var input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').val(value)
+                input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').val(value)
                 break;
             case 'select':
-                var input = $('<select name="' + name + '" id="' + id + '" />')
+                input = $('<select name="' + name + '" id="' + id + '" />')
                 var option_empty = $('<option value=""/>').html('').appendTo(input)
                 for (var i in value) {
                     if (typeof value[i] == 'object') {
@@ -222,10 +224,10 @@ _shiplist.prototype.append_option = function (type, name, label, value, suffix, 
                 }
                 break;
             case 'checkbox':
-                var input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').prop('checked', value)
+                input = $('<input type="' + type + '" name="' + name + '" id="' + id + '" />').prop('checked', value)
                 break;
             case 'radio':
-                var input = $();
+                input = $();
                 for (var i in value) {
                     var title, val
                         , checked = false
