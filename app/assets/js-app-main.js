@@ -722,6 +722,13 @@ _frame.app_main = {
                 }
                 addSubType(
                     '正规航母',
+                    '正规航母 / 近代化航母',
+                    function(ship) {
+                        return ship.stat.asw > 0
+                    }
+                )
+                addSubType(
+                    '正规航母',
                     '正规航母 / 夜间作战航母',
                     function(ship) {
                         if (!ship.capabilities) return false
@@ -729,10 +736,11 @@ _frame.app_main = {
                     }
                 )
                 addSubType(
-                    '正规航母',
-                    '正规航母 / 近代化航母',
+                    '轻型航母',
+                    '轻型航母 / 夜间作战航母',
                     function(ship) {
-                        return ship.stat.asw > 0
+                        if (!ship.capabilities) return false
+                        return !!ship.capabilities.count_as_night_operation_aviation_personnel
                     }
                 )
                 addSubType(
@@ -748,14 +756,6 @@ _frame.app_main = {
                     function(ship) {
                         if (!ship.capabilities) return false
                         return !!ship.capabilities.attack_surface_ship_prioritised
-                    }
-                )
-                addSubType(
-                    '轻型航母',
-                    '轻型航母 / 夜间作战航母',
-                    function(ship) {
-                        if (!ship.capabilities) return false
-                        return !!ship.capabilities.count_as_night_operation_aviation_personnel
                     }
                 )
             })
