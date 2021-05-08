@@ -7474,6 +7474,7 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
                 data.time_modified = _g.timeNow()
                 console.log('> EDIT - set', data)
                 console.log('> EDIT - unset', unset)
+                // return
                 _db.ships.update({
                     '_id': d._id
                 }, { $set: data, $unset: unset }, {}, function (err, numReplaced) {
@@ -7601,7 +7602,9 @@ _frame.app_main.page['ships'].show_ship_form = function (d) {
         }
 
         { // 格数 & 装备 & 搭载总量
-            if (!data['slot'])
+            if (data['slot'] === 0)
+                data['slot'] = [0]
+            else if (!data['slot'])
                 data['slot'] = []
             else if (!Array.isArray(data['slot']))
                 data['slot'] = [data['slot']]
