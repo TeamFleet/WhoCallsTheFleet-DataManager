@@ -745,9 +745,10 @@ _frame.app_main = {
                 )
                 addSubType(
                     '轻型航母',
-                    '轻型航母 / 改装特种航母',
+                    '轻型航母 / 改装特种/护航航母',
                     function(ship) {
-                        return Array.isArray(ship.additional_item_types)
+                        return ship.stat.asw > 0
+                            && Array.isArray(ship.additional_item_types)
                             && ship.additional_item_types.includes(38)
                     }
                 )
