@@ -22,6 +22,11 @@ _g.shipCapabilities = [
         type: 'checkbox',
     },
     {
+        key: 'leader_attack_pt_prioritised',
+        name: '[DD] 对PT炮击领队',
+        type: 'checkbox',
+    },
+    {
         key: 'anti_air_rocket_barrage',
         name: '对空弹幕',
         type: 'select',
