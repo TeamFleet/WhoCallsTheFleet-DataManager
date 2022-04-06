@@ -629,7 +629,7 @@ html body {
 }
 html body {
   font-size: 0.7000000000000001rem;
-  font-family: "Helvetica Neue", Helvetica, "Nimbus Sans L", Arial, "Liberation Sans", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp", "Meiryo", sans-serif;
+  font-family: "Helvetica Neue", /*Helvetica, */ "Nimbus Sans L", Arial, "Liberation Sans", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Wenquanyi Micro Hei", "WenQuanYi Zen Hei", "ST Heiti", SimHei, "WenQuanYi Zen Hei Sharp", "Meiryo", sans-serif;
 }
 html body h1,
 html body h2,
