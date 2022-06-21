@@ -55,7 +55,7 @@
         "gm": "^1.23.1",
         "gulp-ng-annotate": "^2.1.0",
         "jsonfile": "^5.0.0",
-        "marked": "^0.7.0",
+        "marked": "^4.0.10",
         "nedb": "^1.8.0",
         "request": "^2.88.0",
         "webp-bin": "^0.1.4"
