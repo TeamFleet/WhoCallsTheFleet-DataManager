@@ -28,6 +28,7 @@ const rename = require('gulp-rename');
 const watchLess = require('gulp-watch-less2');
 // const notify = require("gulp-notify");
 const ngAnnotate = require('gulp-ng-annotate');
+const babel = require('gulp-babel');
 
 // Defaults ===================================================================
 
@@ -42,6 +43,7 @@ const terserOptions = {
 const scripts = {
     base: () => 
         gulp.src(parseKoalaJS(dirSource, 'js-base.js'))
+            // .pipe(babel())
             .pipe(concat('js-base.js'))
             /*
             .pipe(babel({
@@ -55,6 +57,7 @@ const scripts = {
             .pipe(gulp.dest(dirOutput)),
     appMain: () => 
         gulp.src(parseKoalaJS(dirSource, 'js-app-main.js'))
+            // .pipe(babel())
             .pipe(concat('js-app-main.js'))
             //.pipe(uglify())
             .pipe(gulp.dest(dirOutput)),
@@ -62,6 +65,7 @@ const scripts = {
         gulp.src(parseKoalaJS(dirSource, 'js-app-angular.js'))
             .pipe(concat('js-app-angular.js'))
             .pipe(ngAnnotate())
+            // .pipe(babel())
             .pipe(gulp.dest(dirOutput))
 }
 const styles = {

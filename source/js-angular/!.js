@@ -1,3 +1,5 @@
+// require('babel-polyfill')
+
 if (!app) var app = window.app
 if (!angular) var angular = window.angular
 

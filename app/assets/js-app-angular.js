@@ -349,6 +349,8 @@ ERAS:["BC","AD"],FIRSTDAYOFWEEK:6,MONTH:"January February March April May June J
 Uc)}))})(window);!window.angular.$$csp().noInlineStyle&&window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
 //# sourceMappingURL=angular.min.js.map
 
+// require('babel-polyfill')
+
 if (!app) var app = window.app
 if (!angular) var angular = window.angular
 
@@ -399,6 +401,7 @@ app.addTemplate = (options, initData) => {
 
     return container
 }
+
 if (!_g) var _g = window._g
 if (!_p) var _p = window._p
 if (!_db) var _db = window._db

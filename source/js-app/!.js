@@ -1,5 +1,7 @@
 "use strict";
 
+// require('babel-polyfill')
+
 _g.shipCapabilities = [
     {
         key: 'count_as_landing_craft',
