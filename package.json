@@ -50,7 +50,7 @@
         "less-plugin-clean-css": "^1.5.1"
     },
     "dependencies": {
-        "angular": "1.7.9",
+        "angular": "1.8.3",
         "cwebp": "^2.0.4",
         "gm": "^1.23.1",
         "gulp-ng-annotate": "^2.1.0",
