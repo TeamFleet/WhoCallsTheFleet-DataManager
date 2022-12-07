@@ -1075,14 +1075,14 @@ _frame.app_main = {
                 }
                 addSubType(
                     "正规航母",
-                    "正规航母 / 近代化航母",
+                    "正规航母 / 近代化",
                     function (ship) {
                         return ship.stat.asw > 0;
                     }
                 );
                 addSubType(
                     "正规航母",
-                    "正规航母 / 夜间作战航母",
+                    "正规航母 / 夜间作战",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
@@ -1091,7 +1091,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 护航航母 / 夜间作战轻航母",
+                    "轻型航母 / 护航航母 / 夜间作战",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
@@ -1100,7 +1100,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 护航航母 / 战力投射母舰",
+                    "轻型航母 / 护航航母 / 战力投射",
                     function (ship) {
                         return (
                             Array.isArray(ship.additional_item_types) &&
@@ -1113,7 +1113,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 护航航母 / 改装特种航母",
+                    "轻型航母 / 护航航母 / 改装特种",
                     function (ship) {
                         return (
                             ship.stat.asw > 0 &&
@@ -1131,7 +1131,7 @@ _frame.app_main = {
                 });
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 攻击型轻航母",
+                    "轻型航母 / 攻击型",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
