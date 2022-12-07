@@ -1142,7 +1142,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "护航（轻型）航母 / 夜间作战轻航母",
+                    "轻型航母 / 护航航母 / 夜间作战轻航母",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
@@ -1151,7 +1151,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "护航（轻型）航母 / 战力投射母舰",
+                    "轻型航母 / 护航航母 / 战力投射母舰",
                     function (ship) {
                         return (
                             Array.isArray(ship.additional_item_types) &&
@@ -1164,7 +1164,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "护航（轻型）航母 / 改装特种航母",
+                    "轻型航母 / 护航航母 / 改装特种航母",
                     function (ship) {
                         return (
                             ship.stat.asw > 0 &&
@@ -1177,7 +1177,7 @@ _frame.app_main = {
                         );
                     }
                 );
-                addSubType("轻型航母", "护航（轻型）航母", function (ship) {
+                addSubType("轻型航母", "轻型航母 / 护航航母", function (ship) {
                     return ship.stat.asw > 0;
                 });
                 addSubType(
@@ -5439,11 +5439,11 @@ class TablelistShips_v2 extends Tablelist {
                     const thisCode =
                         thisTypeName === data_shiptype.name.zh_cn
                             ? data_shiptype["code"]
-                            : /^正规航母/.test(data_shiptype.name.zh_cn)
+                            : /^正规航母/.test(thisTypeName)
                             ? "CV"
-                            : /^护航（轻型）航母/.test(data_shiptype.name.zh_cn)
+                            : /^轻型航母 \/ 护航航母/.test(thisTypeName)
                             ? "CVE"
-                            : /^轻型航母/.test(data_shiptype.name.zh_cn)
+                            : /^轻型航母/.test(thisTypeName)
                             ? "CVL"
                             : "";
 

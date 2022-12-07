@@ -858,11 +858,11 @@ class TablelistShips_v2 extends Tablelist {
                     const thisCode =
                         thisTypeName === data_shiptype.name.zh_cn
                             ? data_shiptype["code"]
-                            : /^正规航母/.test(data_shiptype.name.zh_cn)
+                            : /^正规航母/.test(thisTypeName)
                             ? "CV"
-                            : /^护航（轻型）航母/.test(data_shiptype.name.zh_cn)
+                            : /^轻型航母 \/ 护航航母/.test(thisTypeName)
                             ? "CVE"
-                            : /^轻型航母/.test(data_shiptype.name.zh_cn)
+                            : /^轻型航母/.test(thisTypeName)
                             ? "CVL"
                             : "";
 
