@@ -853,6 +853,18 @@ class TablelistShips_v2 extends Tablelist {
                     }
 
                     let checkbox_id = Tablelist.genId();
+                    const thisTypeName =
+                        _g.data["ship_type_order"][i]["name"]["zh_cn"];
+                    const thisCode =
+                        thisTypeName === data_shiptype.name.zh_cn
+                            ? data_shiptype["code"]
+                            : /^正规航母/.test(data_shiptype.name.zh_cn)
+                            ? "CV"
+                            : /^护航（轻型）航母/.test(data_shiptype.name.zh_cn)
+                            ? "CVE"
+                            : /^轻型航母/.test(data_shiptype.name.zh_cn)
+                            ? "CVL"
+                            : "";
 
                     this.last_item =
                         //$('<p class="title" data-trindex="'+this.trIndex+'" data-header="'+i+'">'
@@ -864,13 +876,9 @@ class TablelistShips_v2 extends Tablelist {
                                 '<label class="checkbox" for="' +
                                 checkbox_id +
                                 '">' +
-                                _g.data["ship_type_order"][i]["name"]["zh_cn"] +
-                                (_g.data["ship_type_order"][i]["name"][
-                                    "zh_cn"
-                                ] == data_shiptype.name.zh_cn
-                                    ? "<small>[" +
-                                      data_shiptype["code"] +
-                                      "]</small>"
+                                thisTypeName +
+                                (thisCode !== ""
+                                    ? "<small>[" + thisCode + "]</small>"
                                     : "") +
                                 "</label></p>"
                         ).appendTo(this.dom.tbody);

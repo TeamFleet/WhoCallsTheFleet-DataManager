@@ -1061,6 +1061,7 @@ _frame.app_main = {
 
             // 添加子舰种
             .then(() => {
+                const subTypeMeet = []
                 function addSubType(
                     searchForTypeName,
                     subTypeName,
@@ -1071,13 +1072,15 @@ _frame.app_main = {
                             const list = _g.data.ship_id_by_type[index]
                                 .map((id) => _g.data.ships[id])
                                 .filter(cbFilterShip)
-                                .map((ship) => ship.id);
+                                .map((ship) => ship.id)
+                                .filter(id => !subTypeMeet.includes(id))
                             // console.log(name, subTypeName)
                             list.forEach((id) => {
                                 _g.data.ship_id_by_type[index].splice(
                                     _g.data.ship_id_by_type[index].indexOf(id),
                                     1
                                 );
+                                subTypeMeet.push(id)
                             });
                             _g.ship_type_order_name.splice(index, 0, {
                                 zh_cn: subTypeName,
@@ -1139,7 +1142,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 夜间作战轻航母",
+                    "护航（轻型）航母 / 夜间作战轻航母",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
@@ -1148,33 +1151,33 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 战力投射母舰",
+                    "护航（轻型）航母 / 战力投射母舰",
                     function (ship) {
                         return (
-                            ship.stat.asw > 0 &&
                             Array.isArray(ship.additional_item_types) &&
                             ship.additional_item_types.includes(38) &&
-                            Array.isArray(ship.additional_disable_item_types) &&
-                            ship.additional_disable_item_types.includes(19)
+                            ship.additional_item_types.includes(52)
+                            // Array.isArray(ship.additional_disable_item_types) &&
+                            // ship.additional_disable_item_types.includes(19)
                         );
                     }
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 改装特种护航航母",
+                    "护航（轻型）航母 / 改装特种航母",
                     function (ship) {
                         return (
                             ship.stat.asw > 0 &&
                             Array.isArray(ship.additional_item_types) &&
-                            ship.additional_item_types.includes(38) &&
+                            ship.additional_item_types.includes(38)/* &&
                             !(
                                 Array.isArray(ship.additional_disable_item_types) &&
                                 ship.additional_disable_item_types.includes(19)
-                            )
+                            )*/
                         );
                     }
                 );
-                addSubType("轻型航母", "轻型航母 / 护航航母", function (ship) {
+                addSubType("轻型航母", "护航（轻型）航母", function (ship) {
                     return ship.stat.asw > 0;
                 });
                 addSubType(
@@ -5431,6 +5434,18 @@ class TablelistShips_v2 extends Tablelist {
                     }
 
                     let checkbox_id = Tablelist.genId();
+                    const thisTypeName =
+                        _g.data["ship_type_order"][i]["name"]["zh_cn"];
+                    const thisCode =
+                        thisTypeName === data_shiptype.name.zh_cn
+                            ? data_shiptype["code"]
+                            : /^正规航母/.test(data_shiptype.name.zh_cn)
+                            ? "CV"
+                            : /^护航（轻型）航母/.test(data_shiptype.name.zh_cn)
+                            ? "CVE"
+                            : /^轻型航母/.test(data_shiptype.name.zh_cn)
+                            ? "CVL"
+                            : "";
 
                     this.last_item =
                         //$('<p class="title" data-trindex="'+this.trIndex+'" data-header="'+i+'">'
@@ -5442,13 +5457,9 @@ class TablelistShips_v2 extends Tablelist {
                                 '<label class="checkbox" for="' +
                                 checkbox_id +
                                 '">' +
-                                _g.data["ship_type_order"][i]["name"]["zh_cn"] +
-                                (_g.data["ship_type_order"][i]["name"][
-                                    "zh_cn"
-                                ] == data_shiptype.name.zh_cn
-                                    ? "<small>[" +
-                                      data_shiptype["code"] +
-                                      "]</small>"
+                                thisTypeName +
+                                (thisCode !== ""
+                                    ? "<small>[" + thisCode + "]</small>"
                                     : "") +
                                 "</label></p>"
                         ).appendTo(this.dom.tbody);
