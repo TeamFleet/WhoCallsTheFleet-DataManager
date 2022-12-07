@@ -1072,6 +1072,7 @@ _frame.app_main = {
                                 .map((id) => _g.data.ships[id])
                                 .filter(cbFilterShip)
                                 .map((ship) => ship.id);
+                            // console.log(name, subTypeName)
                             list.forEach((id) => {
                                 _g.data.ship_id_by_type[index].splice(
                                     _g.data.ship_id_by_type[index].indexOf(id),
@@ -1138,7 +1139,7 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 夜间作战航母",
+                    "轻型航母 / 夜间作战轻航母",
                     function (ship) {
                         if (!ship.capabilities) return false;
                         return !!ship.capabilities
@@ -1147,12 +1148,29 @@ _frame.app_main = {
                 );
                 addSubType(
                     "轻型航母",
-                    "轻型航母 / 改装特种/护航航母",
+                    "轻型航母 / 战力投射母舰",
                     function (ship) {
                         return (
                             ship.stat.asw > 0 &&
                             Array.isArray(ship.additional_item_types) &&
-                            ship.additional_item_types.includes(38)
+                            ship.additional_item_types.includes(38) &&
+                            Array.isArray(ship.additional_disable_item_types) &&
+                            ship.additional_disable_item_types.includes(19)
+                        );
+                    }
+                );
+                addSubType(
+                    "轻型航母",
+                    "轻型航母 / 改装特种护航航母",
+                    function (ship) {
+                        return (
+                            ship.stat.asw > 0 &&
+                            Array.isArray(ship.additional_item_types) &&
+                            ship.additional_item_types.includes(38) &&
+                            !(
+                                Array.isArray(ship.additional_disable_item_types) &&
+                                ship.additional_disable_item_types.includes(19)
+                            )
                         );
                     }
                 );
