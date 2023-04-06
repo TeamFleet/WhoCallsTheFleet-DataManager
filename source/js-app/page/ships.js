@@ -1310,6 +1310,8 @@ _frame.app_main.page["ships"].show_ship_form = function (d) {
             "low-2",
             "low-3",
             "low-4",
+            "low-5",
+            "low-6",
             "high-1",
             "high-2",
             "high-3",
