@@ -13722,7 +13722,6 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                             const deferred = Q.defer();
                             const index = mapIdIndex[item.id];
                             // console.log(item)
-                            let promises = new Promise((resolve) => resolve);
 
                             if (typeof index === "undefined") {
                                 setTimeout(() => {
@@ -13767,6 +13766,7 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                             getApiData("dismantle", "broken");
                             set["time_modified"] = _g.timeNow();
                             // ex-slot extra ships
+
                             for (const [slotId, obj] of Object.entries(
                                 api_mst_equip_exslot_ship
                             )) {
@@ -13826,66 +13826,11 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
 
                                 // const sTypesMap = {};
                                 // const cTypesMap = {};
-                                set.exslot_on_ship = shipIds;
+                                set.exslot_on_ship = shipIds.map((v) =>
+                                    Number(v)
+                                );
                                 set.exslot_on_shiptype = shipTypes;
                                 set.exslot_on_shipclass = shipClasses;
-
-                                for (const [dbname, list] of [
-                                    ["ships", shipIds],
-                                    ["ship_classes", shipClasses],
-                                    ["ship_types", shipTypes],
-                                ]) {
-                                    for (const id of list) {
-                                        const item = _g.data[dbname][id];
-                                        if (
-                                            !Array.isArray(
-                                                item.additional_exslot_item_ids
-                                            )
-                                        )
-                                            item.additional_exslot_item_ids =
-                                                [];
-                                        item.additional_exslot_item_ids.push(
-                                            Number(item.id)
-                                        );
-
-                                        const modify = {
-                                            $set: {},
-                                            $unset: {},
-                                        };
-
-                                        if (
-                                            Array.isArray(
-                                                item.additional_exslot_item_ids
-                                            ) &&
-                                            item.additional_exslot_item_ids
-                                                .length
-                                        ) {
-                                            modify["$set"][
-                                                "additional_exslot_item_ids"
-                                            ] = [
-                                                ...item.additional_exslot_item_ids,
-                                            ];
-                                        } else {
-                                            modify["$unset"][
-                                                "additional_exslot_item_ids"
-                                            ] = true;
-                                        }
-                                        promises = promises.then(
-                                            () =>
-                                                new Promise((resolve) => {
-                                                    _db[dbname].update(
-                                                        {
-                                                            id,
-                                                        },
-                                                        modify,
-                                                        function () {
-                                                            resolve();
-                                                        }
-                                                    );
-                                                })
-                                        );
-                                    }
-                                }
                             }
                             // api_mst_equip_exslot_ship.filter(obj => (
                             //     obj.api_slotitem_id === item.id
@@ -13914,22 +13859,20 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                             });
 
                             // _log(set)
-                            promises = promises.then(() => {
-                                _db.items.update(
-                                    {
-                                        _id: item._id,
-                                    },
-                                    {
-                                        $set: set,
-                                        $unset: unset,
-                                    },
-                                    (err) => {
-                                        if (err) return deferred.reject(err);
-                                        // console.log(`丨   > 修改后: `, set)
-                                        deferred.resolve();
-                                    }
-                                );
-                            });
+                            _db.items.update(
+                                {
+                                    _id: item._id,
+                                },
+                                {
+                                    $set: set,
+                                    $unset: unset,
+                                },
+                                (err) => {
+                                    if (err) return deferred.reject(err);
+                                    // console.log(`丨   > 修改后: `, set)
+                                    deferred.resolve();
+                                }
+                            );
                             return deferred.promise;
                         });
                     });
@@ -13946,6 +13889,113 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                     return deferred.promise;
                 })
                 .then(() => console.log("丨 处理装备 - 完成"))
+
+                // 更新数据 - 根据补强增设更新所有舰种、舰级和舰娘
+                .then(
+                    () =>
+                        new Promise((resolve, reject) => {
+                            console.log(
+                                "丨 根据补强增设更新所有舰种、舰级和舰娘"
+                            );
+
+                            _db.items.find({}, (err, docs) => {
+                                if (err) return reject(err);
+                                resolve(
+                                    docs.filter(
+                                        (item) =>
+                                            Array.isArray(
+                                                item.exslot_on_ship
+                                            ) ||
+                                            Array.isArray(
+                                                item.exslot_on_shipclass
+                                            ) ||
+                                            Array.isArray(
+                                                item.exslot_on_shiptype
+                                            )
+                                    )
+                                );
+                            });
+                        })
+                )
+                .then((items) => {
+                    let p = new Promise((resolve) => {
+                        resolve();
+                    });
+                    // additional_exslot_item_ids
+                    [
+                        ["exslot_on_ship", "ships"],
+                        ["exslot_on_shipclass", "ship_classes"],
+                        ["exslot_on_shiptype", "ship_types"],
+                    ].forEach(([key, dbname]) => {
+                        // 重置 additional_exslot_item_ids
+                        p = p.then(
+                            () =>
+                                new Promise((resolve, reject) => {
+                                    _db[dbname].update(
+                                        {
+                                            additional_exslot_item_ids: {
+                                                $exists: true,
+                                            },
+                                        },
+                                        {
+                                            $unset: {
+                                                additional_exslot_item_ids: true,
+                                            },
+                                        },
+                                        { multi: true },
+                                        (err, docs) => {
+                                            if (err) return reject(err);
+                                            // if (!docs.length) resolve();
+                                            // console.log("reset", docs);
+                                            resolve();
+                                        }
+                                    );
+                                })
+                        );
+
+                        items.forEach((equipment) => {
+                            if (!Array.isArray(equipment[key])) return;
+                            if (!equipment[key].length) return;
+                            equipment[key].forEach((id) => {
+                                p = p.then(
+                                    () =>
+                                        new Promise((resolve, reject) => {
+                                            // console.log(items, key, dbname);
+                                            _db[dbname].update(
+                                                { id },
+                                                {
+                                                    $addToSet: {
+                                                        additional_exslot_item_ids:
+                                                            equipment.id,
+                                                    },
+                                                },
+                                                {},
+                                                (err, docs) => {
+                                                    if (err) return reject(err);
+                                                    console.log(docs);
+                                                    // if (!docs.length) resolve();
+                                                    // const thisItem = docs[0];
+                                                    // console.log(
+                                                    //     dbname,
+                                                    //     id,
+                                                    //     thisItem,
+                                                    //     thisItem.additional_exslot_item_ids
+                                                    // );
+                                                    resolve();
+                                                }
+                                            );
+                                        })
+                                );
+                            });
+                        });
+                    });
+                    return p;
+                })
+                .then(() => {
+                    console.log(
+                        "丨 根据补强增设更新所有舰种、舰级和舰娘 - 完成"
+                    );
+                })
 
                 // 错误处理
                 .catch(function (err) {
