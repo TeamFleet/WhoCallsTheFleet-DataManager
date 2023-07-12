@@ -13722,6 +13722,7 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                             const deferred = Q.defer();
                             const index = mapIdIndex[item.id];
                             // console.log(item)
+                            let promises = new Promise((resolve) => resolve);
 
                             if (typeof index === "undefined") {
                                 setTimeout(() => {
@@ -13836,34 +13837,55 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                 ]) {
                                     for (const id of list) {
                                         const item = _g.data[dbname][id];
-                                        console.log(item);
-                                        // let additional_exslot_item_ids = [];
+                                        if (
+                                            !Array.isArray(
+                                                item.additional_exslot_item_ids
+                                            )
+                                        )
+                                            item.additional_exslot_item_ids =
+                                                [];
+                                        item.additional_exslot_item_ids.push(
+                                            Number(item.id)
+                                        );
+
+                                        const modify = {
+                                            $set: {},
+                                            $unset: {},
+                                        };
+
+                                        if (
+                                            Array.isArray(
+                                                item.additional_exslot_item_ids
+                                            ) &&
+                                            item.additional_exslot_item_ids
+                                                .length
+                                        ) {
+                                            modify["$set"][
+                                                "additional_exslot_item_ids"
+                                            ] = [
+                                                ...item.additional_exslot_item_ids,
+                                            ];
+                                        } else {
+                                            modify["$unset"][
+                                                "additional_exslot_item_ids"
+                                            ] = true;
+                                        }
+                                        promises = promises.then(
+                                            () =>
+                                                new Promise((resolve) => {
+                                                    _db[dbname].update(
+                                                        {
+                                                            id,
+                                                        },
+                                                        modify,
+                                                        function () {
+                                                            resolve();
+                                                        }
+                                                    );
+                                                })
+                                        );
                                     }
                                 }
-                                // for (const [slotId, obj] of Object.entries(
-                                //     _frame.app_main.page["gamedata"].data
-                                //         .api_mst_equip_exslot_ship
-                                // )) {
-                                //     if (
-                                //         !Array.isArray(obj.api_ship_ids) ||
-                                //         obj.api_ship_ids.indexOf(
-                                //             data.api_id
-                                //         ) < 0
-                                //     )
-                                //         return;
-                                //     additional_exslot_item_ids.push(slotId);
-                                // }
-                                // // _frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship.forEach(ex => {
-                                // //     if (!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
-                                // //     additional_exslot_item_ids.push(ex.api_slotitem_id)
-                                // // })
-                                // if (additional_exslot_item_ids.length)
-                                //     modified["additional_exslot_item_ids"] =
-                                //         additional_exslot_item_ids;
-                                // else
-                                //     unset[
-                                //         "additional_exslot_item_ids"
-                                //     ] = true;
                             }
                             // api_mst_equip_exslot_ship.filter(obj => (
                             //     obj.api_slotitem_id === item.id
@@ -13892,20 +13914,22 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                             });
 
                             // _log(set)
-                            _db.items.update(
-                                {
-                                    _id: item._id,
-                                },
-                                {
-                                    $set: set,
-                                    $unset: unset,
-                                },
-                                (err) => {
-                                    if (err) return deferred.reject(err);
-                                    // console.log(`丨   > 修改后: `, set)
-                                    deferred.resolve();
-                                }
-                            );
+                            promises = promises.then(() => {
+                                _db.items.update(
+                                    {
+                                        _id: item._id,
+                                    },
+                                    {
+                                        $set: set,
+                                        $unset: unset,
+                                    },
+                                    (err) => {
+                                        if (err) return deferred.reject(err);
+                                        // console.log(`丨   > 修改后: `, set)
+                                        deferred.resolve();
+                                    }
+                                );
+                            });
                             return deferred.promise;
                         });
                     });
