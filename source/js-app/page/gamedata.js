@@ -1,5 +1,15 @@
 // http://203.104.209.23/kcs/...
 
+const sTypesMap = {
+
+}
+// ship class -> database
+const cTypesMap = {
+    38: [22], // 夕雲
+    54: [23], // 秋月
+    101: [131], // 松
+}
+
 _frame.app_main.page['gamedata'] = {}
 _frame.app_main.page['gamedata'].init = function (page) {
     jf.readFile(node.path.join(_g.root, '/fetched_data/api_start2.json'), function (err, obj) {
@@ -456,10 +466,14 @@ _frame.app_main.page['gamedata'].init_ship = function (data) {
                                     unset['remodel_cost.fuel'] = true
                                     // extra slot extra equipable ids
                                     let additional_exslot_item_ids = []
-                                    _frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship.forEach(ex => {
-                                        if (!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
-                                        additional_exslot_item_ids.push(ex.api_slotitem_id)
-                                    })
+                                    for (const [slotId, obj] of Object.entries(_frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship)) {
+                                        if (!Array.isArray(obj.api_ship_ids) || obj.api_ship_ids.indexOf(data.api_id) < 0) return
+                                        additional_exslot_item_ids.push(slotId)
+                                    }
+                                    // _frame.app_main.page['gamedata'].data.api_mst_equip_exslot_ship.forEach(ex => {
+                                    //     if (!Array.isArray(ex.api_ship_ids) || ex.api_ship_ids.indexOf(data.api_id) < 0) return
+                                    //     additional_exslot_item_ids.push(ex.api_slotitem_id)
+                                    // })
                                     if (additional_exslot_item_ids.length)
                                         modified['additional_exslot_item_ids'] = additional_exslot_item_ids
                                     else
@@ -677,12 +691,23 @@ _frame.app_main.page['gamedata'].init_slotitem = function (data) {
                             getApiData('dismantle', 'broken')
                             set['time_modified'] = _g.timeNow()
                             // ex-slot extra ships
-                            api_mst_equip_exslot_ship.filter(obj => (
-                                obj.api_slotitem_id === item.id
-                            )).forEach(obj => {
+                            for (const [slotId, obj] of Object.entries(api_mst_equip_exslot_ship)) {
+                                if (slotId !== item.id) continue;
+                                console.log(slotId, obj)
                                 console.log(`丨   > [${item.id}] ${item.name.ja_jp} - 补强增设栏位额外舰娘: `, obj.api_ship_ids)
                                 set.exslot_on_ship = obj.api_ship_ids
-                            })
+                                const stypesmap = {
+
+                                }
+                                // set.exslot_on_shiptype = 
+                                // set.exslot_on_shipclass = 
+                            }
+                            // api_mst_equip_exslot_ship.filter(obj => (
+                            //     obj.api_slotitem_id === item.id
+                            // )).forEach(obj => {
+                            //     console.log(`丨   > [${item.id}] ${item.name.ja_jp} - 补强增设栏位额外舰娘: `, obj.api_ship_ids)
+                            //     set.exslot_on_ship = obj.api_ship_ids
+                            // })
                             if (!Array.isArray(set.exslot_on_ship) || !set.exslot_on_ship.length) {
                                 unset.exslot_on_ship = true
                             }

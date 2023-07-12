@@ -524,105 +524,184 @@ app.component('formElementCapabilities', {
     }
 })
 
-app.controller('form-ship-class', ["$scope", function ($scope) {
-    $scope.data = {}
-    $scope.ready = true
+app.controller("form-ship-class", ["$scope", function ($scope) {
+    $scope.data = {};
+    $scope.ready = true;
 
-    $scope.items = []
+    $scope.items = [];
     // $scope.newExtraSlotExtra
 
     $scope.init = function (data) {
-        Object.assign($scope, data)
+        Object.assign($scope, data);
+
         if (!$scope._id && $scope.data._id) {
-            $scope._id = $scope.data._id
+            $scope._id = $scope.data._id;
         } else {
-            $scope.ready = false
+            $scope.ready = false;
             new Promise((resolve, reject) => {
-                _db.ship_classes.find({
-                    '_id': $scope._id
-                }, function (err, docs) {
-                    if (err) return reject(err)
-                    $scope.data = docs[0]
-                    if (!$scope.data.extraSlotExtra) $scope.data.extraSlotExtra = []
-                    else $scope.data.extraSlotExtra = $scope.data.extraSlotExtra.map(item => '' + item)
-                    resolve()
-                })
-            }).then(() => new Promise((resolve, reject) => {
-                _db.items
-                    .find({})
-                    .sort({ 'type': 1, 'rarity': 1, 'id': 1 })
-                    .exec((err, docs) => {
-                        if (err) return reject(err)
-                        docs.forEach((doc) => {
-                            const equipment = new Equipment(doc)
-                            const typeId = equipment.type
-                            const type = _g.data.item_types[typeId].name.zh_cn
-
-                            if (!this.items[typeId]) this.items[typeId] = [type, []]
-
-                            this.items[typeId][1].push(equipment)
-                        })
-                        resolve()
-                    })
-            })).then(() => {
-                console.log($scope.data)
-                $scope.ready = true
-                $scope.$apply()
+                _db.ship_classes.find(
+                    {
+                        _id: $scope._id,
+                    },
+                    function (err, docs) {
+                        if (err) return reject(err);
+                        $scope.data = docs[0];
+                        if (!$scope.data.extraSlotExtra)
+                            $scope.data.extraSlotExtra = [];
+                        else
+                            $scope.data.extraSlotExtra =
+                                $scope.data.extraSlotExtra.map(
+                                    (item) => "" + item
+                                );
+                        resolve();
+                    }
+                );
             })
+                .then(
+                    () =>
+                        new Promise((resolve, reject) => {
+                            _db.items
+                                .find({})
+                                .sort({ type: 1, rarity: 1, id: 1 })
+                                .exec((err, docs) => {
+                                    if (err) return reject(err);
+                                    docs.forEach((doc) => {
+                                        const equipment = new Equipment(doc);
+                                        const typeId = equipment.type;
+                                        const type =
+                                            _g.data.item_types[typeId].name
+                                                .zh_cn;
+
+                                        if (!this.items[typeId])
+                                            this.items[typeId] = [type, []];
+
+                                        this.items[typeId][1].push(equipment);
+                                    });
+                                    resolve();
+                                });
+                        })
+                )
+                .then(() => {
+                    // HELPER: 列出该舰级的所有舰娘对应的游戏内数据
+                    return new Promise((resolve, reject) => {
+                        _db.ships
+                            .find({
+                                class: $scope.data.id,
+                            })
+                            .sort({ class_no: 1 })
+                            .exec((err, docs) => {
+                                if (err) return reject(err);
+                                resolve(docs);
+                            });
+                    }).then((ships) => {
+                        const names = ships.reduce((names, ship) => {
+                            if (!names.includes(ship.name.ja_jp))
+                                names.push(ship.name.ja_jp);
+                            return names;
+                        }, []);
+                        return new Promise((resolve, reject) => {
+                            jf.readFile(
+                                node.path.join(
+                                    _g.root,
+                                    "/fetched_data/api_start2.json"
+                                ),
+                                function (err, obj) {
+                                    if (err) return reject(err);
+                                    const list =
+                                        obj.api_data.api_mst_ship.filter(
+                                            (api_ship) =>
+                                                names.some((name) =>
+                                                    api_ship.api_name.includes(
+                                                        name
+                                                    )
+                                                )
+                                        );
+                                    console.log(
+                                        names,
+                                        list.map((api_ship) => ({
+                                            id: api_ship.api_id,
+                                            name: api_ship.api_name,
+                                            ctype: api_ship.api_ctype,
+                                        })),
+                                        new Set([
+                                            ...list.map(
+                                                ({ api_ctype }) => api_ctype
+                                            ),
+                                        ])
+                                    );
+                                    resolve();
+                                }
+                            );
+                        });
+                    });
+                })
+                .then(() => {
+                    console.log($scope.data);
+                    $scope.ready = true;
+                    $scope.$apply();
+                });
         }
-    }
+    };
 
     $scope.actions = {
         addExtraSlotExtra: () => {
-            $scope.data.extraSlotExtra.push(null)
+            $scope.data.extraSlotExtra.push(null);
         },
         removeExtraSlotExtra: (index) => {
-            $scope.data.extraSlotExtra.splice(index, 1)
+            $scope.data.extraSlotExtra.splice(index, 1);
         },
         submit: function ($event) {
-            let newData = Object.assign({}, $scope.data)
-            const unset = {}
+            let newData = Object.assign({}, $scope.data);
+            const unset = {};
 
             if (newData.extraSlotExtra && newData.extraSlotExtra.length)
-                newData.extraSlotExtra = newData.extraSlotExtra.filter(item => item ? true : false).map(item => parseInt(item))
+                newData.extraSlotExtra = newData.extraSlotExtra
+                    .filter((item) => (item ? true : false))
+                    .map((item) => parseInt(item));
             if (newData.extraSlotExtra && !newData.extraSlotExtra.length)
-                delete newData.extraSlotExtra
+                delete newData.extraSlotExtra;
 
-            { // 能力
-                let count = 0
+            {
+                // 能力
+                let count = 0;
                 for (const key in newData.capabilities) {
-                    const value = newData.capabilities[key]
-                    if (value === 'on' || value === 'true')
-                        newData.capabilities[key] = true
-                    if (value !== undefined && value !== null && value !== '') {
-                        count++
+                    const value = newData.capabilities[key];
+                    if (value === "on" || value === "true")
+                        newData.capabilities[key] = true;
+                    if (value !== undefined && value !== null && value !== "") {
+                        count++;
                     } else {
-                        delete newData.capabilities[key]
-                        unset[`capabilities.${key}`] = true
+                        delete newData.capabilities[key];
+                        unset[`capabilities.${key}`] = true;
                     }
-                    if (value === false)
-                        delete newData.capabilities[key]
-                    else
-                        count++
+                    if (value === false) delete newData.capabilities[key];
+                    else count++;
                 }
                 if (!count) {
-                    delete newData.capabilities
-                    unset.capabilities = true
+                    delete newData.capabilities;
+                    unset.capabilities = true;
                 }
             }
 
-            console.log('form-ship-class submitting', $scope._id, newData, $event)
+            console.log(
+                "form-ship-class submitting",
+                $scope._id,
+                newData,
+                $event
+            );
             // return;
             _db.ship_classes.update(
                 {
-                    '_id': $scope._id
+                    _id: $scope._id,
                 },
                 {
                     $set: newData,
                     $unset: unset,
-                }, {}, function (/*err, numReplaced*/) {
+                },
+                {},
+                function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
-                    _frame.modal.hide()
+                    _frame.modal.hide();
                 }
             );
             // var _dom = $('<form class="ship_type loading"/>').on('submit', function (e) {
@@ -670,101 +749,122 @@ app.controller('form-ship-class', ["$scope", function ($scope) {
             //         _dom.removeClass('loading')
             //     }
             // })
-        }
-    }
-}])
+        },
+    };
+}]);
 
-app.controller('form-ship-type', ["$scope", function ($scope) {
-    $scope.data = {}
-    $scope.ready = true
+app.controller("form-ship-type", ["$scope", function ($scope) {
+    $scope.data = {};
+    $scope.ready = true;
 
-    $scope.items = []
+    $scope.items = [];
     // $scope.newExtraSlotExtra
 
     $scope.init = function (data) {
-        Object.assign($scope, data)
+        Object.assign($scope, data);
         if (!$scope._id && $scope.data._id) {
-            $scope._id = $scope.data._id
+            $scope._id = $scope.data._id;
         } else {
-            $scope.ready = false
+            $scope.ready = false;
             new Promise((resolve, reject) => {
-                _db.ship_types.find({
-                    '_id': $scope._id
-                }, function (err, docs) {
-                    if (err) return reject(err)
-                    $scope.data = docs[0]
-                    resolve()
-                })
-            }).then(() => new Promise((resolve, reject) => {
-                _db.items
-                    .find({})
-                    .sort({ 'type': 1, 'rarity': 1, 'id': 1 })
-                    .exec((err, docs) => {
-                        if (err) return reject(err)
-                        docs.forEach((doc) => {
-                            const equipment = new Equipment(doc)
-                            const typeId = equipment.type
-                            const type = _g.data.item_types[typeId].name.zh_cn
-
-                            if (!this.items[typeId]) this.items[typeId] = [type, []]
-
-                            this.items[typeId][1].push(equipment)
-                        })
-                        resolve()
-                    })
-            })).then(() => {
-                console.log($scope.data)
-                $scope.ready = true
-                $scope.$apply()
+                _db.ship_types.find(
+                    {
+                        _id: $scope._id,
+                    },
+                    function (err, docs) {
+                        if (err) return reject(err);
+                        $scope.data = docs[0];
+                        resolve();
+                    }
+                );
             })
+                .then(
+                    () =>
+                        new Promise((resolve, reject) => {
+                            _db.items
+                                .find({})
+                                .sort({ type: 1, rarity: 1, id: 1 })
+                                .exec((err, docs) => {
+                                    if (err) return reject(err);
+                                    docs.forEach((doc) => {
+                                        const equipment = new Equipment(doc);
+                                        const typeId = equipment.type;
+                                        const type =
+                                            _g.data.item_types[typeId].name
+                                                .zh_cn;
+
+                                        if (!this.items[typeId])
+                                            this.items[typeId] = [type, []];
+
+                                        this.items[typeId][1].push(equipment);
+                                    });
+                                    resolve();
+                                });
+                        })
+                )
+                .then(() => {
+                    console.log($scope.data);
+                    // if (!$scope.data.id_ingame) $scope.data.id_ingame = "";
+                    $scope.ready = true;
+                    $scope.$apply();
+                });
         }
-    }
+    };
 
     $scope.actions = {
         submit: function ($event) {
-            let newData = Object.assign({}, $scope.data)
-            const unset = {}
+            let newData = Object.assign({}, $scope.data);
+            const unset = {};
 
-            { // 能力
-                let count = 0
+            {
+                // 能力
+                let count = 0;
                 for (const key in newData.capabilities) {
-                    const value = newData.capabilities[key]
-                    if (value === 'on' || value === 'true')
-                        newData.capabilities[key] = true
-                    if (value !== undefined && value !== null && value !== '') {
-                        count++
+                    const value = newData.capabilities[key];
+                    if (value === "on" || value === "true")
+                        newData.capabilities[key] = true;
+                    if (value !== undefined && value !== null && value !== "") {
+                        count++;
                     } else {
-                        delete newData.capabilities[key]
-                        unset[`capabilities.${key}`] = true
+                        delete newData.capabilities[key];
+                        unset[`capabilities.${key}`] = true;
                     }
-                    if (value === false)
-                        delete newData.capabilities[key]
-                    else
-                        count++
+                    if (value === false) delete newData.capabilities[key];
+                    else count++;
                 }
                 if (!count) {
-                    delete newData.capabilities
-                    unset.capabilities = true
+                    delete newData.capabilities;
+                    unset.capabilities = true;
                 }
             }
 
-            console.log('form-ship-type submitting', $scope._id, newData, $event)
+            if (newData.id_ingame)
+                newData.id_ingame = Number(newData.id_ingame);
+
+            console.log(
+                "form-ship-type submitting",
+                $scope._id,
+                newData,
+                $event
+            );
             // return;
             _db.ship_types.update(
                 {
-                    '_id': $scope._id
+                    _id: $scope._id,
                 },
                 {
                     $set: newData,
                     $unset: unset,
-                }, {}, function (/*err, numReplaced*/) {
+                },
+                {},
+                function (/*err, numReplaced*/) {
                     // btn.html(self.content_ship_type(newdata))
-                    _frame.modal.hide()
+                    _frame.modal.hide();
                 }
             );
-        }
-    }
-}])
+        },
+    };
+}]);
 
 app.factory('dbExillustTypesUpdate', () => {
     return {
