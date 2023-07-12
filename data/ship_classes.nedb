@@ -56,6 +56,7 @@
 {"name":{"ja_jp":"改装陽炎","zh_cn":"改装阳炎"},"ship_type_id":1,"id":138,"_id":"MMjDJ7lYAh3ehJAF","navy":"rocn","id_ingame":30}
 {"ship_type_id":13,"id":63,"_id":"MXCJDdredQZNAeyX","speed_rule":"low-3","name":{"en_us":"Ro-series","ja_jp":"呂号","zh_cn":"吕号"},"id_ingame":86}
 {"name":{"ja_jp":"改阿賀野","zh_cn":"改阿贺野","en_us":"Revised Agano"},"ship_type_id":2,"id":143,"_id":"MvTlUFVIc4eEpmtN","speed_rule":"high-2","equipable_exclude_by_slot":[null,null,null,[12]],"id_ingame":41}
+{"name":{"ja_jp":"宗谷","zh_cn":"宗谷"},"ship_type_id":29,"id":162,"_id":"N3ABoemd8THde36P","id_ingame":111}
 {"name":{"ja_jp":"John C.Butler","zh_cn":"约翰·C·巴特勒","en_us":""},"ship_type_id":1,"id":112,"_id":"Nvzvklc2BNAuwjnZ","navy":"usn","speed_rule":"low-4","id_ingame":87}
 {"name":{"ja_jp":"神威","zh_cn":"神威","en_us":"Kamoi"},"ship_type_id":29,"id":98,"_id":"O3lucZpi7fHXfyYb","id_ingame":72}
 {"name":{"ja_jp":"潜高","zh_cn":"潜高"},"ship_type_id":13,"id":146,"_id":"PSBFXovnUlkOWJkU","speed_rule":"low-5","id_ingame":109}
