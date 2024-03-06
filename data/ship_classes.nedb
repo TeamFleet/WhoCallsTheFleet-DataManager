@@ -59,6 +59,7 @@
 {"ship_type_id":13,"id":63,"_id":"MXCJDdredQZNAeyX","speed_rule":"low-3","name":{"en_us":"Ro-series","ja_jp":"呂号","zh_cn":"吕号"},"id_ingame":86}
 {"name":{"ja_jp":"改阿賀野","zh_cn":"改阿贺野","en_us":"Revised Agano"},"ship_type_id":2,"id":143,"_id":"MvTlUFVIc4eEpmtN","speed_rule":"high-2","equipable_exclude_by_slot":[null,null,null,[12]],"id_ingame":41,"additional_exslot_item_ids":[220,413,66]}
 {"name":{"ja_jp":"宗谷","zh_cn":"宗谷"},"ship_type_id":29,"id":162,"_id":"N3ABoemd8THde36P","id_ingame":111}
+{"name":{"ja_jp":"改氷川丸","zh_cn":"改冰川丸"},"ship_type_id":17,"id":170,"_id":"NHcQKYVGyBRTr0ez","id_ingame":126}
 {"name":{"ja_jp":"John C.Butler","zh_cn":"约翰·C·巴特勒","en_us":""},"ship_type_id":1,"id":112,"_id":"Nvzvklc2BNAuwjnZ","navy":"usn","speed_rule":"low-4","id_ingame":87}
 {"name":{"ja_jp":"神威","zh_cn":"神威","en_us":"Kamoi"},"ship_type_id":29,"id":98,"_id":"O3lucZpi7fHXfyYb","id_ingame":72}
 {"name":{"ja_jp":"潜高","zh_cn":"潜高"},"ship_type_id":13,"id":146,"_id":"PSBFXovnUlkOWJkU","speed_rule":"low-5","id_ingame":109}
@@ -84,6 +85,7 @@
 {"name":{"ja_jp":"Casablanca","zh_cn":"卡萨布兰卡"},"ship_type_id":9,"id":106,"_id":"YnuXflCSvTPmhtWg","navy":"usn","id_ingame":83}
 {"ship_type_id":1,"id":84,"_id":"ZL3yqVUTmQFOkWaC","speed_rule":"high-3","name":{"en_us":"Kamikaze","ja_jp":"神風","zh_cn":"神风"},"id_ingame":66}
 {"ship_type_id":4,"id":57,"_id":"ZhPM1Msam9Zr1lRh","speed_rule":"high-3","name":{"en_us":"Admiral Hipper","ja_jp":"Admiral Hipper","zh_cn":"希佩尔海军上将"},"navy":"km","id_ingame":55}
+{"name":{"ja_jp":"巡潜乙（改一）","zh_cn":"巡潜乙（改一）","en_us":"Junsen Type B Kai Ichi"},"ship_type_id":14,"id":169,"_id":"aKmtcrq1R5ALMLW3","id_ingame":127,"speed_rule":"low-3"}
 {"name":{"ja_jp":"Fletcher","zh_cn":"弗莱彻"},"ship_type_id":1,"id":117,"_id":"aQO0mki7ozsr5pBu","navy":"usn","id_ingame":91}
 {"name":{"ja_jp":"Gato","zh_cn":"猫鲨"},"ship_type_id":13,"id":151,"_id":"aW3hhLQXHmhoB7Ky","navy":"usn","id_ingame":114}
 {"ship_type_id":3,"id":54,"_id":"aqjF6P9FYhNyZMn9","speed_rule":"high-3","name":{"en_us":"Kuma","ja_jp":"球磨","zh_cn":"球磨"},"id_ingame":4,"additional_exslot_item_ids":[413]}
@@ -107,6 +109,7 @@
 {"ship_type_id":32,"id":96,"_id":"ffyU0DgRZRHGjaiW","name":{"en_us":"Taiyou","ja_jp":"大鷹","zh_cn":"大鹰"},"id_ingame":76}
 {"name":{"ja_jp":"丁","zh_cn":"丁"},"ship_type_id":31,"id":132,"_id":"g5euo6YoF9kVgKld","id_ingame":104}
 {"name":{"ja_jp":"松","zh_cn":"松"},"ship_type_id":1,"id":131,"_id":"gAfTNXyFOgal7cqQ","id_ingame":101,"additional_exslot_item_ids":[88,240,27,28,106,450]}
+{"name":{"ja_jp":"最上","zh_cn":"最上","en_us":"Mogami"},"ship_type_id":12,"id":168,"_id":"gZVRtFeTJA2YLqZy","id_ingame":9,"speed_rule":"high-1"}
 {"name":{"ja_jp":"South Dakota","zh_cn":"南达科他"},"ship_type_id":7,"id":134,"_id":"hGnDUAEfmqVjly4q","navy":"usn","id_ingame":102}
 {"ship_type_id":2,"id":52,"_id":"hJAm96B6jC0wWmvP","speed_rule":"high-2","name":{"en_us":"Agano","ja_jp":"阿賀野","zh_cn":"阿贺野"},"id_ingame":41,"additional_exslot_item_ids":[220,413,66]}
 {"ship_type_id":15,"id":56,"_id":"hcWdqljjY0waaU64","speed_rule":"low-3","name":{"en_us":"Hei","ja_jp":"特種船丙","zh_cn":"特种船丙"},"id_ingame":45}
