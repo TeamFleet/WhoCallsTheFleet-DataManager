@@ -13791,6 +13791,7 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                     .map(([id]) => sTypesMap[id])
                                     .flat()
                                     .filter((v) => !!v);
+                                const minStarLevel = obj.api_req_level || 0;
 
                                 // console.log(obj.api_stypes, shipTypes);
                                 console.log(
@@ -13823,6 +13824,9 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                         )
                                         .join(", ")
                                 );
+                                if (minStarLevel > 0) {
+                                    console.log(`丨      > 最低改修 ⭐+${minStarLevel}`);
+                                }
 
                                 // const sTypesMap = {};
                                 // const cTypesMap = {};
@@ -13831,6 +13835,7 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                 );
                                 set.exslot_on_shiptype = shipTypes;
                                 set.exslot_on_shipclass = shipClasses;
+                                set.exslot_min_star_level = minStarLevel;
                             }
                             // api_mst_equip_exslot_ship.filter(obj => (
                             //     obj.api_slotitem_id === item.id
@@ -13858,7 +13863,11 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                 unset[key] = true;
                             });
 
-                            // _log(set)
+                            if (!set.exslot_min_star_level) {
+                                unset.exslot_min_star_level = true;
+                            }
+
+                            _log(set);
                             _db.items.update(
                                 {
                                     _id: item._id,
@@ -13972,7 +13981,7 @@ _frame.app_main.page["gamedata"].init_slotitem = function (data) {
                                                 {},
                                                 (err, docs) => {
                                                     if (err) return reject(err);
-                                                    console.log(docs);
+                                                    // console.log(docs);
                                                     // if (!docs.length) resolve();
                                                     // const thisItem = docs[0];
                                                     // console.log(
